@@ -3,9 +3,15 @@
 
 #include <iostream>
 
+#include "GraphicsSystem.h"
+
 int main()
 {
     std::cout << "Hello World!\n";
+
+    GraphicsSystem graphics;
+
+    graphics.Run();
 }
 
 // Run program: Ctrl + F5 or Debug > Start Without Debugging menu
