@@ -107,6 +107,7 @@ private:
     VkDescriptorPool descriptorPool;
     std::vector<VkDescriptorSet> descriptorSets;
 
+    uint32_t mipLevels;
     VkImage textureImage;
     VkDeviceMemory textureImageMemory;
 
@@ -116,6 +117,12 @@ private:
     VkImage depthImage;
     VkDeviceMemory depthImageMemory;
     VkImageView depthImageView;
+
+    VkSampleCountFlagBits msaaSamples = VK_SAMPLE_COUNT_1_BIT;
+
+    VkImage colorImage;
+    VkDeviceMemory colorImageMemory;
+    VkImageView colorImageView;
 
 public:
     GraphicsSystem() {};
@@ -144,6 +151,7 @@ private:
     QueueFamilyIndices FindQueueFamilies(VkPhysicalDevice device);
     bool CheckDeviceExtensionSupport(VkPhysicalDevice device);
     SwapChainSupportDetails QuerySwapChainSupport(VkPhysicalDevice device);
+    VkSampleCountFlagBits GetMaxUsableSampleCount();
 
     void CreateLogicalDevice();
 
@@ -164,16 +172,18 @@ private:
 
     void CreateCommandPool();
 
+    void CreateColorResources();
     void CreateDepthResources();
     VkFormat FindDepthFormat();
     VkFormat FindSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
     bool HasStencilComponent(VkFormat format);
 
     void CreateTextureImage();
+    void GenerateMipmaps(VkImage image, VkFormat imageFormat, int32_t textureWidth, int32_t textureHeight, uint32_t mipLevels);
     void CreateTextureImageView();
     void CreateTextureSampler();
 
-    VkImageView CreateImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags);
+    VkImageView CreateImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, uint32_t mipLevels);
 
     void LoadModel();
 
@@ -189,7 +199,8 @@ private:
         VkBuffer& buffer, 
         VkDeviceMemory& bufferMemory);
     void CreateImage(
-        uint32_t width, uint32_t height, 
+        uint32_t width, uint32_t height, uint32_t mipLevels, 
+        VkSampleCountFlagBits numSamples, 
         VkFormat format, 
         VkImageTiling tiling, 
         VkImageUsageFlags usage, 
@@ -211,7 +222,7 @@ private:
 
     void RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
 
-    void TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
+    void TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels);
 
     static std::vector<char> ReadFile(const std::string& filename);
 
