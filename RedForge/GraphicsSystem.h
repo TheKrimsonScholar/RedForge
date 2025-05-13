@@ -13,6 +13,9 @@
 const uint32_t WIDTH = 800;
 const uint32_t HEIGHT = 600;
 
+const std::string MESH_PATH = "meshes/viking_room.obj";
+const std::string TEXTURE_PATH = "textures/viking_room.png";
+
 const int MAX_FRAMES_IN_FLIGHT = 2;
 
 const std::vector<const char*> deviceExtensions =
@@ -43,19 +46,6 @@ struct SwapChainSupportDetails
     VkSurfaceCapabilitiesKHR capabilities;
     std::vector<VkSurfaceFormatKHR> formats;
     std::vector<VkPresentModeKHR> presentModes;
-};
-
-const std::vector<Vertex> vertices =
-{
-    {{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
-    {{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
-    {{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
-    {{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}}
-};
-const std::vector<uint16_t> indices = 
-{
-    0, 1, 2, 
-    2, 3, 0
 };
 
 struct UniformBufferObject
@@ -103,6 +93,8 @@ private:
 
     uint32_t currentFrame = 0;
 
+    std::vector<Vertex> vertices;
+    std::vector<uint32_t> indices;
     VkBuffer vertexBuffer;
     VkDeviceMemory vertexBufferMemory;
     VkBuffer indexBuffer;
@@ -120,6 +112,10 @@ private:
 
     VkImageView textureImageView;
     VkSampler textureSampler;
+
+    VkImage depthImage;
+    VkDeviceMemory depthImageMemory;
+    VkImageView depthImageView;
 
 public:
     GraphicsSystem() {};
@@ -168,11 +164,18 @@ private:
 
     void CreateCommandPool();
 
+    void CreateDepthResources();
+    VkFormat FindDepthFormat();
+    VkFormat FindSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
+    bool HasStencilComponent(VkFormat format);
+
     void CreateTextureImage();
     void CreateTextureImageView();
     void CreateTextureSampler();
 
-    VkImageView CreateImageView(VkImage image, VkFormat format);
+    VkImageView CreateImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags);
+
+    void LoadModel();
 
     void CreateVertexBuffer();
     void CreateIndexBuffer();
