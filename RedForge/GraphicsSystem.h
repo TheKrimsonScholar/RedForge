@@ -1,26 +1,33 @@
 #pragma once
 
-#define GLFW_INCLUDE_VULKAN
-#include <GLFW/glfw3.h>
-
 #include <vector>
 #include <cstring>
 #include <optional>
 #include <fstream>
+#include <queue>
 
 #include "Vertex.h"
+#include "Mesh.h"
+#include "Material.h"
+#include "Texture.h"
+#include "MeshRendererComponent.h"
+
+#define GLFW_INCLUDE_VULKAN
+#include <GLFW/glfw3.h>
 
 const uint32_t WIDTH = 800;
 const uint32_t HEIGHT = 600;
 
-const std::string MESH_PATH = "meshes/viking_room.obj";
-const std::string TEXTURE_PATH = "textures/viking_room.png";
-
 const int MAX_FRAMES_IN_FLIGHT = 2;
+
+const uint32_t MAX_INSTANCES = 256;
+const uint32_t MAX_TEXTURES = 256;
+const uint32_t MAX_MATERIALS = 256;
 
 const std::vector<const char*> deviceExtensions =
 {
-    VK_KHR_SWAPCHAIN_EXTENSION_NAME
+    VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+    "VK_EXT_descriptor_indexing"
 };
 const std::vector<const char*> validationLayers =
 {
@@ -50,14 +57,37 @@ struct SwapChainSupportDetails
 
 struct UniformBufferObject
 {
-    alignas(16) glm::mat4 model;
     alignas(16) glm::mat4 view;
     alignas(16) glm::mat4 proj;
+};
+
+struct MaterialData
+{
+    uint32_t textureIndex;
+};
+
+struct InstanceData
+{
+    // Stable index used for accessing all per-object data.
+    uint32_t rendererIndex;
+
+    //uint32_t transformIndex;
+    uint32_t meshIndex;
+    uint32_t materialIndex;
+};
+
+struct DrawBatch
+{
+    uint32_t meshIndex;
+    uint32_t instanceOffset;
+    uint32_t instanceCount;
 };
 
 class GraphicsSystem
 {
 private:
+    static inline GraphicsSystem* Instance;
+
     GLFWwindow* window;
 
     VkInstance instance;
@@ -93,26 +123,36 @@ private:
 
     uint32_t currentFrame = 0;
 
-    std::vector<Vertex> vertices;
-    std::vector<uint32_t> indices;
-    VkBuffer vertexBuffer;
-    VkDeviceMemory vertexBufferMemory;
-    VkBuffer indexBuffer;
-    VkDeviceMemory indexBufferMemory;
-
     std::vector<VkBuffer> uniformBuffers;
     std::vector<VkDeviceMemory> uniformBuffersMemory;
     std::vector<void*> uniformBuffersMapped;
 
+    VkBuffer materialsBuffer[MAX_FRAMES_IN_FLIGHT];
+    VkDeviceMemory materialsBufferMemory[MAX_FRAMES_IN_FLIGHT];
+    void* materialsBufferMapped[MAX_FRAMES_IN_FLIGHT];
+
+    VkBuffer transformBuffer[MAX_FRAMES_IN_FLIGHT];
+    VkDeviceMemory transformBufferMemory[MAX_FRAMES_IN_FLIGHT];
+    void* transformBufferMapped[MAX_FRAMES_IN_FLIGHT];
+
+    VkBuffer instancesBuffer[MAX_FRAMES_IN_FLIGHT];
+    VkDeviceMemory instancesBufferMemory[MAX_FRAMES_IN_FLIGHT];
+    void* instancesBufferMapped[MAX_FRAMES_IN_FLIGHT];
+
+    VkBuffer cameraUBOs[MAX_FRAMES_IN_FLIGHT];
+    VkDeviceMemory cameraUBOsMemory[MAX_FRAMES_IN_FLIGHT];
+    void* cameraUBOsMapped[MAX_FRAMES_IN_FLIGHT];
+
     VkDescriptorPool descriptorPool;
-    std::vector<VkDescriptorSet> descriptorSets;
+    //std::vector<VkDescriptorSet> descriptorSets;
+    VkDescriptorSet descriptorSets[MAX_FRAMES_IN_FLIGHT];
 
-    uint32_t mipLevels;
-    VkImage textureImage;
-    VkDeviceMemory textureImageMemory;
+    std::vector<Texture*> textures;
+    std::vector<Material*> materials;
+    std::vector<Mesh*> meshes;
 
-    VkImageView textureImageView;
-    VkSampler textureSampler;
+    std::vector<VkDescriptorImageInfo> texturesBufferData;
+    std::vector<MaterialData> materialsBufferData;
 
     VkImage depthImage;
     VkDeviceMemory depthImageMemory;
@@ -123,6 +163,22 @@ private:
     VkImage colorImage;
     VkDeviceMemory colorImageMemory;
     VkImageView colorImageView;
+
+    glm::mat4 modelMatrices[MAX_INSTANCES];
+    //std::queue<uint32_t> transformsFreeList;
+    //uint32_t transformsNextIndex = 0;
+
+    std::vector<InstanceData> instanceData;
+    std::vector<MeshRendererComponent*> renderers;
+    uint32_t rendererInstances[MAX_INSTANCES];
+    std::queue<uint32_t> renderersFreeList;
+    uint32_t renderersNextIndex = 0;
+
+    std::vector<DrawBatch> drawBatches;
+
+    // TEMP
+    std::vector<glm::mat4> transforms;
+    //std::vector<MeshRendererComponent> renderers;
 
 public:
     GraphicsSystem() {};
@@ -178,20 +234,31 @@ private:
     VkFormat FindSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
     bool HasStencilComponent(VkFormat format);
 
-    void CreateTextureImage();
+    void AddRenderer(MeshRendererComponent& renderer);
+    void RemoveRenderer(const MeshRendererComponent& renderer);
+
+    void AddMaterial(Texture* texture);
+
+    void CreateGlobalBuffers();
+    void CreateGlobalArrayDescriptorSets();
+    void UpdateMaterialsBuffer();
+    void UpdateInstancesBuffer();
+    void UpdateGlobalArrays(uint32_t currentImage);
+
+    Texture* LoadTexture(const std::string& filePath);
+    void CreateTextureImage(Texture* texture, const std::string& filePath);
     void GenerateMipmaps(VkImage image, VkFormat imageFormat, int32_t textureWidth, int32_t textureHeight, uint32_t mipLevels);
-    void CreateTextureImageView();
-    void CreateTextureSampler();
+    void CreateTextureImageView(Texture* texture);
+    void CreateTextureSampler(Texture* texture);
 
     VkImageView CreateImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, uint32_t mipLevels);
 
-    void LoadModel();
-
-    void CreateVertexBuffer();
-    void CreateIndexBuffer();
+    Mesh* LoadModel(const std::string& filePath);
+    void CreateVertexBuffer(std::vector<Vertex> vertices, VkBuffer& vertexBuffer, VkDeviceMemory& vertexBufferMemory);
+    void CreateIndexBuffer(std::vector<uint32_t> indices, VkBuffer& indexBuffer, VkDeviceMemory& indexBufferMemory);
     void CreateUniformBuffers();
     void CreateDescriptorPool();
-    void CreateDescriptorSets();
+    void CreateDescriptorSets(Material* material);
     void CreateBuffer(
         VkDeviceSize size, 
         VkBufferUsageFlags usage, 
@@ -232,4 +299,7 @@ private:
     void UpdateUniformBuffer(uint32_t currentImage);
 
     void Cleanup();
+
+public:
+    static VkDevice GetDevice() { return Instance->device; };
 };
