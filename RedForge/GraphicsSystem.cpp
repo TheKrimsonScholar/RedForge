@@ -20,6 +20,10 @@
 
 #include "rapidobj/rapidobj.hpp"
 
+#include "imgui/imgui.h"
+#include "imgui/imgui_impl_vulkan.h"
+#include "imgui/imgui_impl_glfw.h"
+
 VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger)
 {
     auto func = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
@@ -41,6 +45,8 @@ void GraphicsSystem::Run()
 
     InitWindow();
     InitVulkan();
+    InitImGui();
+
     MainLoop();
     Cleanup();
 }
@@ -127,6 +133,40 @@ void GraphicsSystem::InitVulkan()
     AddRenderer(renderer3);
 
     UpdateInstancesBuffer();
+}
+void GraphicsSystem::InitImGui()
+{
+    CreateImGuiDescriptorPool();
+
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGuiIO& io = ImGui::GetIO();
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; // Optional
+
+    ImGui_ImplGlfw_InitForVulkan(window, true);  // `window` is your GLFWwindow*
+
+    QueueFamilyIndices indices = FindQueueFamilies(physicalDevice);
+
+    ImGui_ImplVulkan_InitInfo initInfo = {};
+    initInfo.Instance = instance;
+    initInfo.PhysicalDevice = physicalDevice;
+    initInfo.Device = device;
+    initInfo.QueueFamily = indices.graphicsFamily.value();
+    initInfo.Queue = graphicsQueue;
+    initInfo.PipelineCache = nullptr;
+	initInfo.RenderPass = renderPass;
+    initInfo.DescriptorPool = imguiDescriptorPool;
+    initInfo.MinImageCount = 2;
+    initInfo.ImageCount = swapChainImages.size();
+    initInfo.MSAASamples = msaaSamples;
+    initInfo.CheckVkResultFn = nullptr;
+
+    ImGui_ImplVulkan_Init(&initInfo);
+
+    VkCommandBuffer commandBuffer = BeginSingleTimeCommands();
+    ImGui_ImplVulkan_CreateFontsTexture();
+    EndSingleTimeCommands(commandBuffer);
+    ImGui_ImplVulkan_DestroyFontsTexture();
 }
 
 void GraphicsSystem::CreateInstance()
@@ -1541,6 +1581,32 @@ void GraphicsSystem::CreateDescriptorPool()
     if(vkCreateDescriptorPool(device, &poolInfo, nullptr, &descriptorPool) != VK_SUCCESS)
         throw std::runtime_error("Failed to create descriptor pool!");
 }
+void GraphicsSystem::CreateImGuiDescriptorPool()
+{
+    VkDescriptorPoolSize poolSizes[] = 
+    {
+        { VK_DESCRIPTOR_TYPE_SAMPLER, 1000 },
+        { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000 },
+        { VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1000 },
+        { VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1000 },
+        { VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1000 },
+        { VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1000 },
+        { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1000 },
+        { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1000 },
+        { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1000 },
+        { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1000 },
+        { VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1000 }
+    };
+
+    VkDescriptorPoolCreateInfo poolInfo = {};
+    poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+    poolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
+    poolInfo.maxSets = 1000 * IM_ARRAYSIZE(poolSizes);
+    poolInfo.poolSizeCount = (uint32_t)IM_ARRAYSIZE(poolSizes);
+    poolInfo.pPoolSizes = poolSizes;
+
+    vkCreateDescriptorPool(device, &poolInfo, nullptr, &imguiDescriptorPool);
+}
 void GraphicsSystem::CreateDescriptorSets(Material* material)
 {
     std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, descriptorSetLayout);
@@ -1915,6 +1981,19 @@ void GraphicsSystem::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t
         }
     }
 
+    ImGui_ImplVulkan_NewFrame();
+    ImGui_ImplGlfw_NewFrame();
+    ImGui::NewFrame();
+
+    // Draw your UI
+    ImGui::Begin("Hello Vulkan");
+    ImGui::Text("This is a Vulkan + ImGui integration!");
+    ImGui::End();
+
+    ImGui::Render();
+    ImDrawData* draw_data = ImGui::GetDrawData();
+    ImGui_ImplVulkan_RenderDrawData(draw_data, commandBuffer);
+
     vkCmdEndRenderPass(commandBuffer);
 
     if(vkEndCommandBuffer(commandBuffer) != VK_SUCCESS)
@@ -2088,6 +2167,10 @@ void GraphicsSystem::UpdateUniformBuffer(uint32_t currentImage)
 
 void GraphicsSystem::Cleanup()
 {
+    ImGui_ImplVulkan_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
+    ImGui::DestroyContext();
+
     CleanupSwapChain();
 
     for(size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
@@ -2111,6 +2194,7 @@ void GraphicsSystem::Cleanup()
         vkFreeMemory(device, uniformBuffersMemory[i], nullptr);
     }*/
 
+    vkDestroyDescriptorPool(device, imguiDescriptorPool, nullptr);
     vkDestroyDescriptorPool(device, descriptorPool, nullptr);
 
     vkDestroyDescriptorSetLayout(device, descriptorSetLayout, nullptr);

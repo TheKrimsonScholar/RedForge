@@ -144,6 +144,7 @@ private:
     void* cameraUBOsMapped[MAX_FRAMES_IN_FLIGHT];
 
     VkDescriptorPool descriptorPool;
+    VkDescriptorPool imguiDescriptorPool;
     //std::vector<VkDescriptorSet> descriptorSets;
     VkDescriptorSet descriptorSets[MAX_FRAMES_IN_FLIGHT];
 
@@ -192,6 +193,7 @@ private:
 
     void InitWindow();
     void InitVulkan();
+    void InitImGui();
 
     void CreateInstance();
     bool CheckValidationLayerSupport();
@@ -258,6 +260,7 @@ private:
     void CreateIndexBuffer(std::vector<uint32_t> indices, VkBuffer& indexBuffer, VkDeviceMemory& indexBufferMemory);
     void CreateUniformBuffers();
     void CreateDescriptorPool();
+    void CreateImGuiDescriptorPool();
     void CreateDescriptorSets(Material* material);
     void CreateBuffer(
         VkDeviceSize size, 
