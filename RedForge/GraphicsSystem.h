@@ -185,7 +185,10 @@ public:
     GraphicsSystem() {};
     ~GraphicsSystem() {};
 
-    void Run();
+    void Startup();
+    void Shutdown();
+
+    void Update();
 
 private:
     static void FramebufferResizeCallback(GLFWwindow* window, int width, int height);
@@ -304,5 +307,6 @@ private:
     void Cleanup();
 
 public:
+    static GLFWwindow* GetWindow() { return Instance->window; };
     static VkDevice GetDevice() { return Instance->device; };
 };

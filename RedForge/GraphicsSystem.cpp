@@ -10,6 +10,8 @@
 #include <algorithm>
 #include <chrono>
 
+#include "TimeManager.h"
+
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <glm/glm.hpp>
@@ -39,16 +41,150 @@ void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT
         func(instance, debugMessenger, pAllocator);
 }
 
-void GraphicsSystem::Run()
+void GraphicsSystem::Startup()
 {
     Instance = this;
 
     InitWindow();
     InitVulkan();
     InitImGui();
+}
+void GraphicsSystem::Shutdown()
+{
+    ImGui_ImplVulkan_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
+    ImGui::DestroyContext();
 
-    MainLoop();
-    Cleanup();
+    CleanupSwapChain();
+
+    for(size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+    {
+        vkDestroyBuffer(device, cameraUBOs[i], nullptr);
+        vkFreeMemory(device, cameraUBOsMemory[i], nullptr);
+
+        vkDestroyBuffer(device, instancesBuffer[i], nullptr);
+        vkFreeMemory(device, instancesBufferMemory[i], nullptr);
+
+        vkDestroyBuffer(device, transformBuffer[i], nullptr);
+        vkFreeMemory(device, transformBufferMemory[i], nullptr);
+
+        vkDestroyBuffer(device, materialsBuffer[i], nullptr);
+        vkFreeMemory(device, materialsBufferMemory[i], nullptr);
+    }
+
+    vkDestroyDescriptorPool(device, imguiDescriptorPool, nullptr);
+    vkDestroyDescriptorPool(device, descriptorPool, nullptr);
+
+    vkDestroyDescriptorSetLayout(device, descriptorSetLayout, nullptr);
+
+    for(Mesh* mesh : meshes)
+        delete mesh;
+	meshes.clear();
+    for(Material* material : materials)
+        delete material;
+	materials.clear();
+	for(Texture* texture : textures)
+		delete texture;
+	textures.clear();
+
+    for(int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+    {
+        vkDestroySemaphore(device, imageAvailableSemaphores[i], nullptr);
+        vkDestroySemaphore(device, renderFinishedSemaphores[i], nullptr);
+        vkDestroyFence(device, inFlightFences[i], nullptr);
+    }
+
+    vkDestroyCommandPool(device, commandPool, nullptr);
+
+    vkDestroyPipeline(device, graphicsPipeline, nullptr);
+    vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
+    vkDestroyRenderPass(device, renderPass, nullptr);
+
+    vkDestroyDevice(device, nullptr);
+
+    if(enableValidationLayers)
+        DestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
+
+    vkDestroySurfaceKHR(instance, surface, nullptr);
+    vkDestroyInstance(instance, nullptr);
+
+    glfwDestroyWindow(window);
+
+    glfwTerminate();
+}
+
+void GraphicsSystem::Update()
+{
+    // Wait until the previous frame is finished
+    vkWaitForFences(device, 1, &inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
+
+    // Acquire an image from the swap chain
+    uint32_t imageIndex;
+    VkResult result = vkAcquireNextImageKHR(device, swapChain, UINT64_MAX, imageAvailableSemaphores[currentFrame], VK_NULL_HANDLE, &imageIndex);
+    if(result == VK_ERROR_OUT_OF_DATE_KHR)
+    {
+        RecreateSwapChain();
+        return;
+    }
+    else if(result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
+        throw std::runtime_error("Failed to acquire swap chain image!");
+
+    // Only reset the fence if we are submitting work
+    vkResetFences(device, 1, &inFlightFences[currentFrame]);
+
+    // Record command buffer
+    vkResetCommandBuffer(commandBuffers[currentFrame], 0);
+    RecordCommandBuffer(commandBuffers[currentFrame], imageIndex);
+
+    // Update UBO data
+    UpdateUniformBuffer(currentFrame);
+    UpdateGlobalArrays(currentFrame);
+
+    /* Submit command buffer */
+
+    VkSubmitInfo submitInfo{};
+    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+
+    VkSemaphore waitSemaphores[] = { imageAvailableSemaphores[currentFrame] };
+    VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+    submitInfo.waitSemaphoreCount = 1;
+    submitInfo.pWaitSemaphores = waitSemaphores;
+    submitInfo.pWaitDstStageMask = waitStages;
+
+    submitInfo.commandBufferCount = 1;
+    submitInfo.pCommandBuffers = &commandBuffers[currentFrame];
+
+    VkSemaphore signalSemaphores[] = { renderFinishedSemaphores[currentFrame] };
+    submitInfo.signalSemaphoreCount = 1;
+    submitInfo.pSignalSemaphores = signalSemaphores;
+
+    if(vkQueueSubmit(graphicsQueue, 1, &submitInfo, inFlightFences[currentFrame]) != VK_SUCCESS)
+        throw std::runtime_error("Failed to submit draw command buffer!");
+
+    /* Present */
+
+    VkPresentInfoKHR presentInfo{};
+    presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+
+    presentInfo.waitSemaphoreCount = 1;
+    presentInfo.pWaitSemaphores = signalSemaphores;
+
+    VkSwapchainKHR swapChains[] = { swapChain };
+    presentInfo.swapchainCount = 1;
+    presentInfo.pSwapchains = swapChains;
+    presentInfo.pImageIndices = &imageIndex;
+    presentInfo.pResults = nullptr; // Optional
+
+    result = vkQueuePresentKHR(presentQueue, &presentInfo);
+    if(result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || framebufferResized)
+    {
+        framebufferResized = false;
+        RecreateSwapChain();
+    }
+    else if(result != VK_SUCCESS)
+        throw std::runtime_error("Failed to present swap chain image!");
+
+    currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
 }
 
 void GraphicsSystem::FramebufferResizeCallback(GLFWwindow* window, int width, int height)
@@ -207,7 +343,7 @@ void GraphicsSystem::CreateInstance()
     }
 
     if(vkCreateInstance(&createInfo, nullptr, &instance) != VK_SUCCESS)
-        throw std::runtime_error("failed to create instance!");
+        throw std::runtime_error("Failed to create instance!");
 }
 bool GraphicsSystem::CheckValidationLayerSupport()
 {
@@ -1946,11 +2082,14 @@ void GraphicsSystem::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t
     
     if(!instanceData.empty())
     {
-        // Populate draw batches
+        /* Populate draw batches */
+        
         DrawBatch drawBatch{};
         drawBatch.meshIndex = instanceData[0].meshIndex;
         drawBatch.instanceOffset = 0;
         drawBatch.instanceCount = 1;
+
+		drawBatches.clear();
         for(uint32_t i = 1; i < instanceData.size(); i++)
         {
             if(instanceData[i].meshIndex != drawBatch.meshIndex)
@@ -1985,7 +2124,18 @@ void GraphicsSystem::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
 
-    // Draw your UI
+    /* Draw UI */
+
+    ImGui::Begin("FPS", nullptr,
+        ImGuiWindowFlags_NoDecoration |
+        ImGuiWindowFlags_AlwaysAutoResize |
+        ImGuiWindowFlags_NoSavedSettings |
+        ImGuiWindowFlags_NoFocusOnAppearing |
+        ImGuiWindowFlags_NoNav |
+        ImGuiWindowFlags_NoMove);
+    ImGui::Text("FPS: %.0f \t Average: %.0f \t Low: %.0f", TimeManager::GetFPS(), TimeManager::GetAverageFPS(), TimeManager::GetMinFPS());
+    ImGui::End();
+
     ImGui::Begin("Hello Vulkan");
     ImGui::Text("This is a Vulkan + ImGui integration!");
     ImGui::End();
@@ -2064,92 +2214,6 @@ std::vector<char> GraphicsSystem::ReadFile(const std::string& filename)
     return buffer;
 }
 
-void GraphicsSystem::MainLoop()
-{
-    while(!glfwWindowShouldClose(window))
-    {
-        glfwPollEvents();
-
-        DrawFrame();
-    }
-
-    // Wait for device to finish operations before exiting
-    vkDeviceWaitIdle(device);
-}
-
-void GraphicsSystem::DrawFrame()
-{
-    // Wait until the previous frame is finished
-    vkWaitForFences(device, 1, &inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
-
-    // Acquire an image from the swap chain
-    uint32_t imageIndex;
-    VkResult result = vkAcquireNextImageKHR(device, swapChain, UINT64_MAX, imageAvailableSemaphores[currentFrame], VK_NULL_HANDLE, &imageIndex);
-    if(result == VK_ERROR_OUT_OF_DATE_KHR)
-    {
-        RecreateSwapChain();
-        return;
-    }
-    else if(result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
-        throw std::runtime_error("Failed to acquire swap chain image!");
-
-    // Only reset the fence if we are submitting work
-    vkResetFences(device, 1, &inFlightFences[currentFrame]);
-
-    // Record command buffer
-    vkResetCommandBuffer(commandBuffers[currentFrame], 0);
-    RecordCommandBuffer(commandBuffers[currentFrame], imageIndex);
-
-    // Update UBO data
-    UpdateUniformBuffer(currentFrame);
-    UpdateGlobalArrays(currentFrame);
-
-    /* Submit command buffer */
-
-    VkSubmitInfo submitInfo{};
-    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-
-    VkSemaphore waitSemaphores[] = { imageAvailableSemaphores[currentFrame] };
-    VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
-    submitInfo.waitSemaphoreCount = 1;
-    submitInfo.pWaitSemaphores = waitSemaphores;
-    submitInfo.pWaitDstStageMask = waitStages;
-
-    submitInfo.commandBufferCount = 1;
-    submitInfo.pCommandBuffers = &commandBuffers[currentFrame];
-
-    VkSemaphore signalSemaphores[] = { renderFinishedSemaphores[currentFrame] };
-    submitInfo.signalSemaphoreCount = 1;
-    submitInfo.pSignalSemaphores = signalSemaphores;
-
-    if(vkQueueSubmit(graphicsQueue, 1, &submitInfo, inFlightFences[currentFrame]) != VK_SUCCESS)
-        throw std::runtime_error("Failed to submit draw command buffer!");
-
-    /* Present */
-
-    VkPresentInfoKHR presentInfo{};
-    presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-
-    presentInfo.waitSemaphoreCount = 1;
-    presentInfo.pWaitSemaphores = signalSemaphores;
-
-    VkSwapchainKHR swapChains[] = { swapChain };
-    presentInfo.swapchainCount = 1;
-    presentInfo.pSwapchains = swapChains;
-    presentInfo.pImageIndices = &imageIndex;
-    presentInfo.pResults = nullptr; // Optional
-
-    result = vkQueuePresentKHR(presentQueue, &presentInfo);
-    if(result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || framebufferResized)
-    {
-        framebufferResized = false;
-        RecreateSwapChain();
-    }
-    else if(result != VK_SUCCESS)
-        throw std::runtime_error("Failed to present swap chain image!");
-
-    currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
-}
 void GraphicsSystem::UpdateUniformBuffer(uint32_t currentImage)
 {
     static auto startTime = std::chrono::high_resolution_clock::now();
@@ -2163,74 +2227,4 @@ void GraphicsSystem::UpdateUniformBuffer(uint32_t currentImage)
     ubo.proj[1][1] *= -1;
 
     memcpy(cameraUBOsMapped[currentImage], &ubo, sizeof(ubo));
-}
-
-void GraphicsSystem::Cleanup()
-{
-    ImGui_ImplVulkan_Shutdown();
-    ImGui_ImplGlfw_Shutdown();
-    ImGui::DestroyContext();
-
-    CleanupSwapChain();
-
-    for(size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
-    {
-        vkDestroyBuffer(device, cameraUBOs[i], nullptr);
-        vkFreeMemory(device, cameraUBOsMemory[i], nullptr);
-
-        vkDestroyBuffer(device, instancesBuffer[i], nullptr);
-        vkFreeMemory(device, instancesBufferMemory[i], nullptr);
-
-        vkDestroyBuffer(device, transformBuffer[i], nullptr);
-        vkFreeMemory(device, transformBufferMemory[i], nullptr);
-
-        vkDestroyBuffer(device, materialsBuffer[i], nullptr);
-        vkFreeMemory(device, materialsBufferMemory[i], nullptr);
-    }
-
-    /*for(size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
-    {
-        vkDestroyBuffer(device, uniformBuffers[i], nullptr);
-        vkFreeMemory(device, uniformBuffersMemory[i], nullptr);
-    }*/
-
-    vkDestroyDescriptorPool(device, imguiDescriptorPool, nullptr);
-    vkDestroyDescriptorPool(device, descriptorPool, nullptr);
-
-    vkDestroyDescriptorSetLayout(device, descriptorSetLayout, nullptr);
-
-    for(Mesh* mesh : meshes)
-        delete mesh;
-	meshes.clear();
-    for(Material* material : materials)
-        delete material;
-	materials.clear();
-	for(Texture* texture : textures)
-		delete texture;
-	textures.clear();
-
-    for(int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
-    {
-        vkDestroySemaphore(device, imageAvailableSemaphores[i], nullptr);
-        vkDestroySemaphore(device, renderFinishedSemaphores[i], nullptr);
-        vkDestroyFence(device, inFlightFences[i], nullptr);
-    }
-
-    vkDestroyCommandPool(device, commandPool, nullptr);
-
-    vkDestroyPipeline(device, graphicsPipeline, nullptr);
-    vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
-    vkDestroyRenderPass(device, renderPass, nullptr);
-
-    vkDestroyDevice(device, nullptr);
-
-    if(enableValidationLayers)
-        DestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
-
-    vkDestroySurfaceKHR(instance, surface, nullptr);
-    vkDestroyInstance(instance, nullptr);
-
-    glfwDestroyWindow(window);
-
-    glfwTerminate();
 }
