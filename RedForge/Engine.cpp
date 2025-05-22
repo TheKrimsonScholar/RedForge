@@ -13,9 +13,11 @@ void Engine::Run()
     entityManager.Startup();
     graphics.Startup();
 
-    {
+    /*{
         TransformComponent transform{};
-        transform.degrees = 60;
+        transform.location = { 0, 0, 0 };
+        transform.rotation = glm::angleAxis(1.0f, glm::vec3(0.0f, 1.0f, 0.0f));
+        transform.scale = { 1, 1, 1 };
 
         MeshRendererComponent renderer{};
         renderer.mesh = ResourceManager::GetMesh(0);
@@ -28,7 +30,9 @@ void Engine::Run()
 
     {
         TransformComponent transform{};
-        transform.degrees = 30;
+        transform.location = { 0, 0, 0 };
+        transform.rotation = glm::angleAxis(glm::radians(45.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+        transform.scale = { 1, 1, 1 };
 
         MeshRendererComponent renderer{};
         renderer.mesh = ResourceManager::GetMesh(1);
@@ -37,14 +41,16 @@ void Engine::Run()
         Entity entity1 = EntityManager::CreateEntity();
         EntityManager::AddComponent<TransformComponent>(entity1, transform);
         EntityManager::AddComponent<MeshRendererComponent>(entity1, renderer);
-    }
+    }*/
 
     {
         TransformComponent transform{};
-        transform.degrees = 0;
+        transform.location = { 1, 0, 0 };
+        transform.rotation = glm::angleAxis(0.0f, glm::vec3(0.0f, 0.0f, 1.0f));
+		transform.scale = { 0.25f, 0.25f, 0.25f };
 
         MeshRendererComponent renderer{};
-        renderer.mesh = ResourceManager::GetMesh(0);
+        renderer.mesh = ResourceManager::GetMesh(1);
         renderer.material = ResourceManager::GetMaterial(1);
 
         Entity entity1 = EntityManager::CreateEntity();
@@ -61,7 +67,12 @@ void Engine::Run()
 
         for(Entity e = 0; e < EntityManager::GetLastEntity(); e++)
             if(EntityManager::HasComponent<TransformComponent>(e))
-                EntityManager::GetComponent<TransformComponent>(e).degrees += 0.1f;
+            {
+				//EntityManager::GetComponent<TransformComponent>(e).location += glm::vec3(0.0f, 0.0f, 1.0f) * TimeManager::GetDeltaTime();
+                EntityManager::GetComponent<TransformComponent>(e).rotation *= glm::angleAxis(glm::radians(60.0f * TimeManager::GetDeltaTime()), glm::normalize(glm::vec3(0, 0, 1)));
+                //EntityManager::GetComponent<TransformComponent>(e).rotation = glm::angleAxis(glm::radians(60.0f * TimeManager::GetDeltaTime()), glm::normalize(glm::vec3(0, 0, 1))) * EntityManager::GetComponent<TransformComponent>(e).rotation;
+				//EntityManager::GetComponent<TransformComponent>(e).scale += glm::vec3(-0.01f, -0.01f, -0.01f) * TimeManager::GetDeltaTime();
+            }
     }
 
     // Wait for device to finish operations before exiting

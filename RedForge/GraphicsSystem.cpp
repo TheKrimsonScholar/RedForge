@@ -1919,7 +1919,7 @@ void GraphicsSystem::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t
 
         instanceData.push_back(instance);
 
-		modelMatrices[instance.rendererIndex] = glm::rotate(glm::mat4(1.0f), glm::radians(transform.degrees), glm::vec3(0.0f, 0.0f, 1.0f));
+        modelMatrices[instance.rendererIndex] = transform.GetMatrix();
     }
 
     memcpy(transformBufferMapped[currentFrame], modelMatrices, sizeof(glm::mat4) * MAX_INSTANCES);
@@ -1990,6 +1990,63 @@ void GraphicsSystem::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t
 
     ImGui::Begin("Hello Vulkan");
     ImGui::Text("This is a Vulkan + ImGui integration!");
+    ImGui::End();
+
+    ImGui::Begin("Entities");
+    if(ImGui::TreeNode("Entities"))
+    {
+        for(Entity e = 0; e < EntityManager::GetLastEntity(); e++)
+            if(EntityManager::HasComponent<TransformComponent>(e))
+                if(ImGui::TreeNode("Entity " + e))
+                {
+					TransformComponent& transform = EntityManager::GetComponent<TransformComponent>(e);
+
+                    if(ImGui::TreeNode("Transform"))
+                    {
+                        glm::vec3 location = transform.location;
+                        glm::vec3 eulerAngles = glm::eulerAngles(transform.rotation);
+                        glm::vec3 scale = transform.scale;
+                        ImGui::DragFloat3("Location", &location.x, 0.1f, -5.0f, 5.0f);
+                        ImGui::DragFloat3("Rotation", &eulerAngles.x, 0.1f, -5.0f, 5.0f);
+                        ImGui::DragFloat3("Scale", &scale.x, 0.1f, -5.0f, 5.0f);
+
+                        if(location != transform.location)
+                            transform.location = location;
+                        if(eulerAngles != glm::eulerAngles(transform.rotation))
+                            transform.rotation = glm::quat(eulerAngles);
+                        if(scale != transform.scale)
+                            transform.scale = scale;
+                        
+                        ImGui::TreePop();
+                    }
+
+                    if(EntityManager::HasComponent<MeshRendererComponent>(e))
+                    {
+                        MeshRendererComponent& meshRenderer = EntityManager::GetComponent<MeshRendererComponent>(e);
+
+                        if(ImGui::TreeNode("MeshRenderer"))
+                        {
+                            ImGui::Text("Renderer Index: %i", meshRenderer.rendererIndex);
+
+                            int meshIndex = meshRenderer.mesh->index;
+                            int materialIndex = meshRenderer.material->index;
+                            ImGui::DragInt("Mesh Index", &meshIndex, 0.1f, 0, ResourceManager::GetMeshes().size() - 1);
+                            ImGui::DragInt("Material Index", &materialIndex, 0.1f, 0, ResourceManager::GetMaterials().size() - 1);
+
+                            if(meshIndex != meshRenderer.mesh->index)
+                                meshRenderer.mesh = ResourceManager::GetMesh(meshIndex);
+                            if(materialIndex != meshRenderer.material->index)
+                                meshRenderer.material = ResourceManager::GetMaterial(materialIndex);
+                        
+                            ImGui::TreePop();
+                        }
+                    }
+
+                    ImGui::TreePop();
+                }
+        
+        ImGui::TreePop();
+    }
     ImGui::End();
 
     ImGui::Render();
