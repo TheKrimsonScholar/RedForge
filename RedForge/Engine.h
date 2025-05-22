@@ -1,13 +1,17 @@
 #pragma once
 
-#include "GraphicsSystem.h"
 #include "TimeManager.h"
+#include "ResourceManager.h"
+#include "GraphicsSystem.h"
+#include "EntityManager.h"
 
 class Engine
 {
 private:
-	GraphicsSystem graphics;
 	TimeManager timeManager;
+	ResourceManager resourceManager;
+	GraphicsSystem graphics;
+	EntityManager entityManager;
 
 	bool isRunning = false;
 

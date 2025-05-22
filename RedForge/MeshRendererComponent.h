@@ -3,8 +3,6 @@
 #include "Mesh.h"
 #include "Material.h"
 
-struct InstanceData;
-
 struct MeshRendererComponent
 {
 	Mesh* mesh;

@@ -148,9 +148,9 @@ private:
     //std::vector<VkDescriptorSet> descriptorSets;
     VkDescriptorSet descriptorSets[MAX_FRAMES_IN_FLIGHT];
 
-    std::vector<Texture*> textures;
+    /*std::vector<Texture*> textures;
     std::vector<Material*> materials;
-    std::vector<Mesh*> meshes;
+    std::vector<Mesh*> meshes;*/
 
     std::vector<VkDescriptorImageInfo> texturesBufferData;
     std::vector<MaterialData> materialsBufferData;
@@ -189,6 +189,32 @@ public:
     void Shutdown();
 
     void Update();
+    
+    static void CreateVertexBuffer(std::vector<Vertex> vertices, VkBuffer& vertexBuffer, VkDeviceMemory& vertexBufferMemory);
+    static void CreateIndexBuffer(std::vector<uint32_t> indices, VkBuffer& indexBuffer, VkDeviceMemory& indexBufferMemory);
+    
+    static void CreateBuffer(
+        VkDeviceSize size, 
+        VkBufferUsageFlags usage, 
+        VkMemoryPropertyFlags properties, 
+        VkBuffer& buffer, 
+        VkDeviceMemory& bufferMemory);
+    static void CreateImage(
+        uint32_t width, uint32_t height, uint32_t mipLevels, 
+        VkSampleCountFlagBits numSamples, 
+        VkFormat format, 
+        VkImageTiling tiling, 
+        VkImageUsageFlags usage, 
+        VkMemoryPropertyFlags properties, 
+        VkImage& image, 
+        VkDeviceMemory& imageMemory);
+    static void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
+    static void CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
+    
+    static void TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels);
+    
+    static VkCommandBuffer BeginSingleTimeCommands();
+    static void EndSingleTimeCommands(VkCommandBuffer commandBuffer);
 
 private:
     static void FramebufferResizeCallback(GLFWwindow* window, int width, int height);
@@ -242,46 +268,20 @@ private:
     void AddRenderer(MeshRendererComponent& renderer);
     void RemoveRenderer(const MeshRendererComponent& renderer);
 
-    void AddMaterial(Texture* texture);
-
     void CreateGlobalBuffers();
     void CreateGlobalArrayDescriptorSets();
     void UpdateMaterialsBuffer();
     void UpdateInstancesBuffer();
     void UpdateGlobalArrays(uint32_t currentImage);
 
-    Texture* LoadTexture(const std::string& filePath);
-    void CreateTextureImage(Texture* texture, const std::string& filePath);
-    void GenerateMipmaps(VkImage image, VkFormat imageFormat, int32_t textureWidth, int32_t textureHeight, uint32_t mipLevels);
     void CreateTextureImageView(Texture* texture);
-    void CreateTextureSampler(Texture* texture);
 
     VkImageView CreateImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, uint32_t mipLevels);
 
-    Mesh* LoadModel(const std::string& filePath);
-    void CreateVertexBuffer(std::vector<Vertex> vertices, VkBuffer& vertexBuffer, VkDeviceMemory& vertexBufferMemory);
-    void CreateIndexBuffer(std::vector<uint32_t> indices, VkBuffer& indexBuffer, VkDeviceMemory& indexBufferMemory);
     void CreateUniformBuffers();
     void CreateDescriptorPool();
     void CreateImGuiDescriptorPool();
     void CreateDescriptorSets(Material* material);
-    void CreateBuffer(
-        VkDeviceSize size, 
-        VkBufferUsageFlags usage, 
-        VkMemoryPropertyFlags properties, 
-        VkBuffer& buffer, 
-        VkDeviceMemory& bufferMemory);
-    void CreateImage(
-        uint32_t width, uint32_t height, uint32_t mipLevels, 
-        VkSampleCountFlagBits numSamples, 
-        VkFormat format, 
-        VkImageTiling tiling, 
-        VkImageUsageFlags usage, 
-        VkMemoryPropertyFlags properties, 
-        VkImage& image, 
-        VkDeviceMemory& imageMemory);
-    void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
-    void CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
     uint32_t FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
     void CreateCommandBuffers();
 
@@ -290,14 +290,7 @@ private:
     void CleanupSwapChain();
     void RecreateSwapChain();
 
-    VkCommandBuffer BeginSingleTimeCommands();
-    void EndSingleTimeCommands(VkCommandBuffer commandBuffer);
-
     void RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
-
-    void TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels);
-
-    static std::vector<char> ReadFile(const std::string& filename);
 
     void MainLoop();
 
@@ -308,5 +301,6 @@ private:
 
 public:
     static GLFWwindow* GetWindow() { return Instance->window; };
+    static VkPhysicalDevice GetPhysicalDevice() { return Instance->physicalDevice; };
     static VkDevice GetDevice() { return Instance->device; };
 };
