@@ -2,6 +2,7 @@
 
 #include "TransformComponent.h"
 #include "MeshRendererComponent.h"
+#include "CameraComponent.h"
 
 void EntityManager::Startup()
 {
@@ -9,6 +10,7 @@ void EntityManager::Startup()
 
 	RegisterComponent<TransformComponent>();
 	RegisterComponent<MeshRendererComponent>();
+	RegisterComponent<CameraComponent>();
 }
 void EntityManager::Shutdown()
 {

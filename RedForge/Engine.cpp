@@ -12,6 +12,7 @@ void Engine::Run()
 	resourceManager.Startup();
     entityManager.Startup();
     graphics.Startup();
+	cameraManager.Startup();
 
     /*{
         TransformComponent transform{};
@@ -58,6 +59,25 @@ void Engine::Run()
         EntityManager::AddComponent<MeshRendererComponent>(entity1, renderer);
     }
 
+    {
+        TransformComponent transform{};
+        transform.location = { 0, 3, 5 };
+        transform.rotation = glm::angleAxis(glm::radians(-30.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+        transform.scale = { 1, 1, 1 };
+
+        CameraComponent camera{};
+        camera.projectionType = ECameraProjectionType::Perspective;
+		camera.fov = glm::radians(45.0f);
+		camera.aspectRatio = GraphicsSystem::GetAspectRatio();
+		camera.nearClipPlaneDistance = 0.1f;
+		camera.farClipPlaneDistance = 100.0f;
+
+	    Entity cameraEntity = EntityManager::CreateEntity();
+	    EntityManager::AddComponent<TransformComponent>(cameraEntity, transform);
+	    EntityManager::AddComponent<CameraComponent>(cameraEntity, camera);
+        CameraManager::SetMainCamera(cameraEntity);
+    }
+
     while(!glfwWindowShouldClose(GraphicsSystem::GetWindow()))
     {
 		glfwPollEvents();
@@ -69,7 +89,7 @@ void Engine::Run()
             if(EntityManager::HasComponent<TransformComponent>(e))
             {
 				//EntityManager::GetComponent<TransformComponent>(e).location += glm::vec3(0.0f, 0.0f, 1.0f) * TimeManager::GetDeltaTime();
-                EntityManager::GetComponent<TransformComponent>(e).rotation *= glm::angleAxis(glm::radians(60.0f * TimeManager::GetDeltaTime()), glm::normalize(glm::vec3(0, 0, 1)));
+                //EntityManager::GetComponent<TransformComponent>(e).rotation *= glm::angleAxis(glm::radians(60.0f * TimeManager::GetDeltaTime()), glm::normalize(glm::vec3(0, 0, 1)));
                 //EntityManager::GetComponent<TransformComponent>(e).rotation = glm::angleAxis(glm::radians(60.0f * TimeManager::GetDeltaTime()), glm::normalize(glm::vec3(0, 0, 1))) * EntityManager::GetComponent<TransformComponent>(e).rotation;
 				//EntityManager::GetComponent<TransformComponent>(e).scale += glm::vec3(-0.01f, -0.01f, -0.01f) * TimeManager::GetDeltaTime();
             }
@@ -78,6 +98,7 @@ void Engine::Run()
     // Wait for device to finish operations before exiting
     vkDeviceWaitIdle(GraphicsSystem::GetDevice());
 
+    cameraManager.Shutdown();
     entityManager.Shutdown();
 	resourceManager.Shutdown();
     graphics.Shutdown();

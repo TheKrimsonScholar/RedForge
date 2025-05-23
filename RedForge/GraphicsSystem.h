@@ -301,6 +301,9 @@ private:
 
 public:
     static GLFWwindow* GetWindow() { return Instance->window; };
+    static uint32_t GetWindowWidth() { return Instance->swapChainExtent.width; };
+    static uint32_t GetWindowHeight() { return Instance->swapChainExtent.height; };
+    static float GetAspectRatio() { return (float) Instance->swapChainExtent.width / (float) Instance->swapChainExtent.height; };
     static VkPhysicalDevice GetPhysicalDevice() { return Instance->physicalDevice; };
     static VkDevice GetDevice() { return Instance->device; };
 };

@@ -9,11 +9,13 @@
 #include <limits>
 #include <algorithm>
 #include <chrono>
+#include <format>
 
 #include "TimeManager.h"
 #include "EntityManager.h"
 #include "TransformComponent.h"
 #include "ResourceManager.h"
+#include "CameraManager.h"
 
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
@@ -1847,6 +1849,9 @@ void GraphicsSystem::RecreateSwapChain()
     CreateColorResources();
     CreateDepthResources();
     CreateFramebuffers();
+
+    // Update main camera's aspect ratio
+	EntityManager::GetComponent<CameraComponent>(CameraManager::GetMainCamera()).aspectRatio = GetAspectRatio();
 }
 
 void GraphicsSystem::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex)
@@ -1909,6 +1914,9 @@ void GraphicsSystem::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t
 	instanceData.clear();
     for(Entity e = 0; e < EntityManager::GetLastEntity(); e++)
     {
+        if(!EntityManager::HasComponent<MeshRendererComponent>(e) || !EntityManager::HasComponent<TransformComponent>(e))
+            continue;
+
 		MeshRendererComponent& renderer = EntityManager::GetComponent<MeshRendererComponent>(e);
         TransformComponent& transform = EntityManager::GetComponent<TransformComponent>(e);
 
@@ -1997,7 +2005,7 @@ void GraphicsSystem::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t
     {
         for(Entity e = 0; e < EntityManager::GetLastEntity(); e++)
             if(EntityManager::HasComponent<TransformComponent>(e))
-                if(ImGui::TreeNode("Entity " + e))
+                if(ImGui::TreeNode(std::format("Entity {}", e).c_str()))
                 {
 					TransformComponent& transform = EntityManager::GetComponent<TransformComponent>(e);
 
@@ -2067,8 +2075,8 @@ void GraphicsSystem::UpdateUniformBuffer(uint32_t currentImage)
     float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
 
     UniformBufferObject ubo{};
-    ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-    ubo.proj = glm::perspective(glm::radians(45.0f), swapChainExtent.width / (float) swapChainExtent.height, 0.1f, 10.0f);
+    ubo.view = CameraManager::GetViewMatrix(CameraManager::GetMainCamera());
+    ubo.proj = EntityManager::GetComponent<CameraComponent>(CameraManager::GetMainCamera()).GetProjectionMatrix();
     ubo.proj[1][1] *= -1;
 
     memcpy(cameraUBOsMapped[currentImage], &ubo, sizeof(ubo));
