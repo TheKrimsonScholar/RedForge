@@ -7,6 +7,8 @@ class TimeManager
 private:
 	static inline TimeManager* Instance;
 
+	long totalFrames = -1;
+
 	double startTime = 0;
 	double previousTime = 0;
 	double currentTime = 0;
@@ -27,6 +29,7 @@ public:
 
 	void Update();
 
+	static inline long GetCurrentFrame() { return Instance->totalFrames; };
 	static inline float GetDeltaTime() { return Instance->deltaTime; };
 	static inline float GetFPS() { return 1.0f / Instance->deltaTime; };
 	static inline float GetAverageFPS() { return Instance->currentFPS; };

@@ -1,6 +1,9 @@
 #include "Engine.h"
 
+#include <iostream>
+
 #include "TransformComponent.h"
+#include "InputComponent.h"
 
 void Engine::Run()
 {
@@ -10,6 +13,7 @@ void Engine::Run()
 
     timeManager.Startup();
 	resourceManager.Startup();
+	inputSystem.Startup();
     entityManager.Startup();
     graphics.Startup();
 	cameraManager.Startup();
@@ -72,9 +76,48 @@ void Engine::Run()
 		camera.nearClipPlaneDistance = 0.1f;
 		camera.farClipPlaneDistance = 100.0f;
 
+        InputComponent input{};
+        float lookSpeed = 5.0f;
+        input.mouseDownCallbacks.emplace(GLFW_MOUSE_BUTTON_1, [lookSpeed](Entity e)
+            {
+				glm::dvec2 mouseDelta = InputSystem::GetMouseDelta();
+                if(mouseDelta == glm::zero<glm::dvec2>())
+                    return;
+
+                EntityManager::GetComponent<TransformComponent>(e).rotation *= 
+                    glm::angleAxis((float) -mouseDelta.y * lookSpeed * TimeManager::GetDeltaTime(), glm::vec3(1, 0, 0))
+                    * glm::angleAxis((float) -mouseDelta.x * lookSpeed * TimeManager::GetDeltaTime(), glm::vec3(0, 1, 0));
+            });
+		float movementSpeed = 5.0f;
+        input.keyDownCallbacks.emplace(GLFW_KEY_D, [movementSpeed](Entity e)
+            {
+                EntityManager::GetComponent<TransformComponent>(e).location += EntityManager::GetComponent<TransformComponent>(e).GetRight() * movementSpeed * TimeManager::GetDeltaTime();
+            });
+        input.keyDownCallbacks.emplace(GLFW_KEY_A, [movementSpeed](Entity e)
+            {
+                EntityManager::GetComponent<TransformComponent>(e).location -= EntityManager::GetComponent<TransformComponent>(e).GetRight() * movementSpeed * TimeManager::GetDeltaTime();
+            });
+        input.keyDownCallbacks.emplace(GLFW_KEY_SPACE, [movementSpeed](Entity e)
+            {
+                EntityManager::GetComponent<TransformComponent>(e).location += EntityManager::GetComponent<TransformComponent>(e).GetUp() * movementSpeed * TimeManager::GetDeltaTime();
+            });
+        input.keyDownCallbacks.emplace(GLFW_KEY_LEFT_SHIFT, [movementSpeed](Entity e)
+            {
+                EntityManager::GetComponent<TransformComponent>(e).location -= EntityManager::GetComponent<TransformComponent>(e).GetUp() * movementSpeed * TimeManager::GetDeltaTime();
+            });
+        input.keyDownCallbacks.emplace(GLFW_KEY_W, [movementSpeed](Entity e)
+            {
+                EntityManager::GetComponent<TransformComponent>(e).location += EntityManager::GetComponent<TransformComponent>(e).GetForward() * movementSpeed * TimeManager::GetDeltaTime();
+            });
+        input.keyDownCallbacks.emplace(GLFW_KEY_S, [movementSpeed](Entity e)
+            {
+                EntityManager::GetComponent<TransformComponent>(e).location -= EntityManager::GetComponent<TransformComponent>(e).GetForward() * movementSpeed * TimeManager::GetDeltaTime();
+            });
+
 	    Entity cameraEntity = EntityManager::CreateEntity();
 	    EntityManager::AddComponent<TransformComponent>(cameraEntity, transform);
 	    EntityManager::AddComponent<CameraComponent>(cameraEntity, camera);
+		EntityManager::AddComponent<InputComponent>(cameraEntity, input);
         CameraManager::SetMainCamera(cameraEntity);
     }
 
@@ -83,7 +126,14 @@ void Engine::Run()
 		glfwPollEvents();
 
 	    timeManager.Update();
+        inputSystem.Update();
         graphics.Update();
+
+        glm::vec3 pitchYawRoll = glm::eulerAngles(EntityManager::GetComponent<TransformComponent>(0).rotation);
+        pitchYawRoll.y += 0.1f * TimeManager::GetDeltaTime();
+        pitchYawRoll.y += 2 * glm::pi<glm::float32>();
+		//EntityManager::GetComponent<TransformComponent>(0).rotation = glm::quat(pitchYawRoll);
+		EntityManager::GetComponent<TransformComponent>(0).rotation *= glm::angleAxis(1.0f * TimeManager::GetDeltaTime(), glm::vec3(1, 0, 0)) * glm::angleAxis(1.0f * TimeManager::GetDeltaTime(), glm::vec3(0, 1, 0)) * glm::angleAxis(1.0f * TimeManager::GetDeltaTime(), glm::vec3(0, 0, 1));
 
         for(Entity e = 0; e < EntityManager::GetLastEntity(); e++)
             if(EntityManager::HasComponent<TransformComponent>(e))
@@ -100,6 +150,7 @@ void Engine::Run()
 
     cameraManager.Shutdown();
     entityManager.Shutdown();
+	inputSystem.Shutdown();
 	resourceManager.Shutdown();
     graphics.Shutdown();
     timeManager.Shutdown();

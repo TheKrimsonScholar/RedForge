@@ -18,5 +18,9 @@ glm::vec3 TransformComponent::GetForward()
 
 glm::mat4 TransformComponent::GetMatrix()
 {
-	return glm::translate(glm::mat4(1.0f), location) * glm::scale(glm::toMat4(rotation), scale);
+	glm::mat4 transform = glm::translate(glm::mat4(1.0f), location);
+	transform *= glm::mat4_cast(rotation);
+	transform = glm::scale(transform, scale);
+
+	return transform;
 }

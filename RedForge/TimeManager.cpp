@@ -25,6 +25,7 @@ void TimeManager::Update()
 	deltaTime = currentTime - previousTime;
 	previousTime = currentTime;
 
+	totalFrames++;
 	numFrames++;
 	accumulatedTime += deltaTime;
 
