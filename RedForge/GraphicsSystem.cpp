@@ -24,6 +24,7 @@
 
 #include "rapidobj/rapidobj.hpp"
 
+#define IMGUI_ENABLE_VIEWPORTS
 #include "imgui/imgui.h"
 #include "imgui/imgui_impl_vulkan.h"
 #include "imgui/imgui_impl_glfw.h"
@@ -470,10 +471,20 @@ void GraphicsSystem::InitVulkan()
 
     ResourceManager::LoadTexture(L"textures/viking_room.png");
     ResourceManager::LoadTexture(L"textures/KhaimBook.png");
+    ResourceManager::LoadTexture(L"textures/DefaultTexture.png");
 	
     ResourceManager::AddMaterial(ResourceManager::GetTexture(0));
     ResourceManager::AddMaterial(ResourceManager::GetTexture(1));
+    ResourceManager::AddMaterial(ResourceManager::GetTexture(2));
     
+    ResourceManager::LoadModel(L"meshes/primitives/cube.obj");
+    ResourceManager::LoadModel(L"meshes/primitives/quad.obj");
+    ResourceManager::LoadModel(L"meshes/primitives/quad_double_sided.obj");
+    ResourceManager::LoadModel(L"meshes/primitives/sphere.obj");
+    ResourceManager::LoadModel(L"meshes/primitives/cylinder.obj");
+    ResourceManager::LoadModel(L"meshes/primitives/torus.obj");
+    ResourceManager::LoadModel(L"meshes/primitives/helix.obj");
+
     ResourceManager::LoadModel(L"meshes/viking_room.obj");
     ResourceManager::LoadModel(L"meshes/KhaimBook.obj");
 
@@ -513,7 +524,9 @@ void GraphicsSystem::InitImGui()
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; // Optional
+    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+    io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
 
     ImGui_ImplGlfw_InitForVulkan(window, true);  // `window` is your GLFWwindow*
 
@@ -1984,6 +1997,29 @@ void GraphicsSystem::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
 
+    // Create a full-screen, borderless window for the dockspace
+    ImGuiWindowFlags window_flags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking;
+    ImGuiViewport* imguiViewport = ImGui::GetMainViewport();
+    ImGui::SetNextWindowPos(imguiViewport->WorkPos);
+    ImGui::SetNextWindowSize(imguiViewport->WorkSize);
+    ImGui::SetNextWindowViewport(imguiViewport->ID);
+    window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse |
+        ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
+        ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
+    window_flags |= ImGuiWindowFlags_NoBackground;
+
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+
+    ImGui::Begin("DockSpaceWindow", nullptr, window_flags);
+    ImGui::PopStyleVar(2);
+
+    // Dockspace ID and creation
+    ImGuiID dockspace_id = ImGui::GetID("DockSpace");
+    ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_PassthruCentralNode);
+
+    ImGui::End();
+
     /* Draw UI */
 
     ImGui::Begin("FPS", nullptr,
@@ -2021,7 +2057,14 @@ void GraphicsSystem::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t
                         if(location != transform.location)
                             transform.location = location;
                         if(eulerAngles != glm::eulerAngles(transform.rotation))
-                            transform.rotation = glm::quat(eulerAngles);
+                        {
+							glm::vec3 eulerDeltas = eulerAngles - glm::eulerAngles(transform.rotation);
+
+                            transform.rotation = 
+                                glm::angleAxis(eulerDeltas.x, glm::vec3(1, 0, 0)) 
+                                * glm::angleAxis(eulerDeltas.y, glm::vec3(0, 1, 0)) 
+                                * glm::angleAxis(eulerDeltas.z, glm::vec3(0, 0, 1)) * transform.rotation;
+                        }
                         if(scale != transform.scale)
                             transform.scale = scale;
                         
@@ -2060,6 +2103,12 @@ void GraphicsSystem::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t
     ImGui::Render();
     ImDrawData* draw_data = ImGui::GetDrawData();
     ImGui_ImplVulkan_RenderDrawData(draw_data, commandBuffer);
+
+    if(ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+    {
+        ImGui::UpdatePlatformWindows();
+        ImGui::RenderPlatformWindowsDefault();
+    }
 
     vkCmdEndRenderPass(commandBuffer);
 
