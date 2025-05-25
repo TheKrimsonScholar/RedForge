@@ -25,12 +25,11 @@ void Engine::Run()
 		transform.scale = { 0.25f, 0.25f, 0.25f };
 
         MeshRendererComponent renderer{};
-        renderer.mesh = ResourceManager::GetMesh(8);
-        renderer.material = ResourceManager::GetMaterial(1);
+        renderer.UseMeshDefaults(L"KhaimBook.obj");
 
-        Entity entity1 = EntityManager::CreateEntity();
-        EntityManager::AddComponent<TransformComponent>(entity1, transform);
-        EntityManager::AddComponent<MeshRendererComponent>(entity1, renderer);
+        Entity entity = EntityManager::CreateEntity();
+        EntityManager::AddComponent<TransformComponent>(entity, transform);
+        EntityManager::AddComponent<MeshRendererComponent>(entity, renderer);
     }
 
     {
@@ -120,8 +119,7 @@ void Engine::Run()
         transform.scale = { 5.0f, 5.0f, 5.0f };
 
         MeshRendererComponent renderer{};
-        renderer.mesh = ResourceManager::GetMesh(1);
-        renderer.material = ResourceManager::GetMaterial(2);
+        renderer.UseMeshDefaults(L"primitives\\quad.obj");
 
         Entity plane = EntityManager::CreateEntity();
         EntityManager::AddComponent<TransformComponent>(plane, transform);

@@ -3,6 +3,7 @@
 #include <vector>
 
 #include "Vertex.h"
+#include "Material.h"
 
 class Mesh
 {
@@ -14,6 +15,8 @@ public:
     VkDeviceMemory vertexBufferMemory;
     VkBuffer indexBuffer;
     VkDeviceMemory indexBufferMemory;
+
+	Material* defaultMaterial;
 
     // Index of the mesh in the global meshes array, assigned by the graphics system.
     uint32_t index = -1;

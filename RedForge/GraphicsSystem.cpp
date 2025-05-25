@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <chrono>
 #include <format>
+#include <filesystem>
 
 #include "TimeManager.h"
 #include "EntityManager.h"
@@ -454,9 +455,6 @@ void GraphicsSystem::InitVulkan()
     CreateSwapChain();
     CreateImageViews();
     CreateRenderPass();
-
-    // Load textures, materials
-
     CreateDescriptorSetLayout();
     CreateGraphicsPipeline();
     CreateCommandPool();
@@ -469,53 +467,13 @@ void GraphicsSystem::InitVulkan()
     CreateCommandBuffers();
     CreateSyncObjects();
 
-    ResourceManager::LoadTexture(L"textures/viking_room.png");
-    ResourceManager::LoadTexture(L"textures/KhaimBook.png");
-    ResourceManager::LoadTexture(L"textures/DefaultTexture.png");
-	
-    ResourceManager::AddMaterial(ResourceManager::GetTexture(0));
-    ResourceManager::AddMaterial(ResourceManager::GetTexture(1));
-    ResourceManager::AddMaterial(ResourceManager::GetTexture(2));
-    
-    ResourceManager::LoadModel(L"meshes/primitives/cube.obj");
-    ResourceManager::LoadModel(L"meshes/primitives/quad.obj");
-    ResourceManager::LoadModel(L"meshes/primitives/quad_double_sided.obj");
-    ResourceManager::LoadModel(L"meshes/primitives/sphere.obj");
-    ResourceManager::LoadModel(L"meshes/primitives/cylinder.obj");
-    ResourceManager::LoadModel(L"meshes/primitives/torus.obj");
-    ResourceManager::LoadModel(L"meshes/primitives/helix.obj");
+    ResourceManager::LoadAllTextures();
+    //ResourceManager::LoadAllMaterials();
+    ResourceManager::LoadAllMeshes();
 
-    ResourceManager::LoadModel(L"meshes/viking_room.obj");
-    ResourceManager::LoadModel(L"meshes/KhaimBook.obj");
-
-    //CreateGlobalBuffers();
     CreateGlobalArrayDescriptorSets();
 
     UpdateMaterialsBuffer();
-
-    
-
-    
-
-    
-    
-    /*MeshRendererComponent renderer{};
-    renderer.mesh = meshes[0];
-    renderer.material = materials[0];
-
-    MeshRendererComponent renderer2{};
-    renderer2.mesh = meshes[1];
-    renderer2.material = materials[1];
-
-    MeshRendererComponent renderer3{};
-    renderer3.mesh = meshes[0];
-    renderer3.material = materials[1];
-
-    AddRenderer(renderer);
-    AddRenderer(renderer2);
-    AddRenderer(renderer3);
-
-    UpdateInstancesBuffer();*/
 }
 void GraphicsSystem::InitImGui()
 {

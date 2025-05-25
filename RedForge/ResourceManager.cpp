@@ -2,6 +2,7 @@
 
 #include <filesystem>
 #include <unordered_map>
+#include <iostream>
 
 #include "GraphicsSystem.h"
 
@@ -27,17 +28,39 @@ void ResourceManager::Shutdown()
 	textures.clear();
 }
 
-void ResourceManager::AddMaterial(Texture* texture)
+void ResourceManager::LoadAllTextures()
 {
-	Material* material = new Material();
-	material->texture = texture;
+    const std::vector<std::wstring> VALID_TYPES = { L".png" };
+    std::unordered_map<std::wstring, std::wstring> texturePaths = GetAllFilesInDirectory(TEXTURES_PATH, VALID_TYPES);
+    
+    // Load all textures from their paths and associate them with identifiers in an unordered map
+	for(auto& texturePath : texturePaths)
+        LoadTexture(TEXTURES_PATH + texturePath.first);
+}
+void ResourceManager::LoadAllMaterials()
+{
+	const std::vector<std::wstring> VALID_TYPES = { L".mtl" };
+	std::unordered_map<std::wstring, std::wstring> materialPaths = GetAllFilesInDirectory(MATERIALS_PATH, VALID_TYPES);
 
-	material->index = Instance->materials.size();
-	Instance->materials.push_back(material);
+	// Load all materials from their paths and associate them with identifiers in an unordered map
+	for(auto& materialPath : materialPaths)
+		LoadTexture(MATERIALS_PATH + materialPath.first);
+}
+void ResourceManager::LoadAllMeshes()
+{
+    const std::vector<std::wstring> VALID_TYPES = { L".obj" };
+    std::unordered_map<std::wstring, std::wstring> meshPaths = GetAllFilesInDirectory(MESHES_PATH, VALID_TYPES);
+
+    for(auto& meshPath : meshPaths)
+        LoadModel(MESHES_PATH + meshPath.first);
 }
 
 Texture* ResourceManager::LoadTexture(const std::wstring& filePath)
 {
+	// Check if the texture is already loaded
+	if(Instance->textureMap.find(filePath) != Instance->textureMap.end())
+		return Instance->textureMap[filePath];
+
 	Texture* texture = new Texture();
 
 	CreateTextureImage(texture, filePath);
@@ -48,11 +71,32 @@ Texture* ResourceManager::LoadTexture(const std::wstring& filePath)
 
 	texture->index = Instance->textures.size();
 	Instance->textures.push_back(texture);
+    Instance->textureMap.emplace(filePath.substr((TEXTURES_PATH).length()), texture);
 
 	return texture;
 }
+Material* ResourceManager::LoadMaterial(const std::wstring& filePath)
+{
+    // Check if the material is already loaded
+	if(Instance->materialMap.find(filePath) != Instance->materialMap.end())
+		return Instance->materialMap[filePath];
+
+    Material* material = new Material();
+
+	/* --- Custom MAT parsing --- */
+
+    material->index = Instance->materials.size();
+    Instance->materials.push_back(material);
+    Instance->materialMap.emplace(filePath.substr((MATERIALS_PATH).length()), material);
+
+    return material;
+}
 Mesh* ResourceManager::LoadModel(const std::wstring& filePath)
 {
+    // Check if the mesh is already loaded
+	if(Instance->meshMap.find(filePath) != Instance->meshMap.end())
+		return Instance->meshMap[filePath];
+
     Mesh* mesh = new Mesh();
 
     rapidobj::Result obj = rapidobj::ParseFile(filePath.c_str());
@@ -90,12 +134,32 @@ Mesh* ResourceManager::LoadModel(const std::wstring& filePath)
             firstFaceIndex += shape.mesh.num_face_vertices[f];
         }
     }
+    // For each material associated with the .obj
+    for(rapidobj::Material& mat : obj.materials)
+    {
+        if(Instance->materialMap.find(NarrowToWide(mat.name)) != Instance->materialMap.end())
+        {
+		    mesh->defaultMaterial = Instance->materialMap[NarrowToWide(mat.name)];
+            continue;
+        }
+
+		Material* material = new Material();
+
+		material->texture = LoadTexture(TEXTURES_PATH + NarrowToWide(mat.diffuse_texname));
+
+        material->index = Instance->materials.size();
+        Instance->materials.push_back(material);
+        Instance->materialMap.emplace(NarrowToWide(mat.name), material);
+
+		mesh->defaultMaterial = material;
+    }
 
     GraphicsSystem::CreateVertexBuffer(mesh->vertices, mesh->vertexBuffer, mesh->vertexBufferMemory);
     GraphicsSystem::CreateIndexBuffer(mesh->indices, mesh->indexBuffer, mesh->indexBufferMemory);
 
 	mesh->index = Instance->meshes.size();
     Instance->meshes.push_back(mesh);
+    Instance->meshMap.emplace(filePath.substr((MESHES_PATH).length()), mesh);
 
     return mesh;
 }
@@ -281,4 +345,82 @@ VkImageView ResourceManager::CreateImageView(VkImage image, VkFormat format, VkI
         throw std::runtime_error("Failed to create texture image view!");
 
     return imageView;
+}
+
+std::unordered_map<std::wstring, std::wstring> ResourceManager::GetAllFilesInDirectory(std::wstring directory, std::vector<std::wstring> extensions)
+{
+    std::unordered_map<std::wstring, std::wstring> identifiers;
+
+    for(const std::filesystem::directory_entry& entry : std::filesystem::recursive_directory_iterator(directory))
+    {
+        if(std::filesystem::is_regular_file(entry))
+        {
+            std::wstring filePath = entry.path();
+            size_t directoryEnd = filePath.find(directory) + directory.length();
+            size_t extensionStart = filePath.find_last_of('.');
+
+            std::wstring localPath = filePath.substr(directoryEnd);
+            std::wstring identifier = filePath.substr(directoryEnd, extensionStart - directoryEnd);
+            std::wstring extension = filePath.substr(extensionStart);
+
+            if(std::find(extensions.begin(), extensions.end(), extension) != extensions.end())
+                identifiers.emplace(localPath, identifier);
+
+            /*for(char c : identifier)
+                std::cout << c;
+            std::cout << std::endl;*/
+        }
+    }
+
+    return identifiers;
+}
+
+std::string ResourceManager::GetExePath()
+{
+    // Assume the path is just the "current directory" for now
+    std::string path = ".\\";
+
+    // Get the real, full path to this executable
+    char currentDir[1024] = {};
+    GetModuleFileNameA(0, currentDir, 1024);
+
+    // Find the location of the last slash charaacter
+    char* lastSlash = strrchr(currentDir, '\\');
+    if (lastSlash)
+    {
+        // End the string at the last slash character, essentially
+        // chopping off the exe's file name.  Remember, c-strings
+        // are null-terminated, so putting a "zero" character in 
+        // there simply denotes the end of the string.
+        *lastSlash = 0;
+
+        // Set the remainder as the path
+        path = currentDir;
+    }
+
+    // Toss back whatever we've found
+    return path;
+}
+
+std::string ResourceManager::FixPath(const std::string& relativeFilePath)
+{
+    return GetExePath() + "\\" + relativeFilePath;
+}
+std::wstring ResourceManager::FixPath(const std::wstring& relativeFilePath)
+{
+    return NarrowToWide(GetExePath()) + L"\\" + relativeFilePath;
+}
+std::string ResourceManager::WideToNarrow(const std::wstring& str)
+{
+    int size = WideCharToMultiByte(CP_UTF8, 0, str.c_str(), (int)str.length(), 0, 0, 0, 0);
+    std::string result(size, 0);
+    WideCharToMultiByte(CP_UTF8, 0, str.c_str(), -1, &result[0], size, 0, 0);
+    return result;
+}
+std::wstring ResourceManager::NarrowToWide(const std::string& str)
+{
+    int size = MultiByteToWideChar(CP_UTF8, 0, str.c_str(), (int)str.length(), 0, 0);
+    std::wstring result(size, 0);
+    MultiByteToWideChar(CP_UTF8, 0, str.c_str(), -1, &result[0], size);
+    return result;
 }
