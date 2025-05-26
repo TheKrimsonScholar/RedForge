@@ -7,6 +7,7 @@
 #include "EntityManager.h"
 #include "CameraManager.h"
 #include "DebugManager.h"
+#include "PhysicsSystem.h"
 
 class Engine
 {
@@ -18,6 +19,7 @@ private:
 	EntityManager entityManager;
 	CameraManager cameraManager;
 	DebugManager debugManager;
+	PhysicsSystem physicsSystem;
 
 	bool isRunning = false;
 

@@ -4,6 +4,8 @@
 #include "MeshRendererComponent.h"
 #include "CameraComponent.h"
 #include "InputComponent.h"
+#include "ColliderComponent.h"
+#include "PhysicsComponent.h"
 
 void EntityManager::Startup()
 {
@@ -13,6 +15,8 @@ void EntityManager::Startup()
 	RegisterComponent<MeshRendererComponent>();
 	RegisterComponent<CameraComponent>();
 	RegisterComponent<InputComponent>();
+	RegisterComponent<ColliderComponent>();
+	RegisterComponent<PhysicsComponent>();
 }
 void EntityManager::Shutdown()
 {

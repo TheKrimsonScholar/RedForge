@@ -18,19 +18,32 @@ void Engine::Run()
     graphics.Startup();
 	cameraManager.Startup();
 	debugManager.Startup();
+    physicsSystem.Startup();
 
     {
         TransformComponent transform{};
-        transform.location = { 1, 0, 0 };
-        transform.rotation = glm::angleAxis(0.0f, glm::vec3(0.0f, 0.0f, 1.0f));
+        transform.location = { 1, 7, 0 };
+        transform.rotation = glm::angleAxis(45.0f, glm::vec3(0.0f, 0.0f, 1.0f));
 		transform.scale = { 0.25f, 0.25f, 0.25f };
 
         MeshRendererComponent renderer{};
         renderer.UseMeshDefaults(L"KhaimBook.obj");
 
+        ColliderComponent collider{};
+        collider.colliderType = EColliderType::Box;
+        collider.halfSize = glm::vec3(0.4f, 0.2f, 0.4f);
+        collider.center = glm::vec3(0.0f, 0.0f, 0.0f);
+
+        PhysicsComponent physics{};
+        physics.gravity = glm::vec3(0, -1.81f, 0);
+        physics.mass = 1;
+        physics.isStatic = false;
+
         Entity entity = EntityManager::CreateEntity();
         EntityManager::AddComponent<TransformComponent>(entity, transform);
         EntityManager::AddComponent<MeshRendererComponent>(entity, renderer);
+        EntityManager::AddComponent<ColliderComponent>(entity, collider);
+        EntityManager::AddComponent<PhysicsComponent>(entity, physics);
     }
 
     {
@@ -122,13 +135,25 @@ void Engine::Run()
         MeshRendererComponent renderer{};
         renderer.UseMeshDefaults(L"primitives\\quad.obj");
 
+        ColliderComponent collider{};
+        collider.colliderType = EColliderType::Box;
+        collider.halfSize = glm::vec3(5.0f, 0.2f, 5.0f);
+        collider.center = glm::vec3(0.0f, 0.0f, 0.0f);
+
+        PhysicsComponent physics{};
+        physics.gravity = glm::vec3(0, 0, 0);
+        physics.mass = 1;
+        physics.isStatic = true;
+
         Entity plane = EntityManager::CreateEntity();
         EntityManager::AddComponent<TransformComponent>(plane, transform);
         EntityManager::AddComponent<MeshRendererComponent>(plane, renderer);
+        EntityManager::AddComponent<ColliderComponent>(plane, collider);
+        EntityManager::AddComponent<PhysicsComponent>(plane, physics);
     }
 
     DebugManager::DrawDebugBox(
-        glm::vec3(2, 1, 1), glm::angleAxis(glm::radians(60.0f * (float)TimeManager::GetCurrentTime()), glm::normalize(glm::vec3(1, 1, 1))), glm::vec3(0.5f, 0.5f, 0.5f), glm::vec4(1.0f, 0.0f, 0.0f, 1.0f), 10.0f);
+        glm::vec3(2, 1, 1), glm::angleAxis(glm::radians(60.0f * (float) TimeManager::GetCurrentTime()), glm::normalize(glm::vec3(1, 1, 1))), glm::vec3(0.5f, 0.5f, 0.5f), glm::vec4(1.0f, 0.0f, 0.0f, 1.0f), 10.0f);
 
     while(!glfwWindowShouldClose(GraphicsSystem::GetWindow()))
     {
@@ -137,8 +162,9 @@ void Engine::Run()
 	    timeManager.Update();
         inputSystem.Update();
         graphics.Update();
+        physicsSystem.Update();
 
-		EntityManager::GetComponent<TransformComponent>(0).rotation = glm::angleAxis(1.0f * TimeManager::GetDeltaTime(), glm::vec3(1, 0, 0)) * glm::angleAxis(1.0f * TimeManager::GetDeltaTime(), glm::vec3(0, 1, 0)) * glm::angleAxis(1.0f * TimeManager::GetDeltaTime(), glm::vec3(0, 0, 1)) * EntityManager::GetComponent<TransformComponent>(0).rotation;
+		//EntityManager::GetComponent<TransformComponent>(0).rotation = glm::angleAxis(1.0f * TimeManager::GetDeltaTime(), glm::vec3(1, 0, 0)) * glm::angleAxis(1.0f * TimeManager::GetDeltaTime(), glm::vec3(0, 1, 0)) * glm::angleAxis(1.0f * TimeManager::GetDeltaTime(), glm::vec3(0, 0, 1)) * EntityManager::GetComponent<TransformComponent>(0).rotation;
 
         DebugManager::DrawDebugBox(
             glm::vec3(2, 1, 1), glm::angleAxis(glm::radians(60.0f * (float) TimeManager::GetCurrentTime()), glm::normalize(glm::vec3(1, 1, 1))), glm::vec3(0.5f, 0.5f, 0.5f), glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
@@ -158,6 +184,7 @@ void Engine::Run()
     // Wait for device to finish operations before exiting
     vkDeviceWaitIdle(GraphicsSystem::GetDevice());
 
+    physicsSystem.Shutdown();
 	debugManager.Shutdown();
     cameraManager.Shutdown();
     entityManager.Shutdown();
