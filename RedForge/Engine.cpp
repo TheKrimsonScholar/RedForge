@@ -17,6 +17,7 @@ void Engine::Run()
     entityManager.Startup();
     graphics.Startup();
 	cameraManager.Startup();
+	debugManager.Startup();
 
     {
         TransformComponent transform{};
@@ -126,6 +127,9 @@ void Engine::Run()
         EntityManager::AddComponent<MeshRendererComponent>(plane, renderer);
     }
 
+    DebugManager::DrawDebugBox(
+        glm::vec3(2, 1, 1), glm::angleAxis(glm::radians(60.0f * (float)TimeManager::GetCurrentTime()), glm::normalize(glm::vec3(1, 1, 1))), glm::vec3(0.5f, 0.5f, 0.5f), glm::vec4(1.0f, 0.0f, 0.0f, 1.0f), 10.0f);
+
     while(!glfwWindowShouldClose(GraphicsSystem::GetWindow()))
     {
 		glfwPollEvents();
@@ -135,6 +139,11 @@ void Engine::Run()
         graphics.Update();
 
 		EntityManager::GetComponent<TransformComponent>(0).rotation = glm::angleAxis(1.0f * TimeManager::GetDeltaTime(), glm::vec3(1, 0, 0)) * glm::angleAxis(1.0f * TimeManager::GetDeltaTime(), glm::vec3(0, 1, 0)) * glm::angleAxis(1.0f * TimeManager::GetDeltaTime(), glm::vec3(0, 0, 1)) * EntityManager::GetComponent<TransformComponent>(0).rotation;
+
+        DebugManager::DrawDebugBox(
+            glm::vec3(2, 1, 1), glm::angleAxis(glm::radians(60.0f * (float) TimeManager::GetCurrentTime()), glm::normalize(glm::vec3(1, 1, 1))), glm::vec3(0.5f, 0.5f, 0.5f), glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
+        DebugManager::DrawDebugSphere(
+            glm::vec3(2, 3, 1), glm::angleAxis(glm::radians(60.0f * (float) TimeManager::GetCurrentTime()), glm::normalize(glm::vec3(1, 1, 1))), glm::vec3(0.5f, 0.5f, 0.5f), glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
 
         for(Entity e = 0; e < EntityManager::GetLastEntity(); e++)
             if(EntityManager::HasComponent<TransformComponent>(e))
@@ -149,6 +158,7 @@ void Engine::Run()
     // Wait for device to finish operations before exiting
     vkDeviceWaitIdle(GraphicsSystem::GetDevice());
 
+	debugManager.Shutdown();
     cameraManager.Shutdown();
     entityManager.Shutdown();
 	inputSystem.Shutdown();

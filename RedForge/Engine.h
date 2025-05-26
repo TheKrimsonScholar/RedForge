@@ -6,6 +6,7 @@
 #include "GraphicsSystem.h"
 #include "EntityManager.h"
 #include "CameraManager.h"
+#include "DebugManager.h"
 
 class Engine
 {
@@ -16,6 +17,7 @@ private:
 	GraphicsSystem graphics;
 	EntityManager entityManager;
 	CameraManager cameraManager;
+	DebugManager debugManager;
 
 	bool isRunning = false;
 

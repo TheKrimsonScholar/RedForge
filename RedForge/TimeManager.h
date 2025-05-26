@@ -30,6 +30,7 @@ public:
 	void Update();
 
 	static inline long GetCurrentFrame() { return Instance->totalFrames; };
+	static inline double GetCurrentTime() { return Instance->currentTime; };
 	static inline float GetDeltaTime() { return Instance->deltaTime; };
 	static inline float GetFPS() { return 1.0f / Instance->deltaTime; };
 	static inline float GetAverageFPS() { return Instance->currentFPS; };

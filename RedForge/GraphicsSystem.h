@@ -21,6 +21,7 @@ const uint32_t HEIGHT = 600;
 const int MAX_FRAMES_IN_FLIGHT = 2;
 
 const uint32_t MAX_INSTANCES = 256;
+
 const uint32_t MAX_TEXTURES = 256;
 const uint32_t MAX_MATERIALS = 256;
 
@@ -106,9 +107,11 @@ private:
 
     VkRenderPass renderPass;
     VkDescriptorSetLayout descriptorSetLayout;
+    VkPipelineLayout debugPipelineLayout;
     VkPipelineLayout pipelineLayout;
 
     VkPipeline graphicsPipeline;
+    VkPipeline debugGraphicsPipeline;
 
     std::vector<VkFramebuffer> swapChainFramebuffers;
 
@@ -148,10 +151,6 @@ private:
     //std::vector<VkDescriptorSet> descriptorSets;
     VkDescriptorSet descriptorSets[MAX_FRAMES_IN_FLIGHT];
 
-    /*std::vector<Texture*> textures;
-    std::vector<Material*> materials;
-    std::vector<Mesh*> meshes;*/
-
     std::vector<VkDescriptorImageInfo> texturesBufferData;
     std::vector<MaterialData> materialsBufferData;
 
@@ -166,8 +165,6 @@ private:
     VkImageView colorImageView;
 
     glm::mat4 modelMatrices[MAX_INSTANCES];
-    //std::queue<uint32_t> transformsFreeList;
-    //uint32_t transformsNextIndex = 0;
 
     std::vector<InstanceData> instanceData;
     std::vector<MeshRendererComponent*> renderers;
@@ -176,10 +173,6 @@ private:
     uint32_t renderersNextIndex = 0;
 
     std::vector<DrawBatch> drawBatches;
-
-    // TEMP
-    std::vector<glm::mat4> transforms;
-    //std::vector<MeshRendererComponent> renderers;
 
 public:
     GraphicsSystem() {};
@@ -253,6 +246,7 @@ private:
 
     void CreateDescriptorSetLayout();
     void CreateGraphicsPipeline();
+    void CreateDebugGraphicsPipeline();
     VkShaderModule CreateShaderModule(const std::vector<char>& code);
 
     void CreateFramebuffers();
@@ -264,9 +258,6 @@ private:
     VkFormat FindDepthFormat();
     VkFormat FindSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
     bool HasStencilComponent(VkFormat format);
-
-    void AddRenderer(MeshRendererComponent& renderer);
-    void RemoveRenderer(const MeshRendererComponent& renderer);
 
     void CreateGlobalBuffers();
     void CreateGlobalArrayDescriptorSets();
