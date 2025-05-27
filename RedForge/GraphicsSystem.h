@@ -10,6 +10,7 @@
 #include "Mesh.h"
 #include "Material.h"
 #include "Texture.h"
+#include "TextureCube.h"
 #include "MeshRendererComponent.h"
 
 #define GLFW_INCLUDE_VULKAN
@@ -107,10 +108,12 @@ private:
 
     VkRenderPass renderPass;
     VkDescriptorSetLayout descriptorSetLayout;
-    VkPipelineLayout debugPipelineLayout;
     VkPipelineLayout pipelineLayout;
+    VkPipelineLayout skyboxPipelineLayout;
+    VkPipelineLayout debugPipelineLayout;
 
     VkPipeline graphicsPipeline;
+    VkPipeline skyboxGraphicsPipeline;
     VkPipeline debugGraphicsPipeline;
 
     std::vector<VkFramebuffer> swapChainFramebuffers;
@@ -172,6 +175,8 @@ private:
     std::queue<uint32_t> renderersFreeList;
     uint32_t renderersNextIndex = 0;
 
+    TextureCube* skyboxTextureCube;
+
     std::vector<DrawBatch> drawBatches;
 
 public:
@@ -200,11 +205,14 @@ public:
         VkImageUsageFlags usage, 
         VkMemoryPropertyFlags properties, 
         VkImage& image, 
-        VkDeviceMemory& imageMemory);
+        VkDeviceMemory& imageMemory,
+        VkImageCreateFlags flags = 0, uint32_t arrayLayers = 1);
     static void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
-    static void CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
+    static void CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height, 
+        uint32_t layerCount = 1);
     
-    static void TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels);
+    static void TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels, 
+        uint32_t layerCount = 1);
     
     static VkCommandBuffer BeginSingleTimeCommands();
     static void EndSingleTimeCommands(VkCommandBuffer commandBuffer);
@@ -246,6 +254,7 @@ private:
 
     void CreateDescriptorSetLayout();
     void CreateGraphicsPipeline();
+    void CreateSkyboxGraphicsPipeline();
     void CreateDebugGraphicsPipeline();
     VkShaderModule CreateShaderModule(const std::vector<char>& code);
 
@@ -267,7 +276,8 @@ private:
 
     void CreateTextureImageView(Texture* texture);
 
-    VkImageView CreateImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, uint32_t mipLevels);
+    VkImageView CreateImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, uint32_t mipLevels, 
+        VkImageViewType viewType = VK_IMAGE_VIEW_TYPE_2D, uint32_t layerCount = 1);
 
     void CreateUniformBuffers();
     void CreateDescriptorPool();
@@ -283,12 +293,7 @@ private:
 
     void RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
 
-    void MainLoop();
-
-    void DrawFrame();
     void UpdateUniformBuffer(uint32_t currentImage);
-
-    void Cleanup();
 
 public:
     static GLFWwindow* GetWindow() { return Instance->window; };
@@ -297,4 +302,6 @@ public:
     static float GetAspectRatio() { return (float) Instance->swapChainExtent.width / (float) Instance->swapChainExtent.height; };
     static VkPhysicalDevice GetPhysicalDevice() { return Instance->physicalDevice; };
     static VkDevice GetDevice() { return Instance->device; };
+
+	static void SetSkyboxTextureCube(TextureCube* textureCube) { Instance->skyboxTextureCube = textureCube; };
 };

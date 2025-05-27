@@ -23,6 +23,17 @@ void PhysicsSystem::Update()
 
 	simulationTimeLeft += TimeManager::GetDeltaTime();
 
+	for(Entity e = 0; e < EntityManager::GetLastEntity(); e++)
+	{
+		if(!EntityManager::HasComponent<TransformComponent>(e) || !EntityManager::HasComponent<ColliderComponent>(e))
+			continue;
+
+		TransformComponent& transform = EntityManager::GetComponent<TransformComponent>(e);
+		ColliderComponent& collider = EntityManager::GetComponent<ColliderComponent>(e);
+
+		DebugManager::DrawDebugBox(transform.location, transform.rotation, collider.halfSize, glm::vec4(0, 0, 0, 0));
+	}
+
 	while(simulationTimeLeft >= PHYSICS_TICK)
 	{
 		std::vector<CollisionData> collisions;
@@ -62,9 +73,6 @@ void PhysicsSystem::Update()
 				TransformComponent& transformB = EntityManager::GetComponent<TransformComponent>(e2);
 				ColliderComponent& colliderA = EntityManager::GetComponent<ColliderComponent>(e1);
 				ColliderComponent& colliderB = EntityManager::GetComponent<ColliderComponent>(e2);
-
-				DebugManager::DrawDebugBox(transformA.location, transformA.rotation, colliderA.halfSize, glm::vec4(0, 0, 0, 0), 0.1f);
-				DebugManager::DrawDebugBox(transformB.location, transformB.rotation, colliderB.halfSize, glm::vec4(0, 0, 0, 0), 0.1f);
 
 				std::vector<ContactPoint> contactPoints;
 				if(GJK(transformA, colliderA, transformB, colliderB, contactPoints))

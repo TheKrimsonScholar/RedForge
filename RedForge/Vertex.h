@@ -17,7 +17,6 @@ struct Vertex
     static VkVertexInputBindingDescription GetBindingDescription();
     static std::array<VkVertexInputAttributeDescription, 3> GetAttributeDescriptions();
 };
-
 namespace std
 {
     template<> struct hash<Vertex>

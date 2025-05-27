@@ -18,7 +18,7 @@ layout(set = 0, binding = 2) readonly buffer Instances
 {
     InstanceData instances[];
 };
-layout(set = 0, binding = 3) uniform UniformBufferObject
+layout(set = 0, binding = 4) uniform UniformBufferObject
 {
     mat4 view;
     mat4 proj;

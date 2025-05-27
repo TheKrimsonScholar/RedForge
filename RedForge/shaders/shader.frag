@@ -24,7 +24,7 @@ layout(set = 0, binding = 2) readonly buffer Instances
 {
     InstanceData instances[];
 };
-layout(set = 0, binding = 4) uniform sampler2D Textures[];
+layout(set = 0, binding = 5) uniform sampler2D Textures[];
 
 layout(location = 0) in vec3 fragColor;
 layout(location = 1) in vec2 fragUV;

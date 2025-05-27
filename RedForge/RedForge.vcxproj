@@ -167,6 +167,7 @@
     <ClCompile Include="RedForge.cpp" />
     <ClCompile Include="ResourceManager.cpp" />
     <ClCompile Include="Texture.cpp" />
+    <ClCompile Include="TextureCube.cpp" />
     <ClCompile Include="TimeManager.cpp" />
     <ClCompile Include="TransformComponent.cpp" />
     <ClCompile Include="Vertex.cpp" />
@@ -196,6 +197,7 @@
     <ClInclude Include="PhysicsSystem.h" />
     <ClInclude Include="ResourceManager.h" />
     <ClInclude Include="Texture.h" />
+    <ClInclude Include="TextureCube.h" />
     <ClInclude Include="TimeManager.h" />
     <ClInclude Include="TransformComponent.h" />
     <ClInclude Include="Vertex.h" />
@@ -203,6 +205,8 @@
   <ItemGroup>
     <None Include="shaders\shader.frag" />
     <None Include="shaders\shader.vert" />
+    <None Include="shaders\skybox.frag" />
+    <None Include="shaders\skybox.vert" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
