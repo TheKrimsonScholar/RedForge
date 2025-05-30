@@ -152,6 +152,41 @@ void Engine::Run()
         EntityManager::AddComponent<PhysicsComponent>(plane, physics);
     }
 
+    {
+        TransformComponent transform{};
+        transform.location = { 0, -1, 0 };
+        transform.rotation = glm::angleAxis(0.0f, glm::vec3(0.0f, 0.0f, 1.0f));
+        transform.scale = { 5.0f, 5.0f, 5.0f };
+
+        LightComponent light{};
+        light.lightType = ELightType::Directional;
+        light.color = glm::vec3(0, 0, 1);
+        light.intensity = 0.25f;
+        light.direction = glm::vec3(-1, -1, 0);
+
+        Entity directionalLight = EntityManager::CreateEntity();
+        EntityManager::AddComponent<TransformComponent>(directionalLight, transform);
+        EntityManager::AddComponent<LightComponent>(directionalLight, light);
+    }
+
+    {
+        TransformComponent transform{};
+        transform.location = { 0, -1, 0 };
+        transform.rotation = glm::angleAxis(0.0f, glm::vec3(0.0f, 0.0f, 1.0f));
+        transform.scale = { 5.0f, 5.0f, 5.0f };
+
+        LightComponent light{};
+        light.lightType = ELightType::Point;
+        light.color = glm::vec3(1, 1, 1);
+        light.intensity = 1;
+        light.location = glm::vec3(2, 0, 0);
+        light.range = 10;
+
+        Entity pointLight = EntityManager::CreateEntity();
+        EntityManager::AddComponent<TransformComponent>(pointLight, transform);
+        EntityManager::AddComponent<LightComponent>(pointLight, light);
+    }
+
     DebugManager::DrawDebugBox(
         glm::vec3(2, 1, 1), glm::angleAxis(glm::radians(60.0f * (float) TimeManager::GetCurrentTime()), glm::normalize(glm::vec3(1, 1, 1))), glm::vec3(0.5f, 0.5f, 0.5f), glm::vec4(1.0f, 0.0f, 0.0f, 1.0f), 10.0f);
 

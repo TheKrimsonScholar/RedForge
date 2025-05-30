@@ -154,6 +154,11 @@ Mesh* ResourceManager::LoadModel(const std::wstring& filePath)
         // For each face
         for(int f = 0; f < shape.mesh.num_face_vertices.size(); f++)
         {
+            // Only support triangles and quads
+            assert((shape.mesh.num_face_vertices[f] == 3 || shape.mesh.num_face_vertices[f] == 4) && "OBJ file contains a face that is not a triangle or quad!");
+
+            std::vector<Vertex> faceVertices;
+
             // For each vertex
             for(int j = 0; j < shape.mesh.num_face_vertices[f]; j++)
             {
@@ -161,9 +166,9 @@ Mesh* ResourceManager::LoadModel(const std::wstring& filePath)
 
                 Vertex vertex = {};
                 vertex.pos = { obj.attributes.positions[index.position_index * 3], obj.attributes.positions[index.position_index * 3 + 1], obj.attributes.positions[index.position_index * 3 + 2] };
-                //vertex.normal = { obj.attributes.normals[index.normal_index * 3], obj.attributes.normals[index.normal_index * 3 + 1], obj.attributes.normals[index.normal_index * 3 + 2] };
+                vertex.normal = { obj.attributes.normals[index.normal_index * 3], obj.attributes.normals[index.normal_index * 3 + 1], obj.attributes.normals[index.normal_index * 3 + 2] };
+                vertex.tangent = { 0.0f, 0.0f, 0.0f }; // Calculate tangents later
                 vertex.uv = { obj.attributes.texcoords[index.texcoord_index * 2], 1.0f - obj.attributes.texcoords[index.texcoord_index * 2 + 1] };
-                vertex.color = { 1.0f, 1.0f, 1.0f };
 
                 if(vertexMap.count(vertex) == 0)
                 {
@@ -172,11 +177,69 @@ Mesh* ResourceManager::LoadModel(const std::wstring& filePath)
                 }
 
                 mesh->indices.push_back(vertexMap[vertex]);
+                faceVertices.push_back(vertex);
+            }
+
+            // If this face is a quad, complete the second triangle by reusing two indices
+            if(shape.mesh.num_face_vertices[f] == 4)
+            {
+                mesh->indices.push_back(vertexMap[faceVertices[0]]);
+                mesh->indices.push_back(vertexMap[faceVertices[2]]);
             }
 
             firstFaceIndex += shape.mesh.num_face_vertices[f];
         }
+
+        // Second pass through triangles for tangent calculations
+        for(int i = 0; i < mesh->indices.size();)
+        {
+	        // Grab indices and vertices of first triangle
+	        unsigned int i1 = mesh->indices[i++];
+	        unsigned int i2 = mesh->indices[i++];
+	        unsigned int i3 = mesh->indices[i++];
+	        Vertex* v1 = &mesh->vertices[i1];
+	        Vertex* v2 = &mesh->vertices[i2];
+	        Vertex* v3 = &mesh->vertices[i3];
+	        // Calculate vectors relative to triangle positions
+	        float x1 = v2->pos.x - v1->pos.x;
+	        float y1 = v2->pos.y - v1->pos.y;
+	        float z1 = v2->pos.z - v1->pos.z;
+	        float x2 = v3->pos.x - v1->pos.x;
+	        float y2 = v3->pos.y - v1->pos.y;
+	        float z2 = v3->pos.z - v1->pos.z;
+	        // Do the same for vectors relative to triangle uv's
+	        float s1 = v2->uv.x - v1->uv.x;
+	        float t1 = v2->uv.y - v1->uv.y;
+	        float s2 = v3->uv.x - v1->uv.x;
+	        float t2 = v3->uv.y - v1->uv.y;
+	        // Create vectors for tangent calculation
+	        float r = 1.0f / (s1 * t2 - s2 * t1);
+	        float tx = (t2 * x1 - t1 * x2) * r;
+	        float ty = (t2 * y1 - t1 * y2) * r;
+	        float tz = (t2 * z1 - t1 * z2) * r;
+	        // Adjust tangents of each vert of the triangle
+	        v1->tangent.x += tx;
+	        v1->tangent.y += ty;
+	        v1->tangent.z += tz;
+	        v2->tangent.x += tx;
+	        v2->tangent.y += ty;
+	        v2->tangent.z += tz;
+	        v3->tangent.x += tx;
+	        v3->tangent.y += ty;
+	        v3->tangent.z += tz;
+        }
+        // Ensure all of the tangents are orthogonal to the normals
+        for (int i = 0; i < mesh->vertices.size(); i++)
+        {
+	        // Grab the two vectors
+	        glm::vec3 normal = mesh->vertices[i].normal;
+	        glm::vec3 tangent = mesh->vertices[i].tangent;
+	        // Use Gram-Schmidt orthonormalize to ensure
+	        // the normal and tangent are exactly 90 degrees apart
+            mesh->vertices[i].tangent = glm::normalize(tangent - normal * glm::dot(normal, tangent));
+        }
     }
+
     // For each material associated with the .obj
     for(rapidobj::Material& mat : obj.materials)
     {
@@ -188,7 +251,7 @@ Mesh* ResourceManager::LoadModel(const std::wstring& filePath)
 
 		Material* material = new Material();
 
-		material->texture = LoadTexture(TEXTURES_PATH + NarrowToWide(mat.diffuse_texname));
+		material->albedoTexture = LoadTexture(TEXTURES_PATH + NarrowToWide(mat.diffuse_texname));
 
         material->index = Instance->materials.size();
         Instance->materials.push_back(material);

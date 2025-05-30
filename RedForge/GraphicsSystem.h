@@ -12,6 +12,7 @@
 #include "Texture.h"
 #include "TextureCube.h"
 #include "MeshRendererComponent.h"
+#include "LightComponent.h"
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
@@ -22,6 +23,7 @@ const uint32_t HEIGHT = 600;
 const int MAX_FRAMES_IN_FLIGHT = 2;
 
 const uint32_t MAX_INSTANCES = 256;
+const uint32_t MAX_LIGHTS = 256;
 
 const uint32_t MAX_TEXTURES = 256;
 const uint32_t MAX_MATERIALS = 256;
@@ -65,7 +67,10 @@ struct UniformBufferObject
 
 struct MaterialData
 {
-    uint32_t textureIndex;
+    uint32_t albedoIndex;
+    uint32_t normalsIndex;
+    uint32_t roughnessIndex;
+    uint32_t metalnessIndex;
 };
 
 struct InstanceData
@@ -76,6 +81,26 @@ struct InstanceData
     //uint32_t transformIndex;
     uint32_t meshIndex;
     uint32_t materialIndex;
+};
+
+struct alignas(16) LightData
+{
+    glm::vec3 direction;
+    ELightType lightType;
+    glm::vec3 color;
+    float intensity;
+    glm::vec3 location;
+    float range;
+    float spotInnerAngle;
+    float spotOuterAngle;
+
+    float _PADDING[2];
+};
+struct LightBufferData
+{
+    uint32_t lightCount;
+    uint32_t _padding[3];
+    LightData lights[MAX_LIGHTS];
 };
 
 struct DrawBatch
@@ -148,6 +173,10 @@ private:
     VkBuffer cameraUBOs[MAX_FRAMES_IN_FLIGHT];
     VkDeviceMemory cameraUBOsMemory[MAX_FRAMES_IN_FLIGHT];
     void* cameraUBOsMapped[MAX_FRAMES_IN_FLIGHT];
+
+    VkBuffer lightsBuffer[MAX_FRAMES_IN_FLIGHT];
+    VkDeviceMemory lightsBufferMemory[MAX_FRAMES_IN_FLIGHT];
+    void* lightsBufferMapped[MAX_FRAMES_IN_FLIGHT];
 
     VkDescriptorPool descriptorPool;
     VkDescriptorPool imguiDescriptorPool;
@@ -271,7 +300,6 @@ private:
     void CreateGlobalBuffers();
     void CreateGlobalArrayDescriptorSets();
     void UpdateMaterialsBuffer();
-    void UpdateInstancesBuffer();
     void UpdateGlobalArrays(uint32_t currentImage);
 
     void CreateTextureImageView(Texture* texture);
@@ -282,7 +310,6 @@ private:
     void CreateUniformBuffers();
     void CreateDescriptorPool();
     void CreateImGuiDescriptorPool();
-    void CreateDescriptorSets(Material* material);
     uint32_t FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
     void CreateCommandBuffers();
 

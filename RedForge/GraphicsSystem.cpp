@@ -64,6 +64,9 @@ void GraphicsSystem::Shutdown()
 
     for(size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
     {
+        vkDestroyBuffer(device, lightsBuffer[i], nullptr);
+        vkFreeMemory(device, lightsBufferMemory[i], nullptr);
+
         vkDestroyBuffer(device, cameraUBOs[i], nullptr);
         vkFreeMemory(device, cameraUBOsMemory[i], nullptr);
 
@@ -479,13 +482,19 @@ void GraphicsSystem::InitVulkan()
 
     ResourceManager::LoadAllTextures();
 
-    ResourceManager::LoadTextureCube(L"textures/textureCubes/Cold Sunset/.png");
-    ResourceManager::LoadTextureCube(L"textures/textureCubes/Planet/.png");
+    //ResourceManager::LoadTextureCube(L"textures/textureCubes/Cold Sunset/.png");
+    //ResourceManager::LoadTextureCube(L"textures/textureCubes/Planet/.png");
     ResourceManager::LoadTextureCube(L"textures/textureCubes/Clouds Blue/.png");
     SetSkyboxTextureCube(ResourceManager::GetTextureCube(L"Clouds Blue/.png"));
 
     //ResourceManager::LoadAllMaterials();
     ResourceManager::LoadAllMeshes();
+
+    Material* material = ResourceManager::GetMaterial(L"default");
+    material->albedoTexture = ResourceManager::GetTexture(L"scratched_albedo.png");
+    material->normalsTexture = ResourceManager::GetTexture(L"scratched_normals.png");
+    material->roughnessTexture = ResourceManager::GetTexture(L"scratched_roughness.png");
+    material->metalnessTexture = ResourceManager::GetTexture(L"scratched_metal.png");
 
     CreateGlobalArrayDescriptorSets();
 
@@ -1080,20 +1089,28 @@ void GraphicsSystem::CreateDescriptorSetLayout()
     cameraUBOBinding.binding = 4;
     cameraUBOBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     cameraUBOBinding.descriptorCount = 1;
-    cameraUBOBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+    cameraUBOBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
     cameraUBOBinding.pImmutableSamplers = nullptr;
 
+    VkDescriptorSetLayoutBinding lightsArrayBinding{};
+    lightsArrayBinding.binding = 5;
+    lightsArrayBinding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    lightsArrayBinding.descriptorCount = 1;
+    lightsArrayBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+    lightsArrayBinding.pImmutableSamplers = nullptr;
+
     VkDescriptorSetLayoutBinding texturesArrayBinding = {};
-    texturesArrayBinding.binding = 5;
+    texturesArrayBinding.binding = 6;
     texturesArrayBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     texturesArrayBinding.descriptorCount = MAX_TEXTURES;
     texturesArrayBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
     texturesArrayBinding.pImmutableSamplers = nullptr;
 
-    std::array<VkDescriptorSetLayoutBinding, 6> bindings = { materialsArrayBinding, transformsArrayBinding, instancesArrayBinding, skyboxTextureCubeBinding, cameraUBOBinding, texturesArrayBinding };
+    std::array<VkDescriptorSetLayoutBinding, 7> bindings = { materialsArrayBinding, transformsArrayBinding, instancesArrayBinding, skyboxTextureCubeBinding, cameraUBOBinding, lightsArrayBinding, texturesArrayBinding };
     
-    VkDescriptorBindingFlags bindingFlags[6] = 
+    VkDescriptorBindingFlags bindingFlags[7] = 
     {
+        0,
         0,
         0,
         0,
@@ -1760,6 +1777,23 @@ void GraphicsSystem::CreateGlobalBuffers()
             vkMapMemory(device, instancesBufferMemory[i], 0, bufferSize, 0, &instancesBufferMapped[i]);
         }
     }
+
+    /* Lights array */
+    {
+        VkDeviceSize bufferSize = sizeof(LightBufferData);
+
+        for(size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+        {
+            CreateBuffer(
+                bufferSize, 
+                VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, 
+                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, 
+                lightsBuffer[i], 
+                lightsBufferMemory[i]);
+
+            vkMapMemory(device, lightsBufferMemory[i], 0, bufferSize, 0, &lightsBufferMapped[i]);
+        }
+    }
 }
 void GraphicsSystem::CreateGlobalArrayDescriptorSets()
 {
@@ -1811,7 +1845,12 @@ void GraphicsSystem::CreateGlobalArrayDescriptorSets()
         cameraUBOInfo.offset = 0;
         cameraUBOInfo.range = sizeof(UniformBufferObject);
 
-        std::array<VkWriteDescriptorSet, 6> descriptorWrites{};
+        VkDescriptorBufferInfo lightsBufferInfo{};
+        lightsBufferInfo.buffer = lightsBuffer[i];
+        lightsBufferInfo.offset = 0;
+        lightsBufferInfo.range = VK_WHOLE_SIZE;
+
+        std::array<VkWriteDescriptorSet, 7> descriptorWrites{};
 
         // Materials array
         descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -1857,15 +1896,24 @@ void GraphicsSystem::CreateGlobalArrayDescriptorSets()
         descriptorWrites[4].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
         descriptorWrites[4].descriptorCount = 1;
         descriptorWrites[4].pBufferInfo = &cameraUBOInfo;
-        
-        // Textures array
+
+        // Lights array
         descriptorWrites[5].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
         descriptorWrites[5].dstSet = descriptorSets[i];
         descriptorWrites[5].dstBinding = 5;
         descriptorWrites[5].dstArrayElement = 0;
-        descriptorWrites[5].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        descriptorWrites[5].descriptorCount = static_cast<uint32_t>(texturesBufferData.size());
-        descriptorWrites[5].pImageInfo = texturesBufferData.data();
+        descriptorWrites[5].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+        descriptorWrites[5].descriptorCount = 1;
+        descriptorWrites[5].pBufferInfo = &lightsBufferInfo;
+        
+        // Textures array
+        descriptorWrites[6].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptorWrites[6].dstSet = descriptorSets[i];
+        descriptorWrites[6].dstBinding = 6;
+        descriptorWrites[6].dstArrayElement = 0;
+        descriptorWrites[6].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        descriptorWrites[6].descriptorCount = static_cast<uint32_t>(texturesBufferData.size());
+        descriptorWrites[6].pImageInfo = texturesBufferData.data();
         
         vkUpdateDescriptorSets(device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
     }
@@ -1876,18 +1924,19 @@ void GraphicsSystem::UpdateMaterialsBuffer()
     for(Material* material : ResourceManager::GetMaterials())
     {
         MaterialData materialData{};
-        materialData.textureIndex = material->texture->index;
+        materialData.albedoIndex = material->albedoTexture->index;
+        if(material->normalsTexture)
+            materialData.normalsIndex = material->normalsTexture->index;
+        if(material->roughnessTexture)
+            materialData.roughnessIndex = material->roughnessTexture->index;
+        if(material->metalnessTexture)
+            materialData.metalnessIndex = material->metalnessTexture->index;
 
         materialsBufferData.push_back(materialData);
     }
 
     for(int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
         memcpy(materialsBufferMapped[i], materialsBufferData.data(), sizeof(MaterialData) * materialsBufferData.size());
-}
-void GraphicsSystem::UpdateInstancesBuffer()
-{
-    for(int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
-        memcpy(instancesBufferMapped[i], instanceData.data(), sizeof(InstanceData) * instanceData.size());
 }
 void GraphicsSystem::UpdateGlobalArrays(uint32_t currentImage)
 {
@@ -1991,69 +2040,6 @@ void GraphicsSystem::CreateImGuiDescriptorPool()
     poolInfo.pPoolSizes = poolSizes;
 
     vkCreateDescriptorPool(device, &poolInfo, nullptr, &imguiDescriptorPool);
-}
-void GraphicsSystem::CreateDescriptorSets(Material* material)
-{
-    std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, descriptorSetLayout);
-    
-    VkDescriptorSetAllocateInfo allocInfo{};
-    allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-    allocInfo.descriptorPool = descriptorPool;
-    allocInfo.descriptorSetCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
-    allocInfo.pSetLayouts = layouts.data();
-
-    //descriptorSets.resize(MAX_FRAMES_IN_FLIGHT);
-    if(vkAllocateDescriptorSets(device, &allocInfo, material->descriptorSets) != VK_SUCCESS)
-        throw std::runtime_error("Failed to allocate descriptor sets!");
-
-    for(int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
-    {
-        VkDescriptorBufferInfo bufferInfo{};
-        bufferInfo.buffer = uniformBuffers[i];
-        bufferInfo.offset = 0;
-        bufferInfo.range = sizeof(UniformBufferObject);
-        
-        VkDescriptorImageInfo imageInfo{};
-        imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        imageInfo.imageView = material->texture->textureImageView;
-        imageInfo.sampler = material->texture->textureSampler;
-        
-        VkDescriptorBufferInfo storageBufferInfo{};
-        storageBufferInfo.buffer = transformBuffer[i];
-        storageBufferInfo.offset = 0;
-        storageBufferInfo.range = VK_WHOLE_SIZE;
-
-        std::array<VkWriteDescriptorSet, 3> descriptorWrites{};
-
-        VkWriteDescriptorSet descriptorWrite{};
-        descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptorWrites[0].dstSet = material->descriptorSets[i];
-        descriptorWrites[0].dstBinding = 0;
-        descriptorWrites[0].dstArrayElement = 0;
-        descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        descriptorWrites[0].descriptorCount = 1;
-        descriptorWrites[0].pBufferInfo = &bufferInfo;
-        descriptorWrites[0].pImageInfo = nullptr; // Optional
-        descriptorWrites[0].pTexelBufferView = nullptr; // Optional
-
-        descriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptorWrites[1].dstSet = material->descriptorSets[i];
-        descriptorWrites[1].dstBinding = 1;
-        descriptorWrites[1].dstArrayElement = 0;
-        descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        descriptorWrites[1].descriptorCount = 1;
-        descriptorWrites[1].pImageInfo = &imageInfo;
-        
-        descriptorWrites[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptorWrites[2].dstSet = material->descriptorSets[i];
-        descriptorWrites[2].dstBinding = 2;
-        descriptorWrites[2].dstArrayElement = 0;
-        descriptorWrites[2].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-        descriptorWrites[2].descriptorCount = 1;
-        descriptorWrites[2].pBufferInfo = &storageBufferInfo;
-
-        vkUpdateDescriptorSets(device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
-    }
 }
 
 uint32_t GraphicsSystem::FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties)
@@ -2198,28 +2184,54 @@ void GraphicsSystem::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t
         nullptr);
     
     /* Gather renderer instances from Entity Manager */
+    /* Also gather lights */
     // TODO - Move to UpdateGlobalBuffers()?
     // TODO - Make instanceData persist through frames?
 	instanceData.clear();
+    std::vector<LightData> lightsData;
     for(Entity e = 0; e < EntityManager::GetLastEntity(); e++)
     {
-        if(!EntityManager::HasComponent<MeshRendererComponent>(e) || !EntityManager::HasComponent<TransformComponent>(e))
-            continue;
+        if(EntityManager::HasComponent<MeshRendererComponent>(e) && EntityManager::HasComponent<TransformComponent>(e))
+        {
+            MeshRendererComponent& renderer = EntityManager::GetComponent<MeshRendererComponent>(e);
+            TransformComponent& transform = EntityManager::GetComponent<TransformComponent>(e);
 
-		MeshRendererComponent& renderer = EntityManager::GetComponent<MeshRendererComponent>(e);
-        TransformComponent& transform = EntityManager::GetComponent<TransformComponent>(e);
+            InstanceData instance{};
+            instance.rendererIndex = instanceData.size();
+            instance.meshIndex = renderer.mesh->index;
+            instance.materialIndex = renderer.material->index;
 
-        InstanceData instance{};
-		instance.rendererIndex = instanceData.size();
-        instance.meshIndex = renderer.mesh->index;
-        instance.materialIndex = renderer.material->index;
+            instanceData.push_back(instance);
 
-        instanceData.push_back(instance);
+            modelMatrices[instance.rendererIndex] = transform.GetMatrix();
+        }
 
-        modelMatrices[instance.rendererIndex] = transform.GetMatrix();
+        if(EntityManager::HasComponent<LightComponent>(e))
+        {
+            LightComponent& light = EntityManager::GetComponent<LightComponent>(e);
+
+            LightData lightData{};
+            lightData.direction = light.direction;
+            lightData.lightType = light.lightType;
+            lightData.color = light.color;
+            lightData.intensity = light.intensity;
+            lightData.location = light.location;
+            lightData.range = light.range;
+            lightData.spotInnerAngle = light.spotInnerAngle;
+            lightData.spotOuterAngle = light.spotOuterAngle;
+
+            lightsData.push_back(lightData);
+        }
     }
 
     memcpy(transformBufferMapped[currentFrame], modelMatrices, sizeof(glm::mat4) * MAX_INSTANCES);
+    
+    uint32_t lightCount = lightsData.size();
+    // Copy light count to buffer (first uint)
+    memcpy(lightsBufferMapped[currentFrame], &lightCount, sizeof(uint32_t));
+    // Copy all light data to buffer (skip four uints for alignment purposes)
+    if(!lightsData.empty())
+        memcpy(&((uint32_t*) lightsBufferMapped[currentFrame])[4], lightsData.data(), sizeof(LightData) * lightsData.size());
 
     if(!instanceData.empty())
     {
@@ -2228,8 +2240,7 @@ void GraphicsSystem::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t
 	    std::stable_sort(instanceData.begin(), instanceData.end(), 
             [](const InstanceData& a, const InstanceData& b) -> bool { return a.meshIndex < b.meshIndex; });
 
-        //for(int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
-            memcpy(instancesBufferMapped[currentFrame], instanceData.data(), sizeof(InstanceData) * instanceData.size());
+        memcpy(instancesBufferMapped[currentFrame], instanceData.data(), sizeof(InstanceData) * instanceData.size());
 
         /* Populate draw batches */
         

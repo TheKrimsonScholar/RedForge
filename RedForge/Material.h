@@ -7,7 +7,10 @@
 class Material
 {
 public:
-	Texture* texture;
+	Texture* albedoTexture;
+	Texture* normalsTexture;
+	Texture* roughnessTexture;
+	Texture* metalnessTexture;
 
 	VkDescriptorSet descriptorSets[2];
 

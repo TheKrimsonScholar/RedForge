@@ -7,8 +7,9 @@ layout(set = 0, binding = 4) uniform UniformBufferObject
 } cameraUBO;
 
 layout(location = 0) in vec3 inPosition;
-layout(location = 1) in vec3 inColor;
-layout(location = 2) in vec2 inUV;
+layout(location = 1) in vec3 inNormal;
+layout(location = 2) in vec3 inTangent;
+layout(location = 3) in vec2 inUV;
 
 layout(location = 0) out vec3 fragColor;
 layout(location = 1) out vec2 fragUV;
@@ -25,7 +26,7 @@ void main()
 	gl_Position = cameraUBO.proj * (viewNoTranslation * vec4(inPosition, 1));
 	gl_Position.z = gl_Position.w; // Ensure depth is 1.0 (z/w = 1.0)
 
-    fragColor = inColor;
+    fragColor = inNormal;
     fragUV = inUV;
     instanceID = gl_InstanceIndex;
 	sampleDirection = inPosition;
