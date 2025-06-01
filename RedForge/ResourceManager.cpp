@@ -328,7 +328,6 @@ void ResourceManager::CreateTextureImage(Texture* texture, const std::wstring& f
 
     GraphicsSystem::TransitionImageLayout(texture->textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, texture->mipLevels);
     GraphicsSystem::CopyBufferToImage(stagingBuffer, texture->textureImage, static_cast<uint32_t>(textureWidth), static_cast<uint32_t>(textureHeight));
-    //TransitionImageLayout(textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, mipLevels);
 
     vkDestroyBuffer(GraphicsSystem::GetDevice(), stagingBuffer, nullptr);
     vkFreeMemory(GraphicsSystem::GetDevice(), stagingBufferMemory, nullptr);
@@ -386,12 +385,10 @@ void ResourceManager::CreateTextureCubeImage(TextureCube* textureCube, const std
 
     GraphicsSystem::TransitionImageLayout(textureCube->textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, textureCube->mipLevels, 6);
     GraphicsSystem::CopyBufferToImage(stagingBuffer, textureCube->textureImage, static_cast<uint32_t>(textureWidth), static_cast<uint32_t>(textureHeight), 6);
-    //TransitionImageLayout(textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, mipLevels);
+    GraphicsSystem::TransitionImageLayout(textureCube->textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, textureCube->mipLevels, 6);
 
     vkDestroyBuffer(GraphicsSystem::GetDevice(), stagingBuffer, nullptr);
     vkFreeMemory(GraphicsSystem::GetDevice(), stagingBufferMemory, nullptr);
-
-    GenerateMipmaps(textureCube->textureImage, VK_FORMAT_R8G8B8A8_SRGB, textureWidth, textureHeight, textureCube->mipLevels);
 }
 void ResourceManager::GenerateMipmaps(VkImage image, VkFormat imageFormat, int32_t textureWidth, int32_t textureHeight, uint32_t mipLevels)
 {

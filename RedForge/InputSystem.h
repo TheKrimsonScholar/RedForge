@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Exports.h"
+
 #include <glm/glm.hpp>
 
 class InputSystem
@@ -23,10 +25,10 @@ public:
 	void Startup();
 	void Shutdown();
 	
-	void Update();
+	REDFORGE_API void Update();
 
-	static bool WasButtonFirstPressedThisFrame(uint32_t buttonIndex) { return Instance->buttonsPressedThisFrame[buttonIndex]; };
+	REDFORGE_API static bool WasButtonFirstPressedThisFrame(uint32_t buttonIndex) { return Instance->buttonsPressedThisFrame[buttonIndex]; };
 
-	static glm::dvec2 GetMousePosition() { return Instance->mousePosition; };
-	static glm::dvec2 GetMouseDelta() { return Instance->mouseDelta; };
+	REDFORGE_API static glm::dvec2 GetMousePosition() { return Instance->mousePosition; };
+	REDFORGE_API static glm::dvec2 GetMouseDelta() { return Instance->mouseDelta; };
 };

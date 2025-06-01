@@ -8,14 +8,14 @@
 
 #include "Engine.h"
 
-int main()
-{
-    _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
-
-    Engine* engine = new Engine();
-    engine->Run();
-
-    delete engine;
-
-    return 0;
-}
+//int main()
+//{
+//    _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+//
+//    Engine* engine = new Engine();
+//    engine->Run();
+//
+//    delete engine;
+//
+//    return 0;
+//}

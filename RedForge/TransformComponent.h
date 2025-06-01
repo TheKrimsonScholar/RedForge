@@ -1,9 +1,11 @@
 #pragma once
 
+#include "Exports.h"
+
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
 
-struct TransformComponent
+REDFORGE_API struct TransformComponent
 {
 	glm::vec3 location;
 	glm::quat rotation;

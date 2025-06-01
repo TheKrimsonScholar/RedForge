@@ -2,6 +2,8 @@
 
 #include <cstdint>
 
+#include "Exports.h"
+
 class TimeManager
 {
 private:
@@ -27,12 +29,12 @@ public:
 	void Startup();
 	void Shutdown();
 
-	void Update();
+	REDFORGE_API void Update();
 
-	static inline long GetCurrentFrame() { return Instance->totalFrames; };
-	static inline double GetCurrentTime() { return Instance->currentTime; };
-	static inline float GetDeltaTime() { return Instance->deltaTime; };
-	static inline float GetFPS() { return 1.0f / Instance->deltaTime; };
-	static inline float GetAverageFPS() { return Instance->currentFPS; };
-	static inline float GetMinFPS() { return Instance->minFPS; };
+	static inline REDFORGE_API long GetCurrentFrame() { return Instance->totalFrames; };
+	static inline REDFORGE_API double GetCurrentTime() { return Instance->currentTime; };
+	static inline REDFORGE_API float GetDeltaTime() { return Instance->deltaTime; };
+	static inline REDFORGE_API float GetFPS() { return 1.0f / Instance->deltaTime; };
+	static inline REDFORGE_API float GetAverageFPS() { return Instance->currentFPS; };
+	static inline REDFORGE_API float GetMinFPS() { return Instance->minFPS; };
 };

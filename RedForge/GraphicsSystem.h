@@ -14,6 +14,8 @@
 #include "MeshRendererComponent.h"
 #include "LightComponent.h"
 
+#include "Exports.h"
+
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
@@ -110,10 +112,10 @@ struct DrawBatch
     uint32_t instanceCount;
 };
 
-class GraphicsSystem
+REDFORGE_API class GraphicsSystem
 {
 private:
-    static inline GraphicsSystem* Instance;
+    static inline REDFORGE_API GraphicsSystem* Instance;
 
     GLFWwindow* window;
 
@@ -215,7 +217,7 @@ public:
     void Startup();
     void Shutdown();
 
-    void Update();
+    REDFORGE_API void Update();
     
     static void CreateVertexBuffer(std::vector<Vertex> vertices, VkBuffer& vertexBuffer, VkDeviceMemory& vertexBufferMemory);
     static void CreateIndexBuffer(std::vector<uint32_t> indices, VkBuffer& indexBuffer, VkDeviceMemory& indexBufferMemory);
@@ -323,10 +325,10 @@ private:
     void UpdateUniformBuffer(uint32_t currentImage);
 
 public:
-    static GLFWwindow* GetWindow() { return Instance->window; };
+    static REDFORGE_API GLFWwindow* GetWindow() { return Instance->window; };
     static uint32_t GetWindowWidth() { return Instance->swapChainExtent.width; };
     static uint32_t GetWindowHeight() { return Instance->swapChainExtent.height; };
-    static float GetAspectRatio() { return (float) Instance->swapChainExtent.width / (float) Instance->swapChainExtent.height; };
+    static REDFORGE_API float GetAspectRatio() { return (float) Instance->swapChainExtent.width / (float) Instance->swapChainExtent.height; };
     static VkPhysicalDevice GetPhysicalDevice() { return Instance->physicalDevice; };
     static VkDevice GetDevice() { return Instance->device; };
 

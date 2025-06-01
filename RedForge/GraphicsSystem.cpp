@@ -2126,7 +2126,7 @@ void GraphicsSystem::RecreateSwapChain()
     CreateFramebuffers();
 
     // Update main camera's aspect ratio
-	EntityManager::GetComponent<CameraComponent>(CameraManager::GetMainCamera()).aspectRatio = GetAspectRatio();
+    CameraManager::SetTargetAspectRatio(GetAspectRatio());
 }
 
 void GraphicsSystem::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex)
@@ -2521,8 +2521,8 @@ void GraphicsSystem::UpdateUniformBuffer(uint32_t currentImage)
     float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
 
     UniformBufferObject ubo{};
-    ubo.view = CameraManager::GetViewMatrix(CameraManager::GetMainCamera());
-    ubo.proj = EntityManager::GetComponent<CameraComponent>(CameraManager::GetMainCamera()).GetProjectionMatrix();
+    ubo.view = CameraManager::GetMainViewMatrix();
+    ubo.proj = CameraManager::GetMainProjectionMatrix();
     ubo.proj[1][1] *= -1;
 
     memcpy(cameraUBOsMapped[currentImage], &ubo, sizeof(ubo));

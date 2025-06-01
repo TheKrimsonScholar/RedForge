@@ -6,6 +6,8 @@
 #include <queue>
 #include <cassert>
 
+#include "Exports.h"
+
 using Entity = uint32_t;
 
 static const uint32_t MAX_ENTITIES = 256;
@@ -102,10 +104,10 @@ T& ComponentArray<T>::Get(uint32_t entity)
 	return components[entityToComponentIndex[entity]];
 }
 
-class EntityManager
+REDFORGE_API class EntityManager
 {
 private:
-	static inline EntityManager* Instance;
+	static inline REDFORGE_API EntityManager* Instance;
 
 	Entity lastEntity = 0;
 	// Queue of free entity indices less than lastEntity, sorted by index
@@ -121,7 +123,7 @@ public:
 	void Startup();
 	void Shutdown();
 
-	static Entity CreateEntity();
+	static REDFORGE_API Entity CreateEntity();
 	static inline void DestroyEntity(Entity entity);
 
 	static inline Entity GetLastEntity() { return Instance->lastEntity; };
@@ -129,7 +131,7 @@ public:
 	template<typename T>
 	inline void RegisterComponent();
 	template<typename T>
-	static inline void AddComponent(uint32_t entity, T component);
+	static inline REDFORGE_API void AddComponent(uint32_t entity, T component);
 	template<typename T>
 	static inline void RemoveComponent(uint32_t entity);
 	template<typename T>

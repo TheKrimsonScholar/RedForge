@@ -5,7 +5,9 @@
 #include "Mesh.h"
 #include "Material.h"
 
-struct MeshRendererComponent
+#include "Exports.h"
+
+REDFORGE_API struct MeshRendererComponent
 {
 	Mesh* mesh;
 	Material* material;
@@ -13,5 +15,5 @@ struct MeshRendererComponent
 	uint32_t rendererIndex;
 
 public:
-	void UseMeshDefaults(const std::wstring& meshIdentifier);
+	REDFORGE_API void UseMeshDefaults(const std::wstring& meshIdentifier);
 };

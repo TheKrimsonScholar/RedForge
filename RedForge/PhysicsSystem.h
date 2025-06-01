@@ -98,7 +98,7 @@ public:
 	void Startup();
 	void Shutdown();
 
-	void Update();
+	REDFORGE_API void Update();
 
 private:
 	void UpdatePhysics(TransformComponent& transform, PhysicsComponent& rigidbody, float deltaTime);

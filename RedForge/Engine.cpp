@@ -9,16 +9,8 @@ void Engine::Run()
 {
     if(isRunning)
 		return;
-	isRunning = true;
 
-    timeManager.Startup();
-	resourceManager.Startup();
-	inputSystem.Startup();
-    entityManager.Startup();
-    graphics.Startup();
-	cameraManager.Startup();
-	debugManager.Startup();
-    physicsSystem.Startup();
+    Startup();
 
     {
         TransformComponent transform{};
@@ -216,17 +208,37 @@ void Engine::Run()
             }
     }
 
+    Shutdown();
+}
+
+void Engine::Startup()
+{
+    if(isRunning)
+		return;
+	isRunning = true;
+
+    timeManager.Startup();
+    resourceManager.Startup();
+    inputSystem.Startup();
+    entityManager.Startup();
+    graphics.Startup();
+    cameraManager.Startup();
+    debugManager.Startup();
+    physicsSystem.Startup();
+}
+void Engine::Shutdown()
+{
     // Wait for device to finish operations before exiting
     vkDeviceWaitIdle(GraphicsSystem::GetDevice());
 
     physicsSystem.Shutdown();
-	debugManager.Shutdown();
+    debugManager.Shutdown();
     cameraManager.Shutdown();
     entityManager.Shutdown();
-	inputSystem.Shutdown();
-	resourceManager.Shutdown();
+    inputSystem.Shutdown();
+    resourceManager.Shutdown();
     graphics.Shutdown();
     timeManager.Shutdown();
 
-	isRunning = false;
+    isRunning = false;
 }

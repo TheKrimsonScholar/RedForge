@@ -9,7 +9,9 @@
 #include "DebugManager.h"
 #include "PhysicsSystem.h"
 
-class Engine
+#include "Exports.h"
+
+REDFORGE_API class Engine
 {
 private:
 	TimeManager timeManager;
@@ -27,5 +29,13 @@ public:
 	Engine() {};
 	~Engine() {};
 
-	void Run();
+	REDFORGE_API void Run();
+
+	REDFORGE_API void Startup();
+	REDFORGE_API void Shutdown();
+
+	REDFORGE_API TimeManager& GetTimeManager() { return timeManager; };
+	REDFORGE_API InputSystem& GetInputSystem() { return inputSystem; };
+	REDFORGE_API GraphicsSystem& GetGraphicsSystem() { return graphics; };
+	REDFORGE_API PhysicsSystem& GetPhysicsSystem() { return physicsSystem; };
 };
