@@ -4,6 +4,8 @@
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
 
+#include <gtkmm.h>
+
 class ViewportCamera
 {
 private:
@@ -20,11 +22,14 @@ private:
 
 	glm::vec2 pitchYaw;
 
+	glm::dvec2 mouseDragStartPosition;
+	glm::dvec2 previousMousePosition;
+
 public:
 	ViewportCamera();
 	~ViewportCamera();
 
-	void Update(GLFWwindow* window);
+	void Update();
 
 	glm::vec3 GetRight();
 	glm::vec3 GetUp();

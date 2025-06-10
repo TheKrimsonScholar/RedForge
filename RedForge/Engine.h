@@ -31,11 +31,15 @@ public:
 
 	REDFORGE_API void Run();
 
-	REDFORGE_API void Startup();
+	REDFORGE_API void Startup(bool shouldOverrideFramebuffer = false, unsigned int overrideExtentWidth = 0, unsigned int overrideExtentHeight = 0);
 	REDFORGE_API void Shutdown();
 
-	REDFORGE_API TimeManager& GetTimeManager() { return timeManager; };
+	REDFORGE_API void Update();
+
+	/*REDFORGE_API TimeManager& GetTimeManager() { return timeManager; };
 	REDFORGE_API InputSystem& GetInputSystem() { return inputSystem; };
 	REDFORGE_API GraphicsSystem& GetGraphicsSystem() { return graphics; };
-	REDFORGE_API PhysicsSystem& GetPhysicsSystem() { return physicsSystem; };
+	REDFORGE_API PhysicsSystem& GetPhysicsSystem() { return physicsSystem; };*/
+
+	REDFORGE_API bool IsRunning() { return isRunning; };
 };

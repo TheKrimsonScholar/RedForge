@@ -1,4 +1,5 @@
 #pragma once
+#define VK_USE_PLATFORM_WIN32_KHR
 
 #include <vector>
 #include <cstring>
@@ -13,16 +14,22 @@
 #include "TextureCube.h"
 #include "MeshRendererComponent.h"
 #include "LightComponent.h"
+#include "GLFWInputLayer.h"
 
 #include "Exports.h"
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
+#define WIN32_LEAN_AND_MEAN
+#define NOMINMAX
+#include <windows.h>
+#include <vulkan/vulkan_win32.h>
+
 const uint32_t WIDTH = 800;
 const uint32_t HEIGHT = 600;
 
-const int MAX_FRAMES_IN_FLIGHT = 2;
+const int MAX_FRAMES_IN_FLIGHT = 1;
 
 const uint32_t MAX_INSTANCES = 256;
 const uint32_t MAX_LIGHTS = 256;
@@ -30,10 +37,22 @@ const uint32_t MAX_LIGHTS = 256;
 const uint32_t MAX_TEXTURES = 256;
 const uint32_t MAX_MATERIALS = 256;
 
+const VkFormat EXTERNAL_RENDER_IMAGE_FORMAT = VK_FORMAT_R8G8B8A8_UNORM; // Match with OpenGL
+
 const std::vector<const char*> deviceExtensions =
 {
     VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+    VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME,
+    VK_KHR_EXTERNAL_MEMORY_WIN32_EXTENSION_NAME,
+    VK_KHR_EXTERNAL_SEMAPHORE_EXTENSION_NAME,
+    VK_KHR_EXTERNAL_SEMAPHORE_WIN32_EXTENSION_NAME,
     "VK_EXT_descriptor_indexing"
+};
+const std::vector<const char*> instanceExtensions =
+{
+    VK_KHR_SURFACE_EXTENSION_NAME
+    //"VK_KHR_external_memory_win32",
+    //"GL_EXT_memory_object_win32"
 };
 const std::vector<const char*> validationLayers =
 {
@@ -51,7 +70,7 @@ struct QueueFamilyIndices
     std::optional<uint32_t> graphicsFamily;
     std::optional<uint32_t> presentFamily;
 
-    bool isComplete() { return graphicsFamily.has_value() && presentFamily.has_value(); }
+    bool IsComplete() { return graphicsFamily.has_value() && presentFamily.has_value(); }
 };
 
 struct SwapChainSupportDetails
@@ -112,12 +131,13 @@ struct DrawBatch
     uint32_t instanceCount;
 };
 
-REDFORGE_API class GraphicsSystem
+class GraphicsSystem
 {
 private:
     static inline REDFORGE_API GraphicsSystem* Instance;
 
     GLFWwindow* window;
+    GLFWInputLayer inputLayer;
 
     VkInstance instance;
     VkDebugUtilsMessengerEXT debugMessenger;
@@ -132,6 +152,24 @@ private:
     VkFormat swapChainImageFormat;
     VkExtent2D swapChainExtent;
     std::vector<VkImageView> swapChainImageViews;
+
+    // Does the graphics system render to a custom render target instead of directly rendering to the swapchain?
+    bool shouldRenderOffscreen = false;
+    VkExtent2D externalRenderImageExtent;
+    VkImage externalRenderImage;
+    VkDeviceMemory externalRenderMemory;
+    HANDLE externalRenderMemoryHandle = INVALID_HANDLE_VALUE;
+    size_t externalRenderMemorySize = 0;
+    VkImageView externalRenderImageView;
+    VkFramebuffer externalRenderFramebuffer;
+    VkSemaphore externalRenderCompleteSemaphore;
+    VkSemaphore externalRenderReleaseSemaphore;
+    HANDLE externalRenderCompleteSemaphoreHandle = INVALID_HANDLE_VALUE;
+    HANDLE externalRenderReleaseSemaphoreHandle = INVALID_HANDLE_VALUE;
+
+    // Function pointers for extension functions
+    PFN_vkGetMemoryWin32HandleKHR vkGetMemoryWin32HandleKHR = nullptr;
+    PFN_vkGetSemaphoreWin32HandleKHR vkGetSemaphoreWin32HandleKHR = nullptr;
 
     VkRenderPass renderPass;
     VkDescriptorSetLayout descriptorSetLayout;
@@ -214,7 +252,7 @@ public:
     GraphicsSystem() {};
     ~GraphicsSystem() {};
 
-    void Startup();
+    void Startup(bool shouldOverrideFramebuffer = false, unsigned int overrideExtentWidth = 0, unsigned int overrideExtentHeight = 0);
     void Shutdown();
 
     REDFORGE_API void Update();
@@ -241,6 +279,7 @@ public:
     static void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
     static void CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height, 
         uint32_t layerCount = 1);
+    static void CopyImageToBuffer(VkImage image, VkFormat format, VkExtent2D extent, VkBuffer buffer, VkCommandPool commandPool, VkQueue queue);
     
     static void TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels, 
         uint32_t layerCount = 1);
@@ -259,6 +298,7 @@ private:
     void CreateInstance();
     bool CheckValidationLayerSupport();
     std::vector<const char*> GetRequiredExtensions();
+    void LoadExtensionFunctions();
 
     void SetupDebugMessenger();
     void PopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
@@ -318,19 +358,42 @@ private:
     void CreateSyncObjects();
 
     void CleanupSwapChain();
-    void RecreateSwapChain();
 
+public:
+    REDFORGE_API static void RecreateSwapChain();
+    
+private:
     void RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
 
     void UpdateUniformBuffer(uint32_t currentImage);
 
 public:
-    static REDFORGE_API GLFWwindow* GetWindow() { return Instance->window; };
-    static uint32_t GetWindowWidth() { return Instance->swapChainExtent.width; };
-    static uint32_t GetWindowHeight() { return Instance->swapChainExtent.height; };
-    static REDFORGE_API float GetAspectRatio() { return (float) Instance->swapChainExtent.width / (float) Instance->swapChainExtent.height; };
+    REDFORGE_API static VkInstance GetVulkanInstance() { return Instance->instance; };
+    REDFORGE_API static GLFWwindow* GetWindow() { return Instance->window; };
+    static VkExtent2D GetRenderExtent() { return Instance->shouldRenderOffscreen ? Instance->externalRenderImageExtent : Instance->swapChainExtent; };
+    static uint32_t GetWindowWidth() { return GetRenderExtent().width; };
+    static uint32_t GetWindowHeight() { return GetRenderExtent().height; };
+    static VkFormat GetRenderFormat() { return Instance->shouldRenderOffscreen ? EXTERNAL_RENDER_IMAGE_FORMAT : Instance->swapChainImageFormat; };
+    REDFORGE_API static float GetAspectRatio() { return (float) GetWindowWidth() / (float) GetWindowHeight(); };
     static VkPhysicalDevice GetPhysicalDevice() { return Instance->physicalDevice; };
     static VkDevice GetDevice() { return Instance->device; };
 
+    static void SetSurface(VkSurfaceKHR surface) { Instance->surface = surface; };
+
 	static void SetSkyboxTextureCube(TextureCube* textureCube) { Instance->skyboxTextureCube = textureCube; };
+
+    void CreateExternalRenderSyncObjects();
+    void CreateExternalRenderResources();
+    void CreateExternalRenderImage();
+    void CreateExternalRenderImageView();
+    void CreateExternalRenderFramebuffer();
+
+    static void* GetExternalRenderMemoryHandle() { return Instance->externalRenderMemoryHandle; };
+    static size_t GetExternalRenderMemorySize() { return Instance->externalRenderMemorySize; };
+    static void* GetExternalRenderCompleteSemaphoreHandle() { return Instance->externalRenderCompleteSemaphoreHandle; };
+    static void* GetExternalRenderReleaseSemaphoreHandle() { return Instance->externalRenderReleaseSemaphoreHandle; };
+
+    void CleanupExternalRenderResources();
+
+    REDFORGE_API static void SetExternalRenderImageExtent(uint32_t width, uint32_t height) { if(Instance) Instance->externalRenderImageExtent = { width, height }; };
 };

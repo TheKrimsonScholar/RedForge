@@ -1,6 +1,7 @@
 #include "TimeManager.h"
 
 #include <cstdio>
+#include <chrono>
 
 #include <GLFW/glfw3.h>
 
@@ -8,9 +9,9 @@ void TimeManager::Startup()
 {
 	Instance = this;
 
-	startTime = glfwGetTime();
-	previousTime = startTime;
-	currentTime = startTime;
+	startTimeMillis = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+	previousTimeMillis = 0;
+	currentTimeMillis = 0;
 }
 void TimeManager::Shutdown()
 {
@@ -21,9 +22,9 @@ void TimeManager::Update()
 {
 	static float maxDelta = 0.0f;
 
-	currentTime = glfwGetTime();
-	deltaTime = currentTime - previousTime;
-	previousTime = currentTime;
+	currentTimeMillis = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count() - startTimeMillis;
+	deltaTime = (currentTimeMillis - previousTimeMillis) / 1000.0f;
+	previousTimeMillis = currentTimeMillis;
 
 	totalFrames++;
 	numFrames++;

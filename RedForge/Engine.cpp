@@ -4,6 +4,12 @@
 
 #include "TransformComponent.h"
 #include "InputComponent.h"
+#include "GLFWInputLayer.h"
+
+#define DEBUG_NEW new(_NORMAL_BLOCK, __FILE__, __LINE__)
+#define new DEBUG_NEW
+
+#undef GetCurrentTime()
 
 void Engine::Run()
 {
@@ -53,7 +59,7 @@ void Engine::Run()
 
         InputComponent input{};
         float lookSpeed = 10.0f;
-        input.mouseDownCallbacks.emplace(GLFW_MOUSE_BUTTON_1, [lookSpeed](Entity e)
+        input.mouseDownCallbacks.emplace((uint32_t) MouseButtonCode::Left, [lookSpeed](Entity e)
             {
 				static const float MAX_PITCH_ANGLE = 85.0f;
 
@@ -86,27 +92,27 @@ void Engine::Run()
                 transform.rotation = glm::normalize(transform.rotation);
             });
 		float movementSpeed = 5.0f;
-        input.keyDownCallbacks.emplace(GLFW_KEY_D, [movementSpeed](Entity e)
+        input.keyDownCallbacks.emplace((uint32_t) KeyCode::D, [movementSpeed](Entity e)
             {
                 EntityManager::GetComponent<TransformComponent>(e).location += EntityManager::GetComponent<TransformComponent>(e).GetRight() * movementSpeed * TimeManager::GetDeltaTime();
             });
-        input.keyDownCallbacks.emplace(GLFW_KEY_A, [movementSpeed](Entity e)
+        input.keyDownCallbacks.emplace((uint32_t) KeyCode::A, [movementSpeed](Entity e)
             {
                 EntityManager::GetComponent<TransformComponent>(e).location -= EntityManager::GetComponent<TransformComponent>(e).GetRight() * movementSpeed * TimeManager::GetDeltaTime();
             });
-        input.keyDownCallbacks.emplace(GLFW_KEY_SPACE, [movementSpeed](Entity e)
+        input.keyDownCallbacks.emplace((uint32_t) KeyCode::SPACE, [movementSpeed](Entity e)
             {
                 EntityManager::GetComponent<TransformComponent>(e).location += glm::vec3(0, 1, 0) * movementSpeed * TimeManager::GetDeltaTime();
             });
-        input.keyDownCallbacks.emplace(GLFW_KEY_LEFT_SHIFT, [movementSpeed](Entity e)
+        input.keyDownCallbacks.emplace((uint32_t) KeyCode::LSHIFT, [movementSpeed](Entity e)
             {
                 EntityManager::GetComponent<TransformComponent>(e).location -= glm::vec3(0, 1, 0) * movementSpeed * TimeManager::GetDeltaTime();
             });
-        input.keyDownCallbacks.emplace(GLFW_KEY_W, [movementSpeed](Entity e)
+        input.keyDownCallbacks.emplace((uint32_t) KeyCode::W, [movementSpeed](Entity e)
             {
                 EntityManager::GetComponent<TransformComponent>(e).location += EntityManager::GetComponent<TransformComponent>(e).GetForward() * movementSpeed * TimeManager::GetDeltaTime();
             });
-        input.keyDownCallbacks.emplace(GLFW_KEY_S, [movementSpeed](Entity e)
+        input.keyDownCallbacks.emplace((uint32_t) KeyCode::S, [movementSpeed](Entity e)
             {
                 EntityManager::GetComponent<TransformComponent>(e).location -= EntityManager::GetComponent<TransformComponent>(e).GetForward() * movementSpeed * TimeManager::GetDeltaTime();
             });
@@ -211,7 +217,7 @@ void Engine::Run()
     Shutdown();
 }
 
-void Engine::Startup()
+void Engine::Startup(bool shouldOverrideFramebuffer, unsigned int overrideExtentWidth, unsigned int overrideExtentHeight)
 {
     if(isRunning)
 		return;
@@ -221,7 +227,7 @@ void Engine::Startup()
     resourceManager.Startup();
     inputSystem.Startup();
     entityManager.Startup();
-    graphics.Startup();
+    graphics.Startup(shouldOverrideFramebuffer, overrideExtentWidth, overrideExtentHeight);
     cameraManager.Startup();
     debugManager.Startup();
     physicsSystem.Startup();
@@ -241,4 +247,30 @@ void Engine::Shutdown()
     timeManager.Shutdown();
 
     isRunning = false;
+}
+
+REDFORGE_API void Engine::Update()
+{
+    glfwPollEvents();
+
+    timeManager.Update();
+    inputSystem.Update();
+    graphics.Update();
+    physicsSystem.Update();
+
+    //EntityManager::GetComponent<TransformComponent>(0).rotation = glm::angleAxis(1.0f * TimeManager::GetDeltaTime(), glm::vec3(1, 0, 0)) * glm::angleAxis(1.0f * TimeManager::GetDeltaTime(), glm::vec3(0, 1, 0)) * glm::angleAxis(1.0f * TimeManager::GetDeltaTime(), glm::vec3(0, 0, 1)) * EntityManager::GetComponent<TransformComponent>(0).rotation;
+
+    DebugManager::DrawDebugBox(
+        glm::vec3(2, 1, 1), glm::angleAxis(glm::radians(60.0f * (float) TimeManager::GetCurrentTime()), glm::normalize(glm::vec3(1, 1, 1))), glm::vec3(0.5f, 0.5f, 0.5f), glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
+    DebugManager::DrawDebugSphere(
+        glm::vec3(2, 3, 1), glm::angleAxis(glm::radians(60.0f * (float) TimeManager::GetCurrentTime()), glm::normalize(glm::vec3(1, 1, 1))), glm::vec3(0.5f, 0.5f, 0.5f), glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
+
+    for(Entity e = 0; e < EntityManager::GetLastEntity(); e++)
+        if(EntityManager::HasComponent<TransformComponent>(e))
+        {
+			//EntityManager::GetComponent<TransformComponent>(e).location += glm::vec3(0.0f, 0.0f, 1.0f) * TimeManager::GetDeltaTime();
+            //EntityManager::GetComponent<TransformComponent>(e).rotation *= glm::angleAxis(glm::radians(60.0f * TimeManager::GetDeltaTime()), glm::normalize(glm::vec3(0, 0, 1)));
+            //EntityManager::GetComponent<TransformComponent>(e).rotation = glm::angleAxis(glm::radians(60.0f * TimeManager::GetDeltaTime()), glm::normalize(glm::vec3(0, 0, 1))) * EntityManager::GetComponent<TransformComponent>(e).rotation;
+			//EntityManager::GetComponent<TransformComponent>(e).scale += glm::vec3(-0.01f, -0.01f, -0.01f) * TimeManager::GetDeltaTime();
+        }
 }

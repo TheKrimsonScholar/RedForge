@@ -11,9 +11,9 @@ private:
 
 	long totalFrames = -1;
 
-	double startTime = 0;
-	double previousTime = 0;
-	double currentTime = 0;
+	long long startTimeMillis = 0;
+	long long previousTimeMillis = 0;
+	long long currentTimeMillis = 0;
 	float deltaTime = 0;
 
 	float averageInterval = 0.5f;
@@ -32,7 +32,7 @@ public:
 	REDFORGE_API void Update();
 
 	static inline REDFORGE_API long GetCurrentFrame() { return Instance->totalFrames; };
-	static inline REDFORGE_API double GetCurrentTime() { return Instance->currentTime; };
+	static inline REDFORGE_API double GetCurrentTime() { return Instance->currentTimeMillis / 1000.0; };
 	static inline REDFORGE_API float GetDeltaTime() { return Instance->deltaTime; };
 	static inline REDFORGE_API float GetFPS() { return 1.0f / Instance->deltaTime; };
 	static inline REDFORGE_API float GetAverageFPS() { return Instance->currentFPS; };

@@ -114,6 +114,12 @@
     <ClCompile Include="Exports.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="InputLayer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="GLFWInputLayer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GraphicsSystem.h">
@@ -206,6 +212,15 @@
     <ClInclude Include="Exports.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="InputLayer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="resource.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="GLFWInputLayer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="shaders\shader.frag">
@@ -216,5 +231,10 @@
     </None>
     <None Include="shaders\skybox.frag" />
     <None Include="shaders\skybox.vert" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="RedForge.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
   </ItemGroup>
 </Project>

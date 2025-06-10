@@ -18,6 +18,7 @@
 #include "ResourceManager.h"
 #include "CameraManager.h"
 #include "DebugManager.h"
+#include "InputSystem.h"
 
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
@@ -30,6 +31,10 @@
 #include "imgui/imgui.h"
 #include "imgui/imgui_impl_vulkan.h"
 #include "imgui/imgui_impl_glfw.h"
+
+#define WIN32_LEAN_AND_MEAN
+#define NOMINMAX
+#include <windows.h>
 
 VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger)
 {
@@ -46,21 +51,34 @@ void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT
         func(instance, debugMessenger, pAllocator);
 }
 
-void GraphicsSystem::Startup()
+void GraphicsSystem::Startup(bool shouldOverrideFramebuffer, unsigned int overrideExtentWidth, unsigned int overrideExtentHeight)
 {
     Instance = this;
 
-    InitWindow();
+    this->shouldRenderOffscreen = shouldOverrideFramebuffer;
+    this->externalRenderImageExtent = { overrideExtentWidth, overrideExtentHeight };
+
+    if(!shouldOverrideFramebuffer)
+        InitWindow();
+
     InitVulkan();
-    InitImGui();
+
+    if(!shouldOverrideFramebuffer)
+        InitImGui();
 }
 void GraphicsSystem::Shutdown()
 {
-    ImGui_ImplVulkan_Shutdown();
-    ImGui_ImplGlfw_Shutdown();
-    ImGui::DestroyContext();
+    if(!shouldRenderOffscreen)
+    {
+        ImGui_ImplVulkan_Shutdown();
+        ImGui_ImplGlfw_Shutdown();
+        ImGui::DestroyContext();
+    }
 
     CleanupSwapChain();
+
+    vkDestroySemaphore(device, externalRenderCompleteSemaphore, nullptr);
+    vkDestroySemaphore(device, externalRenderReleaseSemaphore, nullptr);
 
     for(size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
     {
@@ -121,15 +139,18 @@ void GraphicsSystem::Update()
     vkWaitForFences(device, 1, &inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
 
     // Acquire an image from the swap chain
-    uint32_t imageIndex;
-    VkResult result = vkAcquireNextImageKHR(device, swapChain, UINT64_MAX, imageAvailableSemaphores[currentFrame], VK_NULL_HANDLE, &imageIndex);
-    if(result == VK_ERROR_OUT_OF_DATE_KHR)
+    uint32_t imageIndex = 0;
+    if(!shouldRenderOffscreen)
     {
-        RecreateSwapChain();
-        return;
+        VkResult result = vkAcquireNextImageKHR(device, swapChain, UINT64_MAX, imageAvailableSemaphores[currentFrame], VK_NULL_HANDLE, &imageIndex);
+        if(result == VK_ERROR_OUT_OF_DATE_KHR)
+        {
+            RecreateSwapChain();
+            return;
+        }
+        else if(result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
+            throw std::runtime_error("Failed to acquire swap chain image!");
     }
-    else if(result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
-        throw std::runtime_error("Failed to acquire swap chain image!");
 
     // Only reset the fence if we are submitting work
     vkResetFences(device, 1, &inFlightFences[currentFrame]);
@@ -147,7 +168,7 @@ void GraphicsSystem::Update()
     VkSubmitInfo submitInfo{};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
-    VkSemaphore waitSemaphores[] = { imageAvailableSemaphores[currentFrame] };
+    VkSemaphore waitSemaphores[] = { shouldRenderOffscreen ? externalRenderReleaseSemaphore : imageAvailableSemaphores[currentFrame] };
     VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
     submitInfo.waitSemaphoreCount = 1;
     submitInfo.pWaitSemaphores = waitSemaphores;
@@ -156,7 +177,7 @@ void GraphicsSystem::Update()
     submitInfo.commandBufferCount = 1;
     submitInfo.pCommandBuffers = &commandBuffers[currentFrame];
 
-    VkSemaphore signalSemaphores[] = { renderFinishedSemaphores[currentFrame] };
+    VkSemaphore signalSemaphores[] = { shouldRenderOffscreen ? externalRenderCompleteSemaphore : renderFinishedSemaphores[currentFrame] };
     submitInfo.signalSemaphoreCount = 1;
     submitInfo.pSignalSemaphores = signalSemaphores;
 
@@ -177,14 +198,17 @@ void GraphicsSystem::Update()
     presentInfo.pImageIndices = &imageIndex;
     presentInfo.pResults = nullptr; // Optional
 
-    result = vkQueuePresentKHR(presentQueue, &presentInfo);
-    if(result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || framebufferResized)
+    if(!shouldRenderOffscreen)
     {
-        framebufferResized = false;
-        RecreateSwapChain();
+        VkResult result = vkQueuePresentKHR(presentQueue, &presentInfo);
+        if(result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || framebufferResized)
+        {
+            framebufferResized = false;
+            RecreateSwapChain();
+        }
+        else if(result != VK_SUCCESS)
+            throw std::runtime_error("Failed to present swap chain image!");
     }
-    else if(result != VK_SUCCESS)
-        throw std::runtime_error("Failed to present swap chain image!");
 
     currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
 }
@@ -354,6 +378,61 @@ void GraphicsSystem::CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t 
 
     EndSingleTimeCommands(commandBuffer);
 }
+void GraphicsSystem::CopyImageToBuffer(VkImage image, VkFormat format, VkExtent2D extent, VkBuffer buffer, VkCommandPool commandPool, VkQueue queue)
+{
+    // 1. Transition image layout to VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
+    VkCommandBuffer commandBuffer = BeginSingleTimeCommands();
+    // (Allocate and begin recording command buffer)
+    // ...
+    VkImageMemoryBarrier barrier{};
+    barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+    barrier.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL; // Or whatever current layout is
+    barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+    barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.image = image;
+    barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    barrier.subresourceRange.baseMipLevel = 0;
+    barrier.subresourceRange.levelCount = 1;
+    barrier.subresourceRange.baseArrayLayer = 0;
+    barrier.subresourceRange.layerCount = 1;
+    barrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT; // Or whatever is needed for current usage
+    barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+
+    vkCmdPipelineBarrier(commandBuffer,
+        VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, // Or whatever is needed for current usage
+        VK_PIPELINE_STAGE_TRANSFER_BIT,
+        0, 0, nullptr, 0, nullptr, 1, &barrier);
+
+    // 2. Copy image to buffer
+    VkBufferImageCopy region{};
+    region.bufferOffset = 0;
+    region.bufferRowLength = 0; // Tightly packed
+    region.bufferImageHeight = 0; // Tightly packed
+    region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    region.imageSubresource.mipLevel = 0;
+    region.imageSubresource.baseArrayLayer = 0;
+    region.imageSubresource.layerCount = 1;
+    region.imageOffset = { 0, 0, 0 };
+    region.imageExtent = { extent.width, extent.height, 1 };
+
+    vkCmdCopyImageToBuffer(commandBuffer, image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, buffer, 1, &region);
+
+    // 3. Transition image layout back (e.g., to VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL)
+    barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+    barrier.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL; // Or whatever next usage is
+    barrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+    barrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT; // Or whatever next usage is
+
+    vkCmdPipelineBarrier(commandBuffer,
+        VK_PIPELINE_STAGE_TRANSFER_BIT,
+        VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+        0, 0, nullptr, 0, nullptr, 1, &barrier);
+
+    // (End recording and submit command buffer, then wait for queue idle or fence)
+    // ...
+    vkQueueWaitIdle(queue); // For simplicity, wait idle. Use fences/semaphores for better perf.
+}
 
 void GraphicsSystem::TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels, 
     uint32_t layerCount)
@@ -455,16 +534,25 @@ void GraphicsSystem::InitWindow()
     window = glfwCreateWindow(WIDTH, HEIGHT, "RedForge", nullptr, nullptr);
     glfwSetWindowUserPointer(window, this);
     glfwSetFramebufferSizeCallback(window, FramebufferResizeCallback);
+
+    // Set input system to receive input from GLFW
+    inputLayer = GLFWInputLayer(window);
+    InputSystem::SetActiveInputLayer(&inputLayer);
 }
 void GraphicsSystem::InitVulkan()
 {
     CreateInstance();
     SetupDebugMessenger();
-    CreateSurface();
+    if(!shouldRenderOffscreen)
+        CreateSurface();
     SelectPhysicalDevice();
     CreateLogicalDevice();
-    CreateSwapChain();
-    CreateImageViews();
+    LoadExtensionFunctions();
+    if(!shouldRenderOffscreen)
+    {
+        CreateSwapChain();
+        CreateImageViews();
+    }
     CreateRenderPass();
     CreateDescriptorSetLayout();
     CreateGraphicsPipeline();
@@ -473,12 +561,19 @@ void GraphicsSystem::InitVulkan()
     CreateCommandPool();
     CreateColorResources();
     CreateDepthResources();
-    CreateFramebuffers();
+    if(!shouldRenderOffscreen)
+        CreateFramebuffers();
     CreateUniformBuffers();
     CreateGlobalBuffers();
     CreateDescriptorPool();
     CreateCommandBuffers();
     CreateSyncObjects();
+
+    if(shouldRenderOffscreen)
+    {
+        CreateExternalRenderSyncObjects();
+        CreateExternalRenderResources();
+    }
 
     ResourceManager::LoadAllTextures();
 
@@ -525,7 +620,7 @@ void GraphicsSystem::InitImGui()
 	initInfo.RenderPass = renderPass;
     initInfo.DescriptorPool = imguiDescriptorPool;
     initInfo.MinImageCount = 2;
-    initInfo.ImageCount = swapChainImages.size();
+    initInfo.ImageCount = 2;
     initInfo.MSAASamples = msaaSamples;
     initInfo.CheckVkResultFn = nullptr;
 
@@ -544,9 +639,9 @@ void GraphicsSystem::CreateInstance()
 
     VkApplicationInfo appInfo{};
     appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-    appInfo.pApplicationName = "Hello Triangle";
+    appInfo.pApplicationName = "RedForge Game";
     appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
-    appInfo.pEngineName = "No Engine";
+    appInfo.pEngineName = "RedForge";
     appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
     appInfo.apiVersion = VK_API_VERSION_1_0;
 
@@ -565,7 +660,7 @@ void GraphicsSystem::CreateInstance()
         createInfo.ppEnabledLayerNames = validationLayers.data();
 
         PopulateDebugMessengerCreateInfo(debugCreateInfo);
-        createInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT*)&debugCreateInfo;
+        createInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT*) &debugCreateInfo;
     }
     else
     {
@@ -612,10 +707,27 @@ std::vector<const char*> GraphicsSystem::GetRequiredExtensions()
 
     std::vector<const char*> extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
 
+    for(const char* e : instanceExtensions)
+        extensions.push_back(e);
+
     if(enableValidationLayers)
         extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 
     return extensions;
+}
+void GraphicsSystem::LoadExtensionFunctions()
+{
+    // Load memory functions
+    vkGetMemoryWin32HandleKHR = (PFN_vkGetMemoryWin32HandleKHR) vkGetDeviceProcAddr(device, "vkGetMemoryWin32HandleKHR");
+
+    if(!vkGetMemoryWin32HandleKHR)
+        throw std::runtime_error("Failed to load vkGetMemoryWin32HandleKHR!");
+
+    // Load semaphore functions
+    vkGetSemaphoreWin32HandleKHR = (PFN_vkGetSemaphoreWin32HandleKHR) vkGetDeviceProcAddr(device, "vkGetSemaphoreWin32HandleKHR");
+
+    if(!vkGetSemaphoreWin32HandleKHR)
+        throw std::runtime_error("Failed to load vkGetSemaphoreWin32HandleKHR!");
 }
 
 void GraphicsSystem::SetupDebugMessenger()
@@ -700,18 +812,21 @@ int GraphicsSystem::RateDeviceSuitability(VkPhysicalDevice device)
 
     // Queue family checks
     QueueFamilyIndices indices = FindQueueFamilies(device);
-    if(!indices.isComplete())
+    if(!indices.IsComplete())
         return 0;
 
     // Extension checks
     if(!CheckDeviceExtensionSupport(device))
         return 0;
 
-    // Swap chain checks
-    SwapChainSupportDetails swapChainSupport = QuerySwapChainSupport(device);
-    bool swapChainAdequate = !swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty();
-    if(!swapChainAdequate)
-        return 0;
+    // Swap chain checks - ignore if rendering offscreen
+    if(!shouldRenderOffscreen)
+    {
+        SwapChainSupportDetails swapChainSupport = QuerySwapChainSupport(device);
+        bool swapChainAdequate = !swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty();
+        if(!swapChainAdequate)
+            return 0;
+    }
 
     return score;
 }
@@ -732,14 +847,19 @@ QueueFamilyIndices GraphicsSystem::FindQueueFamilies(VkPhysicalDevice device)
         if(queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT)
             indices.graphicsFamily = i;
 
-        // Check if the queue family supports presenting to the window surface
-        VkBool32 presentSupport = false;
-        vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &presentSupport);
-        if(presentSupport)
-            indices.presentFamily = i;
+        // Check if the queue family supports presenting to the window surface (If rendering offscreen, don't need present support)
+        if(!shouldRenderOffscreen)
+        {
+            VkBool32 presentSupport = false;
+            vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &presentSupport);
+            if(presentSupport)
+                indices.presentFamily = i;
+        }
+        else
+            indices.presentFamily = 0;
 
         // Early exit if we find a suitable queue family
-        if(indices.isComplete())
+        if(indices.IsComplete())
             break;
 
         i++;
@@ -916,7 +1036,8 @@ void GraphicsSystem::CreateSwapChain()
 
     createInfo.oldSwapchain = VK_NULL_HANDLE;
 
-    if(vkCreateSwapchainKHR(device, &createInfo, nullptr, &swapChain) != VK_SUCCESS)
+    VkResult result = vkCreateSwapchainKHR(device, &createInfo, nullptr, &swapChain);
+    if(result != VK_SUCCESS)
         throw std::runtime_error("Failed to create swap chain!");
 
     // Retrieve swap chain images
@@ -976,7 +1097,7 @@ VkExtent2D GraphicsSystem::ChooseSwapExtent(const VkSurfaceCapabilitiesKHR& capa
 void GraphicsSystem::CreateImageViews()
 {
     swapChainImageViews.resize(swapChainImages.size());
-
+    
     // Create image view for each swap chain image
     for(size_t i = 0; i < swapChainImages.size(); i++)
         swapChainImageViews[i] = CreateImageView(swapChainImages[i], swapChainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT, 1);
@@ -985,7 +1106,7 @@ void GraphicsSystem::CreateImageViews()
 void GraphicsSystem::CreateRenderPass()
 {
     VkAttachmentDescription colorAttachment{};
-    colorAttachment.format = swapChainImageFormat;
+    colorAttachment.format = GetRenderFormat();
     colorAttachment.samples = msaaSamples;
     colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
     colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
@@ -1005,7 +1126,7 @@ void GraphicsSystem::CreateRenderPass()
     depthAttachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
     VkAttachmentDescription colorAttachmentResolve{};
-    colorAttachmentResolve.format = swapChainImageFormat;
+    colorAttachmentResolve.format = GetRenderFormat();
     colorAttachmentResolve.samples = VK_SAMPLE_COUNT_1_BIT;
     colorAttachmentResolve.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
     colorAttachmentResolve.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
@@ -1177,8 +1298,8 @@ void GraphicsSystem::CreateGraphicsPipeline()
     VkViewport viewport{};
     viewport.x = 0.0f;
     viewport.y = 0.0f;
-    viewport.width = (float)swapChainExtent.width;
-    viewport.height = (float)swapChainExtent.height;
+    viewport.width = (float) swapChainExtent.width;
+    viewport.height = (float) swapChainExtent.height;
     viewport.minDepth = 0.0f;
     viewport.maxDepth = 1.0f;
 
@@ -1669,10 +1790,10 @@ void GraphicsSystem::CreateCommandPool()
 
 void GraphicsSystem::CreateColorResources()
 {
-    VkFormat colorFormat = swapChainImageFormat;
+    VkFormat colorFormat = GetRenderFormat();
 
     CreateImage(
-        swapChainExtent.width, swapChainExtent.height, 1, 
+        GetWindowWidth(), GetWindowHeight(), 1,
         msaaSamples, 
         colorFormat, 
         VK_IMAGE_TILING_OPTIMAL, 
@@ -1687,7 +1808,7 @@ void GraphicsSystem::CreateDepthResources()
     VkFormat depthFormat = FindDepthFormat();
 
     CreateImage(
-        swapChainExtent.width, swapChainExtent.height, 1, 
+        GetWindowWidth(), GetWindowHeight(), 1,
         msaaSamples, 
         depthFormat, 
         VK_IMAGE_TILING_OPTIMAL, 
@@ -2089,6 +2210,8 @@ void GraphicsSystem::CreateSyncObjects()
 
 void GraphicsSystem::CleanupSwapChain()
 {
+    CleanupExternalRenderResources();
+
     vkDestroyImageView(device, colorImageView, nullptr);
     vkDestroyImage(device, colorImage, nullptr);
     vkFreeMemory(device, colorImageMemory, nullptr);
@@ -2097,33 +2220,49 @@ void GraphicsSystem::CleanupSwapChain()
     vkDestroyImage(device, depthImage, nullptr);
     vkFreeMemory(device, depthImageMemory, nullptr);
 
-    for(auto framebuffer : swapChainFramebuffers)
-        vkDestroyFramebuffer(device, framebuffer, nullptr);
+    if(!shouldRenderOffscreen)
+    {
+        for(auto framebuffer : swapChainFramebuffers)
+            vkDestroyFramebuffer(device, framebuffer, nullptr);
 
-    for(auto imageView : swapChainImageViews)
-        vkDestroyImageView(device, imageView, nullptr);
+        for(auto imageView : swapChainImageViews)
+            vkDestroyImageView(device, imageView, nullptr);
 
-    vkDestroySwapchainKHR(device, swapChain, nullptr);
+        vkDestroySwapchainKHR(device, swapChain, nullptr);
+    }
 }
 void GraphicsSystem::RecreateSwapChain()
 {
-    int width = 0, height = 0;
-    // Pause while window is minimized
-    while(width == 0 || height == 0)
+    if(!Instance)
+        return;
+
+    if(!Instance->shouldRenderOffscreen)
     {
-        glfwGetFramebufferSize(window, &width, &height);
-        glfwWaitEvents();
+        int width = 0, height = 0;
+        // Pause while window is minimized
+        while(width == 0 || height == 0)
+        {
+            glfwGetFramebufferSize(Instance->window, &width, &height);
+            glfwWaitEvents();
+        }
     }
 
-    vkDeviceWaitIdle(device);
+    vkDeviceWaitIdle(Instance->device);
 
-    CleanupSwapChain();
+    Instance->CleanupSwapChain();
 
-    CreateSwapChain();
-    CreateImageViews();
-    CreateColorResources();
-    CreateDepthResources();
-    CreateFramebuffers();
+    if(!Instance->shouldRenderOffscreen)
+    {
+        Instance->CreateSwapChain();
+        Instance->CreateImageViews();
+    }
+    Instance->CreateColorResources();
+    Instance->CreateDepthResources();
+    if(!Instance->shouldRenderOffscreen)
+        Instance->CreateFramebuffers();
+
+    if(Instance->shouldRenderOffscreen)
+        Instance->CreateExternalRenderResources();
 
     // Update main camera's aspect ratio
     CameraManager::SetTargetAspectRatio(GetAspectRatio());
@@ -2142,9 +2281,9 @@ void GraphicsSystem::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t
     VkRenderPassBeginInfo renderPassInfo{};
     renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
     renderPassInfo.renderPass = renderPass;
-    renderPassInfo.framebuffer = swapChainFramebuffers[imageIndex];
+    renderPassInfo.framebuffer = shouldRenderOffscreen ? externalRenderFramebuffer : swapChainFramebuffers[imageIndex];
     renderPassInfo.renderArea.offset = { 0, 0 };
-    renderPassInfo.renderArea.extent = swapChainExtent;
+    renderPassInfo.renderArea.extent = GetRenderExtent();
 
     std::array<VkClearValue, 2> clearValues{};
     clearValues[0].color = { {0.0f, 0.0f, 0.0f, 1.0f} };
@@ -2162,15 +2301,15 @@ void GraphicsSystem::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t
     VkViewport viewport{};
     viewport.x = 0.0f;
     viewport.y = 0.0f;
-    viewport.width = static_cast<float>(swapChainExtent.width);
-    viewport.height = static_cast<float>(swapChainExtent.height);
+    viewport.width = static_cast<float>(GetWindowWidth());
+    viewport.height = static_cast<float>(GetWindowHeight());
     viewport.minDepth = 0.0f;
     viewport.maxDepth = 1.0f;
     vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
 
     VkRect2D scissor{};
     scissor.offset = { 0, 0 };
-    scissor.extent = swapChainExtent;
+    scissor.extent = GetRenderExtent();
     vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
     vkCmdBindDescriptorSets(
@@ -2390,121 +2529,125 @@ void GraphicsSystem::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t
 
 	/* --- Draw ImGui UI --- */
 
-    ImGui_ImplVulkan_NewFrame();
-    ImGui_ImplGlfw_NewFrame();
-    ImGui::NewFrame();
-
-    // Create a full-screen, borderless window for the dockspace
-    ImGuiWindowFlags window_flags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking;
-    ImGuiViewport* imguiViewport = ImGui::GetMainViewport();
-    ImGui::SetNextWindowPos(imguiViewport->WorkPos);
-    ImGui::SetNextWindowSize(imguiViewport->WorkSize);
-    ImGui::SetNextWindowViewport(imguiViewport->ID);
-    window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse |
-        ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
-        ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
-    window_flags |= ImGuiWindowFlags_NoBackground;
-
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
-
-    ImGui::Begin("DockSpaceWindow", nullptr, window_flags);
-    ImGui::PopStyleVar(2);
-
-    // Dockspace ID and creation
-    ImGuiID dockspace_id = ImGui::GetID("DockSpace");
-    ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_PassthruCentralNode);
-
-    ImGui::End();
-
-    /* Draw UI */
-
-    ImGui::Begin("FPS", nullptr,
-        ImGuiWindowFlags_NoDecoration |
-        ImGuiWindowFlags_AlwaysAutoResize |
-        ImGuiWindowFlags_NoSavedSettings |
-        ImGuiWindowFlags_NoFocusOnAppearing |
-        ImGuiWindowFlags_NoNav |
-        ImGuiWindowFlags_NoMove);
-    ImGui::Text("FPS: %.0f \t Average: %.0f \t Low: %.0f", TimeManager::GetFPS(), TimeManager::GetAverageFPS(), TimeManager::GetMinFPS());
-    ImGui::End();
-
-    ImGui::Begin("Hello Vulkan");
-    ImGui::Text("This is a Vulkan + ImGui integration!");
-    ImGui::End();
-
-    ImGui::Begin("Entities");
-    if(ImGui::TreeNode("Entities"))
+    // Only draw immediate-mode GUI if not in editor
+    if(!shouldRenderOffscreen)
     {
-        for(Entity e = 0; e < EntityManager::GetLastEntity(); e++)
-            if(EntityManager::HasComponent<TransformComponent>(e))
-                if(ImGui::TreeNode(std::format("Entity {}", e).c_str()))
-                {
-					TransformComponent& transform = EntityManager::GetComponent<TransformComponent>(e);
+        ImGui_ImplVulkan_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
 
-                    if(ImGui::TreeNode("Transform"))
+        // Create a full-screen, borderless window for the dockspace
+        ImGuiWindowFlags window_flags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking;
+        ImGuiViewport* imguiViewport = ImGui::GetMainViewport();
+        ImGui::SetNextWindowPos(imguiViewport->WorkPos);
+        ImGui::SetNextWindowSize(imguiViewport->WorkSize);
+        ImGui::SetNextWindowViewport(imguiViewport->ID);
+        window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse |
+            ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
+            ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
+        window_flags |= ImGuiWindowFlags_NoBackground;
+
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+
+        ImGui::Begin("DockSpaceWindow", nullptr, window_flags);
+        ImGui::PopStyleVar(2);
+
+        // Dockspace ID and creation
+        ImGuiID dockspace_id = ImGui::GetID("DockSpace");
+        ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_PassthruCentralNode);
+
+        ImGui::End();
+
+        /* Draw UI */
+
+        ImGui::Begin("FPS", nullptr,
+            ImGuiWindowFlags_NoDecoration |
+            ImGuiWindowFlags_AlwaysAutoResize |
+            ImGuiWindowFlags_NoSavedSettings |
+            ImGuiWindowFlags_NoFocusOnAppearing |
+            ImGuiWindowFlags_NoNav |
+            ImGuiWindowFlags_NoMove);
+        ImGui::Text("FPS: %.0f \t Average: %.0f \t Low: %.0f", TimeManager::GetFPS(), TimeManager::GetAverageFPS(), TimeManager::GetMinFPS());
+        ImGui::End();
+
+        ImGui::Begin("Hello Vulkan");
+        ImGui::Text("This is a Vulkan + ImGui integration!");
+        ImGui::End();
+
+        ImGui::Begin("Entities");
+        if(ImGui::TreeNode("Entities"))
+        {
+            for(Entity e = 0; e < EntityManager::GetLastEntity(); e++)
+                if(EntityManager::HasComponent<TransformComponent>(e))
+                    if(ImGui::TreeNode(std::format("Entity {}", e).c_str()))
                     {
-                        glm::vec3 location = transform.location;
-                        glm::vec3 eulerAngles = glm::eulerAngles(transform.rotation);
-                        glm::vec3 scale = transform.scale;
-                        ImGui::DragFloat3("Location", &location.x, 0.1f, -5.0f, 5.0f);
-                        ImGui::DragFloat3("Rotation", &eulerAngles.x, 0.1f, -5.0f, 5.0f);
-                        ImGui::DragFloat3("Scale", &scale.x, 0.1f, -5.0f, 5.0f);
+					    TransformComponent& transform = EntityManager::GetComponent<TransformComponent>(e);
 
-                        if(location != transform.location)
-                            transform.location = location;
-                        if(eulerAngles != glm::eulerAngles(transform.rotation))
+                        if(ImGui::TreeNode("Transform"))
                         {
-							glm::vec3 eulerDeltas = eulerAngles - glm::eulerAngles(transform.rotation);
+                            glm::vec3 location = transform.location;
+                            glm::vec3 eulerAngles = glm::eulerAngles(transform.rotation);
+                            glm::vec3 scale = transform.scale;
+                            ImGui::DragFloat3("Location", &location.x, 0.1f, -5.0f, 5.0f);
+                            ImGui::DragFloat3("Rotation", &eulerAngles.x, 0.1f, -5.0f, 5.0f);
+                            ImGui::DragFloat3("Scale", &scale.x, 0.1f, -5.0f, 5.0f);
 
-                            transform.rotation = 
-                                glm::angleAxis(eulerDeltas.x, glm::vec3(1, 0, 0)) 
-                                * glm::angleAxis(eulerDeltas.y, glm::vec3(0, 1, 0)) 
-                                * glm::angleAxis(eulerDeltas.z, glm::vec3(0, 0, 1)) * transform.rotation;
-                        }
-                        if(scale != transform.scale)
-                            transform.scale = scale;
-                        
-                        ImGui::TreePop();
-                    }
+                            if(location != transform.location)
+                                transform.location = location;
+                            if(eulerAngles != glm::eulerAngles(transform.rotation))
+                            {
+							    glm::vec3 eulerDeltas = eulerAngles - glm::eulerAngles(transform.rotation);
 
-                    if(EntityManager::HasComponent<MeshRendererComponent>(e))
-                    {
-                        MeshRendererComponent& meshRenderer = EntityManager::GetComponent<MeshRendererComponent>(e);
-
-                        if(ImGui::TreeNode("MeshRenderer"))
-                        {
-                            ImGui::Text("Renderer Index: %i", meshRenderer.rendererIndex);
-
-                            int meshIndex = meshRenderer.mesh->index;
-                            int materialIndex = meshRenderer.material->index;
-                            ImGui::DragInt("Mesh Index", &meshIndex, 0.1f, 0, ResourceManager::GetMeshes().size() - 1);
-                            ImGui::DragInt("Material Index", &materialIndex, 0.1f, 0, ResourceManager::GetMaterials().size() - 1);
-
-                            if(meshIndex != meshRenderer.mesh->index)
-                                meshRenderer.mesh = ResourceManager::GetMesh(meshIndex);
-                            if(materialIndex != meshRenderer.material->index)
-                                meshRenderer.material = ResourceManager::GetMaterial(materialIndex);
+                                transform.rotation = 
+                                    glm::angleAxis(eulerDeltas.x, glm::vec3(1, 0, 0)) 
+                                    * glm::angleAxis(eulerDeltas.y, glm::vec3(0, 1, 0)) 
+                                    * glm::angleAxis(eulerDeltas.z, glm::vec3(0, 0, 1)) * transform.rotation;
+                            }
+                            if(scale != transform.scale)
+                                transform.scale = scale;
                         
                             ImGui::TreePop();
                         }
+
+                        if(EntityManager::HasComponent<MeshRendererComponent>(e))
+                        {
+                            MeshRendererComponent& meshRenderer = EntityManager::GetComponent<MeshRendererComponent>(e);
+
+                            if(ImGui::TreeNode("MeshRenderer"))
+                            {
+                                ImGui::Text("Renderer Index: %i", meshRenderer.rendererIndex);
+
+                                int meshIndex = meshRenderer.mesh->index;
+                                int materialIndex = meshRenderer.material->index;
+                                ImGui::DragInt("Mesh Index", &meshIndex, 0.1f, 0, ResourceManager::GetMeshes().size() - 1);
+                                ImGui::DragInt("Material Index", &materialIndex, 0.1f, 0, ResourceManager::GetMaterials().size() - 1);
+
+                                if(meshIndex != meshRenderer.mesh->index)
+                                    meshRenderer.mesh = ResourceManager::GetMesh(meshIndex);
+                                if(materialIndex != meshRenderer.material->index)
+                                    meshRenderer.material = ResourceManager::GetMaterial(materialIndex);
+                        
+                                ImGui::TreePop();
+                            }
+                        }
+
+                        ImGui::TreePop();
                     }
-
-                    ImGui::TreePop();
-                }
         
-        ImGui::TreePop();
-    }
-    ImGui::End();
+            ImGui::TreePop();
+        }
+        ImGui::End();
 
-    ImGui::Render();
-    ImDrawData* draw_data = ImGui::GetDrawData();
-    ImGui_ImplVulkan_RenderDrawData(draw_data, commandBuffer);
+        ImGui::Render();
+        ImDrawData* draw_data = ImGui::GetDrawData();
+        ImGui_ImplVulkan_RenderDrawData(draw_data, commandBuffer);
 
-    if(ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
-    {
-        ImGui::UpdatePlatformWindows();
-        ImGui::RenderPlatformWindowsDefault();
+        if(ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+        {
+            ImGui::UpdatePlatformWindows();
+            ImGui::RenderPlatformWindowsDefault();
+        }
     }
 
     vkCmdEndRenderPass(commandBuffer);
@@ -2526,4 +2669,120 @@ void GraphicsSystem::UpdateUniformBuffer(uint32_t currentImage)
     ubo.proj[1][1] *= -1;
 
     memcpy(cameraUBOsMapped[currentImage], &ubo, sizeof(ubo));
+}
+
+void GraphicsSystem::CreateExternalRenderSyncObjects()
+{
+    // Create Vulkan semaphores with external handle support
+    VkExportSemaphoreCreateInfo exportInfo = {};
+    exportInfo.sType = VK_STRUCTURE_TYPE_EXPORT_SEMAPHORE_CREATE_INFO;
+    exportInfo.handleTypes = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32_BIT;
+    //export_info.handleTypes = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_FD_BIT;
+
+    VkSemaphoreCreateInfo semaphoreInfo = {};
+    semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+    semaphoreInfo.pNext = &exportInfo;
+
+    vkCreateSemaphore(device, &semaphoreInfo, nullptr, &externalRenderCompleteSemaphore);
+    vkCreateSemaphore(device, &semaphoreInfo, nullptr, &externalRenderReleaseSemaphore);
+
+    // Export semaphore handles
+    VkSemaphoreGetWin32HandleInfoKHR handleInfo = {};
+    handleInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_GET_WIN32_HANDLE_INFO_KHR;
+    handleInfo.handleType = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32_BIT;
+
+    handleInfo.semaphore = Instance->externalRenderCompleteSemaphore;
+    vkGetSemaphoreWin32HandleKHR(Instance->device, &handleInfo, &externalRenderCompleteSemaphoreHandle);
+
+    handleInfo.semaphore = Instance->externalRenderReleaseSemaphore;
+    vkGetSemaphoreWin32HandleKHR(Instance->device, &handleInfo, &externalRenderReleaseSemaphoreHandle);
+}
+void GraphicsSystem::CreateExternalRenderResources()
+{
+    CreateExternalRenderImage();
+    CreateExternalRenderImageView();
+    CreateExternalRenderFramebuffer();
+}
+void GraphicsSystem::CreateExternalRenderImage()
+{
+    // Create Vulkan image with external memory
+    VkExternalMemoryImageCreateInfo externalInfo = {};
+    externalInfo.sType = VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMAGE_CREATE_INFO;
+    externalInfo.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT; // Windows
+    //external_info.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT; // Linux
+
+    VkImageCreateInfo imageInfo = {};
+    imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    imageInfo.imageType = VK_IMAGE_TYPE_2D;
+    imageInfo.format = EXTERNAL_RENDER_IMAGE_FORMAT;
+    imageInfo.extent = { externalRenderImageExtent.width, externalRenderImageExtent.height, 1 };
+    imageInfo.mipLevels = 1;
+    imageInfo.arrayLayers = 1;
+    imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+    imageInfo.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+    imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    imageInfo.pNext = &externalInfo;
+
+    vkCreateImage(device, &imageInfo, nullptr, &externalRenderImage);
+
+    // Allocate exportable memory
+    VkMemoryRequirements memReqs;
+    vkGetImageMemoryRequirements(device, externalRenderImage, &memReqs);
+    externalRenderMemorySize = memReqs.size;
+
+    VkExportMemoryAllocateInfo exportInfo = {};
+    exportInfo.sType = VK_STRUCTURE_TYPE_EXPORT_MEMORY_ALLOCATE_INFO;
+    exportInfo.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT; // Windows
+    //export_info.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT; // Linux
+
+    VkMemoryAllocateInfo allocInfo = {};
+    allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    allocInfo.allocationSize = memReqs.size;
+    allocInfo.memoryTypeIndex = FindMemoryType(memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    allocInfo.pNext = &exportInfo;
+
+    vkAllocateMemory(device, &allocInfo, nullptr, &externalRenderMemory);
+    vkBindImageMemory(device, externalRenderImage, externalRenderMemory, 0);
+
+    // Export memory handle
+    VkMemoryGetWin32HandleInfoKHR handleInfo = {};
+    handleInfo.sType = VK_STRUCTURE_TYPE_MEMORY_GET_WIN32_HANDLE_INFO_KHR;
+    handleInfo.handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT;
+    handleInfo.memory = Instance->externalRenderMemory;
+
+    vkGetMemoryWin32HandleKHR(Instance->device, &handleInfo, &externalRenderMemoryHandle);
+}
+void GraphicsSystem::CreateExternalRenderImageView()
+{
+    externalRenderImageView = CreateImageView(externalRenderImage, EXTERNAL_RENDER_IMAGE_FORMAT, VK_IMAGE_ASPECT_COLOR_BIT, 1);
+}
+void GraphicsSystem::CreateExternalRenderFramebuffer()
+{
+    std::vector<VkImageView> attachments = 
+    {
+        colorImageView,
+        depthImageView,
+        externalRenderImageView
+    };
+
+    VkFramebufferCreateInfo framebufferInfo = {};
+    framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+    framebufferInfo.renderPass = renderPass;
+    framebufferInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
+    framebufferInfo.pAttachments = attachments.data();
+    framebufferInfo.width = externalRenderImageExtent.width;
+    framebufferInfo.height = externalRenderImageExtent.height;
+    framebufferInfo.layers = 1;
+
+    if(vkCreateFramebuffer(device, &framebufferInfo, nullptr, &externalRenderFramebuffer) != VK_SUCCESS)
+        throw std::runtime_error("Failed to create editor framebuffer!");
+}
+
+void GraphicsSystem::CleanupExternalRenderResources()
+{
+    vkDestroyImageView(device, externalRenderImageView, nullptr);
+    vkDestroyImage(device, externalRenderImage, nullptr);
+    vkFreeMemory(device, externalRenderMemory, nullptr);
+
+    vkDestroyFramebuffer(device, externalRenderFramebuffer, nullptr);
 }
