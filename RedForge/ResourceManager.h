@@ -8,15 +8,17 @@
 #include "Material.h"
 #include "Mesh.h"
 
+#include "Exports.h"
+
 #define TEXTURES_PATH (std::wstring) L"textures/"
 #define TEXTURE_CUBES_PATH (std::wstring) L"textures/textureCubes/"
 #define MATERIALS_PATH (std::wstring) L"materials/"
 #define MESHES_PATH (std::wstring) L"meshes/"
 
-class ResourceManager
+REDFORGE_API class ResourceManager
 {
 private:
-	static inline ResourceManager* Instance;
+	REDFORGE_API static inline ResourceManager* Instance;
 
 	std::vector<Texture*> textures;
 	std::vector<TextureCube*> textureCubes;
@@ -57,12 +59,6 @@ private:
 
 	static std::unordered_map<std::wstring, std::wstring> GetAllFilesInDirectory(std::wstring directory, std::vector<std::wstring> extensions);
 
-	static std::string GetExePath();
-	static std::string FixPath(const std::string& relativeFilePath);
-	static std::wstring FixPath(const std::wstring& relativeFilePath);
-	static std::string WideToNarrow(const std::wstring& str);
-	static std::wstring NarrowToWide(const std::string& str);
-
 public:
 	static Texture* GetTexture(const std::wstring& identifier) { return GetTexture(Instance->textureMap[identifier]->index); };
 	static Texture* GetTexture(uint32_t index) { return Instance->textures[index]; };
@@ -74,6 +70,12 @@ public:
 	static Mesh* GetMesh(uint32_t index) { return Instance->meshes[index]; };
 
 	static std::vector<Texture*> GetTextures() { return Instance->textures; };
+	static std::vector<TextureCube*> GetTextureCubes() { return Instance->textureCubes; };
 	static std::vector<Material*> GetMaterials() { return Instance->materials; };
 	static std::vector<Mesh*> GetMeshes() { return Instance->meshes; };
+
+	static std::unordered_map<std::wstring, Texture*> GetTextureMap() { return Instance->textureMap; };
+	static std::unordered_map<std::wstring, TextureCube*> GetTextureCubeMap() { return Instance->textureCubeMap; };
+	static std::unordered_map<std::wstring, Material*> GetMaterialMap() { return Instance->materialMap; };
+	static std::unordered_map<std::wstring, Mesh*> GetMeshMap() { return Instance->meshMap; };
 };

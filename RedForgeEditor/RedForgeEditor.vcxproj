@@ -83,7 +83,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>C:\msys64\mingw64\lib\;C:\VulkanSDK\1.4.304.0\Lib;C:\vcpkg\installed\x64-windows\lib\;$(SolutionDir)x64\Debug\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>C:\msys64\mingw64\lib\;C:\VulkanSDK\1.4.304.0\Lib;C:\vcpkg\installed\x64-windows\lib\;$(SolutionDir)x64\$(Configuration)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>RedForge.lib;gtkmm-4.0.lib;
 gtk-4.lib
 ;glibmm-2.68.lib
@@ -113,7 +113,7 @@ gobject-2.0.lib
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>C:\msys64\mingw64\lib\;C:\VulkanSDK\1.4.304.0\Lib;C:\vcpkg\installed\x64-windows\lib\;$(SolutionDir)x64\Debug\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>C:\msys64\mingw64\lib\;C:\VulkanSDK\1.4.304.0\Lib;C:\vcpkg\installed\x64-windows\lib\;$(SolutionDir)x64\$(Configuration)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>RedForge.lib;gtkmm-4.0.lib;
 gtk-4.lib
 ;glibmm-2.68.lib
@@ -139,7 +139,7 @@ gobject-2.0.lib
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>C:\msys64\mingw64\lib\;C:\VulkanSDK\1.4.304.0\Lib;C:\vcpkg\installed\x64-windows\lib\;$(SolutionDir)x64\Debug\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>C:\msys64\mingw64\lib\;C:\VulkanSDK\1.4.304.0\Lib;C:\vcpkg\installed\x64-windows\lib\;$(SolutionDir)x64\$(Configuration)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>RedForge.lib;gtkmm-4.0.lib;
 gtk-4.lib
 ;glibmm-2.68.lib
@@ -169,7 +169,7 @@ gobject-2.0.lib
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>C:\msys64\mingw64\lib\;C:\VulkanSDK\1.4.304.0\Lib;C:\vcpkg\installed\x64-windows\lib\;$(SolutionDir)x64\Debug\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>C:\msys64\mingw64\lib\;C:\VulkanSDK\1.4.304.0\Lib;C:\vcpkg\installed\x64-windows\lib\;$(SolutionDir)x64\$(Configuration)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>RedForge.lib;gtkmm-4.0.lib;
 gtk-4.lib
 ;glibmm-2.68.lib
@@ -183,19 +183,43 @@ gobject-2.0.lib
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="ComponentEntry.cpp" />
+    <ClCompile Include="ComponentVariableEntry_Float.cpp" />
+    <ClCompile Include="ComponentVariableEntry_Material.cpp" />
+    <ClCompile Include="ComponentVariableEntry_Mesh.cpp" />
+    <ClCompile Include="ComponentVariableEntry_QuaternionEuler.cpp" />
+    <ClCompile Include="ComponentVariableEntry_Vector2.cpp" />
+    <ClCompile Include="ComponentVariableEntry_Vector3.cpp" />
+    <ClCompile Include="ComponentVariableEntry.cpp" />
     <ClCompile Include="GTKInputLayer.cpp" />
+    <ClCompile Include="HierarchyPanel.cpp" />
+    <ClCompile Include="InspectorWindow.cpp" />
     <ClCompile Include="MainEditorWindow.cpp" />
+    <ClCompile Include="NumberField.cpp" />
     <ClCompile Include="RedForgeEditor.cpp">
       <PreprocessToFile Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</PreprocessToFile>
       <PreprocessToFile Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</PreprocessToFile>
     </ClCompile>
+    <ClCompile Include="SearchFieldPopup.cpp" />
     <ClCompile Include="ViewportCamera.cpp" />
     <ClCompile Include="VulkanViewport.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="ComponentEntry.h" />
+    <ClInclude Include="ComponentVariableEntry_Float.h" />
+    <ClInclude Include="ComponentVariableEntry_Material.h" />
+    <ClInclude Include="ComponentVariableEntry_Mesh.h" />
+    <ClInclude Include="ComponentVariableEntry_QuaternionEuler.h" />
+    <ClInclude Include="ComponentVariableEntry_Vector2.h" />
+    <ClInclude Include="ComponentVariableEntry_Vector3.h" />
+    <ClInclude Include="ComponentVariableEntry.h" />
     <ClInclude Include="GTKInputLayer.h" />
+    <ClInclude Include="HierarchyPanel.h" />
+    <ClInclude Include="InspectorWindow.h" />
     <ClInclude Include="MainEditorWindow.h" />
+    <ClInclude Include="NumberField.h" />
     <ClInclude Include="resource.h" />
+    <ClInclude Include="SearchFieldPopup.h" />
     <ClInclude Include="ViewportCamera.h" />
     <ClInclude Include="VulkanViewport.h" />
   </ItemGroup>

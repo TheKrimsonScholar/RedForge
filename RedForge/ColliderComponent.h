@@ -2,6 +2,8 @@
 
 #include <glm/glm.hpp>
 
+#include "ComponentMacros.h"
+
 enum class EColliderType
 {
     None,
@@ -19,3 +21,10 @@ struct ColliderComponent
 public:
     glm::mat4 GetInertiaTensor(float mass) const;
 };
+
+REGISTER_COMPONENT_BEGIN(ColliderComponent)
+//COMPONENT_VAR(EColliderType, colliderType)
+COMPONENT_VAR(glm::vec3, center)
+COMPONENT_VAR(glm::vec3, halfSize)
+COMPONENT_VAR(float, radius)
+REGISTER_COMPONENT_END(ColliderComponent)

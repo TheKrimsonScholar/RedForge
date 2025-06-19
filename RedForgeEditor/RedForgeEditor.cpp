@@ -10,10 +10,12 @@ int main(int argc, char* argv[])
 {
     //_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
 
+    // Disable hardware acceleration (causes flickering on Windows)
+    g_setenv("GSK_RENDERER", "cairo", TRUE);
     auto app = Gtk::Application::create("org.krimson.RedForgeEditor");
 
     /* Apply CSS styles */
-    try
+    /*try
     {
         auto provider = Gtk::CssProvider::create();
         provider->load_from_path("styles/style.css");
@@ -24,9 +26,10 @@ int main(int argc, char* argv[])
     {
         std::cerr << "Error loading CSS: " << ex.what() << std::endl;
         return 1;
-    }
+    }*/
 
-    return app->make_window_and_run<MainEditorWindow>(argc, argv);
+    int result = app->make_window_and_run<MainEditorWindow>(argc, argv);
+    return result;
 }
 
 int main1()

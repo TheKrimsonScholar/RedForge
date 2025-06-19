@@ -68,8 +68,17 @@ void VulkanViewport::CreateSharedResources()
     if(viewportWidth <= 0 || viewportHeight <= 0)
         return;
 
-    onViewportInitialized();
-    InputSystem::SetActiveInputLayer(&inputLayer);
+	static bool initialized = false;
+
+    if(!initialized)
+    {
+        initialized = true;
+
+        onViewportInitialized();
+        InputSystem::SetActiveInputLayer(&inputLayer);
+    }
+    else
+        onViewportResized();
 
     // Set up the OpenGL side after Vulkan is initialized
     SetupOpenGLInterop();

@@ -42,8 +42,7 @@ void PhysicsSystem::Update()
 
 		for(Entity e = 0; e < EntityManager::GetLastEntity(); e++)
 		{
-
-			if(EntityManager::HasComponent<PhysicsComponent>(e) && EntityManager::HasComponent<ColliderComponent>(e))
+			if(EntityManager::HasComponent<PhysicsComponent>(e) && EntityManager::HasComponent<ColliderComponent>(e) && EntityManager::HasComponent<TransformComponent>(e))
 			{
 				TransformComponent& transform = EntityManager::GetComponent<TransformComponent>(e);
 				PhysicsComponent& rb = EntityManager::GetComponent<PhysicsComponent>(e);

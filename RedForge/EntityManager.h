@@ -2,14 +2,16 @@
 
 #include <unordered_map>
 #include <any>
-#include <typeindex>
 #include <queue>
 #include <cassert>
+
+#include "ComponentMacros.h"
 
 #include "Exports.h"
 
 using Entity = uint32_t;
 
+static const Entity INVALID_ENTITY = 0xFFFFFFFF;
 static const uint32_t MAX_ENTITIES = 256;
 
 class IComponentArray
@@ -17,8 +19,11 @@ class IComponentArray
 public:
 	virtual ~IComponentArray() = default;
 
+	virtual void Add(uint32_t entity) = 0;
 	virtual void Remove(uint32_t entity) = 0;
 	virtual bool Has(uint32_t entity) = 0;
+
+	virtual void* GetRaw(size_t stride, uint32_t entity) = 0;
 };
 template<typename T>
 class ComponentArray : public IComponentArray
@@ -31,14 +36,19 @@ private:
 	T components[MAX_ENTITIES] = {};
 	std::unordered_map<Entity, uint32_t> entityToComponentIndex;
 
+	size_t componentStride;
+
 public:
 	ComponentArray();
 	~ComponentArray() override;
 
 	void Add(uint32_t entity, T component);
+	void Add(uint32_t entity) override;
 	void Remove(uint32_t entity) override;
 	bool Has(uint32_t entity) override;
 	T& Get(uint32_t entity);
+
+	void* GetRaw(size_t stride, uint32_t entity) override;
 };
 
 template<typename T>
@@ -68,6 +78,11 @@ void ComponentArray<T>::Add(uint32_t entity, T component)
 
 	components[componentIndex] = component;
 	entityToComponentIndex[entity] = componentIndex;
+}
+template<typename T>
+inline void ComponentArray<T>::Add(uint32_t entity)
+{
+	Add(entity, T()); // Default construct the component
 }
 template<typename T>
 void ComponentArray<T>::Remove(uint32_t entity)
@@ -104,17 +119,30 @@ T& ComponentArray<T>::Get(uint32_t entity)
 	return components[entityToComponentIndex[entity]];
 }
 
-REDFORGE_API class EntityManager
+template<typename T>
+void* ComponentArray<T>::GetRaw(size_t stride, uint32_t entity)
+{
+	assert(entityToComponentIndex.find(entity) != entityToComponentIndex.end() && "Entity has no component of this type.");
+
+	// Cast the relevant component array to a plain byte array and manually calculate this component's offset using custom stride
+	return static_cast<void*>(reinterpret_cast<std::byte*>(components) + entityToComponentIndex[entity] * stride);
+}
+
+class EntityManager
 {
 private:
-	static inline REDFORGE_API EntityManager* Instance;
+	REDFORGE_API static inline EntityManager* Instance;
 
 	Entity lastEntity = 0;
+	bool entityStates[MAX_ENTITIES] = {};
 	// Queue of free entity indices less than lastEntity, sorted by index
 	std::priority_queue<Entity> freeQueue;
 	uint32_t generationCounts[MAX_ENTITIES] = {};
 
 	std::unordered_map<std::type_index, IComponentArray*> componentArrays;
+
+	//std::unordered_map<std::type_index, ComponentID> typeToComponentID;
+	std::unordered_map<std::type_index, size_t> registeredComponentSizes;
 
 public:
 	EntityManager() {};
@@ -123,27 +151,36 @@ public:
 	void Startup();
 	void Shutdown();
 
-	static REDFORGE_API Entity CreateEntity();
-	static inline void DestroyEntity(Entity entity);
+	REDFORGE_API static Entity CreateEntity();
+	REDFORGE_API static void DestroyEntity(Entity entity);
 
 	static inline Entity GetLastEntity() { return Instance->lastEntity; };
 
 	template<typename T>
 	inline void RegisterComponent();
 	template<typename T>
-	static inline REDFORGE_API void AddComponent(uint32_t entity, T component);
+	static inline void AddComponent(uint32_t entity, T component);
 	template<typename T>
 	static inline void RemoveComponent(uint32_t entity);
 	template<typename T>
 	static inline bool HasComponent(uint32_t entity);
 	template<typename T>
 	static inline T& GetComponent(uint32_t entity);
+
+	REDFORGE_API static void AddComponentOfType(uint32_t entity, std::type_index componentType);
+	REDFORGE_API static void RemoveComponentOfType(uint32_t entity, std::type_index componentType);
+
+	REDFORGE_API static std::unordered_map<void*, std::type_index> GetAllComponents(uint32_t entity);
+
+	REDFORGE_API static bool IsEntityValid(uint32_t entity);
+	REDFORGE_API static bool IsComponentValid(uint32_t entity, std::type_index componentType);
 };
 
 template<typename T>
 inline void EntityManager::RegisterComponent()
 {
 	Instance->componentArrays[typeid(T)] = new ComponentArray<T>();
+	Instance->registeredComponentSizes[typeid(T)] = sizeof(T);
 }
 template<typename T>
 inline void EntityManager::AddComponent(uint32_t entity, T component)

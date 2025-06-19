@@ -26,6 +26,7 @@ public:
     ViewportCamera* camera;
 
     std::function<void()> onViewportInitialized;
+    std::function<void()> onViewportResized;
     std::function<void()> onViewportUpdated;
 
 private:

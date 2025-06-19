@@ -11,6 +11,8 @@
 
 #include "Engine.h"
 
+#include "HierarchyPanel.h"
+
 #include "ViewportCamera.h"
 
 class MainEditorWindow : public Gtk::Window
@@ -22,6 +24,9 @@ protected:
     Gtk::Paned* mainPanel;
     Gtk::Paned* leftPanel;
     Gtk::Paned* rightPanel;
+
+    InspectorWindow* inspectorWindow;
+    HierarchyPanel* hierarchyPanel;
 
     VulkanViewport viewport;
 
