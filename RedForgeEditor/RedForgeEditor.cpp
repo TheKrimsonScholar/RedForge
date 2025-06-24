@@ -1,5 +1,5 @@
-#define _CRTDBG_MAP_ALLOC
-#include <crtdbg.h>
+//#define _CRTDBG_MAP_ALLOC
+//#include <crtdbg.h>
 #include <chrono>
 
 #include <iostream>
@@ -15,7 +15,7 @@ int main(int argc, char* argv[])
     auto app = Gtk::Application::create("org.krimson.RedForgeEditor");
 
     /* Apply CSS styles */
-    /*try
+    try
     {
         auto provider = Gtk::CssProvider::create();
         provider->load_from_path("styles/style.css");
@@ -26,7 +26,7 @@ int main(int argc, char* argv[])
     {
         std::cerr << "Error loading CSS: " << ex.what() << std::endl;
         return 1;
-    }*/
+    }
 
     int result = app->make_window_and_run<MainEditorWindow>(argc, argv);
     return result;
@@ -34,8 +34,8 @@ int main(int argc, char* argv[])
 
 int main1()
 {
-    _CrtMemState initialMemoryState;
-    _CrtMemCheckpoint(&initialMemoryState);
+    /*_CrtMemState initialMemoryState;
+    _CrtMemCheckpoint(&initialMemoryState);*/
 
     {
         std::cout << "Hello World!\n";
@@ -50,11 +50,11 @@ int main1()
     }
     
     // Check difference in memory state to find leaks
-    _CrtMemState finalMemoryState;
+    /*_CrtMemState finalMemoryState;
     _CrtMemCheckpoint(&finalMemoryState);
     _CrtMemState memoryDiff;
     if(_CrtMemDifference(&memoryDiff, &initialMemoryState, &finalMemoryState))
-        _CrtMemDumpStatistics(&memoryDiff);
+        _CrtMemDumpStatistics(&memoryDiff);*/
     
     return 0;
 }

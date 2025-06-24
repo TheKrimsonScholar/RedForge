@@ -11,43 +11,43 @@ static std::unordered_map<guint, MouseButtonCode> GDK_INPUT_MOUSE_BUTTON_MAP =
     { GDK_BUTTON_MIDDLE, MouseButtonCode::Middle },
     { GDK_BUTTON_SECONDARY, MouseButtonCode::Right }
 };
-static std::unordered_map<guint, KeyCode> GDK_INPUT_KEY_MAP =
+static std::unordered_map<guint, RFKeyCode> GDK_INPUT_KEY_MAP =
 {
-    { GDK_KEY_a, KeyCode::A }, { GDK_KEY_A, KeyCode::A },
-    { GDK_KEY_b, KeyCode::B }, { GDK_KEY_B, KeyCode::B },
-    { GDK_KEY_c, KeyCode::C }, { GDK_KEY_C, KeyCode::C },
-    { GDK_KEY_d, KeyCode::D }, { GDK_KEY_D, KeyCode::D },
-    { GDK_KEY_e, KeyCode::E }, { GDK_KEY_E, KeyCode::E },
-    { GDK_KEY_f, KeyCode::F }, { GDK_KEY_F, KeyCode::F },
-    { GDK_KEY_g, KeyCode::G }, { GDK_KEY_G, KeyCode::G },
-    { GDK_KEY_h, KeyCode::H }, { GDK_KEY_H, KeyCode::H },
-    { GDK_KEY_i, KeyCode::I }, { GDK_KEY_I, KeyCode::I },
-    { GDK_KEY_j, KeyCode::J }, { GDK_KEY_J, KeyCode::J },
-    { GDK_KEY_k, KeyCode::K }, { GDK_KEY_K, KeyCode::K },
-    { GDK_KEY_l, KeyCode::L }, { GDK_KEY_L, KeyCode::L },
-    { GDK_KEY_m, KeyCode::M }, { GDK_KEY_M, KeyCode::M },
-    { GDK_KEY_n, KeyCode::N }, { GDK_KEY_N, KeyCode::N },
-    { GDK_KEY_o, KeyCode::O }, { GDK_KEY_O, KeyCode::O },
-    { GDK_KEY_p, KeyCode::P }, { GDK_KEY_P, KeyCode::P },
-    { GDK_KEY_q, KeyCode::Q }, { GDK_KEY_Q, KeyCode::Q },
-    { GDK_KEY_r, KeyCode::R }, { GDK_KEY_R, KeyCode::R },
-    { GDK_KEY_s, KeyCode::S }, { GDK_KEY_S, KeyCode::S },
-    { GDK_KEY_t, KeyCode::T }, { GDK_KEY_T, KeyCode::T },
-    { GDK_KEY_u, KeyCode::U }, { GDK_KEY_U, KeyCode::U },
-    { GDK_KEY_v, KeyCode::V }, { GDK_KEY_V, KeyCode::V },
-    { GDK_KEY_w, KeyCode::W }, { GDK_KEY_W, KeyCode::W },
-    { GDK_KEY_x, KeyCode::X }, { GDK_KEY_X, KeyCode::X },
-    { GDK_KEY_y, KeyCode::Y }, { GDK_KEY_Y, KeyCode::Y },
-    { GDK_KEY_z, KeyCode::Z }, { GDK_KEY_Z, KeyCode::Z },
+    { GDK_KEY_a, RFKeyCode::A }, { GDK_KEY_A, RFKeyCode::A },
+    { GDK_KEY_b, RFKeyCode::B }, { GDK_KEY_B, RFKeyCode::B },
+    { GDK_KEY_c, RFKeyCode::C }, { GDK_KEY_C, RFKeyCode::C },
+    { GDK_KEY_d, RFKeyCode::D }, { GDK_KEY_D, RFKeyCode::D },
+    { GDK_KEY_e, RFKeyCode::E }, { GDK_KEY_E, RFKeyCode::E },
+    { GDK_KEY_f, RFKeyCode::F }, { GDK_KEY_F, RFKeyCode::F },
+    { GDK_KEY_g, RFKeyCode::G }, { GDK_KEY_G, RFKeyCode::G },
+    { GDK_KEY_h, RFKeyCode::H }, { GDK_KEY_H, RFKeyCode::H },
+    { GDK_KEY_i, RFKeyCode::I }, { GDK_KEY_I, RFKeyCode::I },
+    { GDK_KEY_j, RFKeyCode::J }, { GDK_KEY_J, RFKeyCode::J },
+    { GDK_KEY_k, RFKeyCode::K }, { GDK_KEY_K, RFKeyCode::K },
+    { GDK_KEY_l, RFKeyCode::L }, { GDK_KEY_L, RFKeyCode::L },
+    { GDK_KEY_m, RFKeyCode::M }, { GDK_KEY_M, RFKeyCode::M },
+    { GDK_KEY_n, RFKeyCode::N }, { GDK_KEY_N, RFKeyCode::N },
+    { GDK_KEY_o, RFKeyCode::O }, { GDK_KEY_O, RFKeyCode::O },
+    { GDK_KEY_p, RFKeyCode::P }, { GDK_KEY_P, RFKeyCode::P },
+    { GDK_KEY_q, RFKeyCode::Q }, { GDK_KEY_Q, RFKeyCode::Q },
+    { GDK_KEY_r, RFKeyCode::R }, { GDK_KEY_R, RFKeyCode::R },
+    { GDK_KEY_s, RFKeyCode::S }, { GDK_KEY_S, RFKeyCode::S },
+    { GDK_KEY_t, RFKeyCode::T }, { GDK_KEY_T, RFKeyCode::T },
+    { GDK_KEY_u, RFKeyCode::U }, { GDK_KEY_U, RFKeyCode::U },
+    { GDK_KEY_v, RFKeyCode::V }, { GDK_KEY_V, RFKeyCode::V },
+    { GDK_KEY_w, RFKeyCode::W }, { GDK_KEY_W, RFKeyCode::W },
+    { GDK_KEY_x, RFKeyCode::X }, { GDK_KEY_X, RFKeyCode::X },
+    { GDK_KEY_y, RFKeyCode::Y }, { GDK_KEY_Y, RFKeyCode::Y },
+    { GDK_KEY_z, RFKeyCode::Z }, { GDK_KEY_Z, RFKeyCode::Z },
 
-    { GDK_KEY_Shift_L, KeyCode::LSHIFT },
-    { GDK_KEY_Shift_R, KeyCode::RSHIFT },
-    { GDK_KEY_space, KeyCode::SPACE },
-    { GDK_KEY_Escape, KeyCode::ESCAPE },
-    { GDK_KEY_Control_L, KeyCode::LCTRL },
-    { GDK_KEY_Control_R, KeyCode::RCTRL },
-    { GDK_KEY_Alt_L, KeyCode::LALT },
-    { GDK_KEY_Alt_R, KeyCode::RALT }
+    { GDK_KEY_Shift_L, RFKeyCode::LSHIFT },
+    { GDK_KEY_Shift_R, RFKeyCode::RSHIFT },
+    { GDK_KEY_space, RFKeyCode::SPACE },
+    { GDK_KEY_Escape, RFKeyCode::ESCAPE },
+    { GDK_KEY_Control_L, RFKeyCode::LCTRL },
+    { GDK_KEY_Control_R, RFKeyCode::RCTRL },
+    { GDK_KEY_Alt_L, RFKeyCode::LALT },
+    { GDK_KEY_Alt_R, RFKeyCode::RALT }
 };
 
 GTKInputLayer::GTKInputLayer(Gtk::Widget* widget) : 
@@ -109,7 +109,7 @@ bool GTKInputLayer::OnKeyPressed(guint keyval, guint keycode, Gdk::ModifierType 
 {
     assert(GDK_INPUT_KEY_MAP.find(keyval) != GDK_INPUT_KEY_MAP.end() && "GDK key isn't registered.");
 
-    KeyCode key = GDK_INPUT_KEY_MAP[keyval];
+    RFKeyCode key = GDK_INPUT_KEY_MAP[keyval];
 
     keysDown[(size_t) key] = true;
     keysPressedThisFrame[(size_t) key] = true;
@@ -120,7 +120,7 @@ void GTKInputLayer::OnKeyReleased(guint keyval, guint keycode, Gdk::ModifierType
 {
     assert(GDK_INPUT_KEY_MAP.find(keyval) != GDK_INPUT_KEY_MAP.end() && "GDK key isn't registered.");
 
-    KeyCode key = GDK_INPUT_KEY_MAP[keyval];
+    RFKeyCode key = GDK_INPUT_KEY_MAP[keyval];
 
     keysDown[(size_t) key] = false;
     keysReleasedThisFrame[(size_t) key] = true;

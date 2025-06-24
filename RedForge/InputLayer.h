@@ -4,7 +4,7 @@
 
 #include <glm/glm.hpp>
 
-enum class KeyCode : uint32_t
+enum class RFKeyCode : uint32_t
 {
 	A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z,
 	LSHIFT, RSHIFT, SPACE, ESCAPE, LCTRL, RCTRL, LALT, RALT,
@@ -21,9 +21,9 @@ enum class MouseButtonCode
 class InputLayer
 {
 protected:
-	bool keysDown[(size_t) KeyCode::MAX] = {};
-	bool keysPressedThisFrame[(size_t) KeyCode::MAX] = {};
-	bool keysReleasedThisFrame[(size_t) KeyCode::MAX] = {};
+	bool keysDown[(size_t) RFKeyCode::MAX] = {};
+	bool keysPressedThisFrame[(size_t) RFKeyCode::MAX] = {};
+	bool keysReleasedThisFrame[(size_t) RFKeyCode::MAX] = {};
 
 	bool mouseButtonsDown[(size_t) MouseButtonCode::MAX] = {};
 	bool mouseButtonsPressedThisFrame[(size_t) MouseButtonCode::MAX] = {};
@@ -41,6 +41,6 @@ public:
 	REDFORGE_API glm::dvec2 GetMousePosition() { return mousePosition; };
 	REDFORGE_API glm::dvec2 GetMouseDelta() { return mouseDelta; };
 
-	REDFORGE_API bool IsKeyDown(KeyCode key) { return keysDown[(size_t) key]; };
+	REDFORGE_API bool IsKeyDown(RFKeyCode key) { return keysDown[(size_t) key]; };
 	REDFORGE_API bool IsMouseButtonDown(MouseButtonCode mouseButton) { return mouseButtonsDown[(size_t) mouseButton]; };
 };

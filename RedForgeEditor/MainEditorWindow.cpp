@@ -5,17 +5,21 @@
 #include <gtkmm/drawingarea.h>
 #include <glibmm/main.h>
 
-#define VK_USE_PLATFORM_WIN32_KHR
-#define WIN32_LEAN_AND_MEAN
-#define NOMINMAX
-#include <windows.h>
+#ifdef _WIN32
+    #define VK_USE_PLATFORM_WIN32_KHR
+    #define WIN32_LEAN_AND_MEAN
+    #define NOMINMAX
+    #include <windows.h>
+    #include <gdk/win32/gdkwin32.h>
+#else
+    #define VK_USE_PLATFORM_XLIB_KHR
+#endif
 #include <vulkan/vulkan.h>
 #include "Engine.h"
 
 #include "DebugMacros.h"
 
 #include <gdk/gdk.h>
-#include <gdk/win32/gdkwin32.h>
 #include <glibmm.h>
 #include <gdkmm/pixbuf.h>
 

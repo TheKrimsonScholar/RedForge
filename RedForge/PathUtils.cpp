@@ -1,53 +1,72 @@
 #include "PathUtils.h"
 
-#include <windows.h>
+#include <filesystem>
+
+#ifdef _WIN32
+    #include <windows.h>
+#else
+    #include <unistd.h>
+    #include <limits.h>
+#endif
 
 std::string GetExePath()
 {
-    // Assume the path is just the "current directory" for now
-    std::string path = ".\\";
+    std::filesystem::path exePath;
 
-    // Get the real, full path to this executable
-    char currentDir[1024] = {};
-    GetModuleFileNameA(0, currentDir, 1024);
-
-    // Find the location of the last slash charaacter
-    char* lastSlash = strrchr(currentDir, '\\');
-    if (lastSlash)
-    {
-        // End the string at the last slash character, essentially
-        // chopping off the exe's file name.  Remember, c-strings
-        // are null-terminated, so putting a "zero" character in 
-        // there simply denotes the end of the string.
-        *lastSlash = 0;
-
-        // Set the remainder as the path
-        path = currentDir;
+#ifdef _WIN32
+    // Windows-specific: Get the path to the executable
+    char buffer[1024];
+    DWORD length = GetModuleFileNameA(NULL, buffer, sizeof(buffer));
+    if (length > 0 && length < sizeof(buffer)) {
+        exePath = buffer;
     }
+    else {
+        // Fallback or error handling
+        exePath = std::filesystem::current_path();
+    }
+#else
+    // Linux/Unix-specific: Read /proc/self/exe or use argv[0]
+    // A common way on Linux is to read the symbolic link /proc/self/exe
+    char buffer[1024];
+    ssize_t len = readlink("/proc/self/exe", buffer, sizeof(buffer) - 1);
+    if (len != -1) {
+        buffer[len] = '\0';
+        exePath = buffer;
+    }
+    else {
+        // Fallback: If /proc/self/exe fails, assume current working directory
+        // or rely on argv[0] (which would need to be passed into this function)
+        exePath = std::filesystem::current_path();
+    }
+#endif
 
-    // Toss back whatever we've found
-    return path;
+    // Get the parent path (directory containing the executable)
+    return exePath.parent_path().string();
 }
 
 std::string FixPath(const std::string& relativeFilePath)
 {
-    return GetExePath() + "\\" + relativeFilePath;
+	std::filesystem::path exePath = GetExePath();
+	std::filesystem::path relPath = relativeFilePath;
+
+    return (exePath/relativeFilePath).string();
 }
 std::wstring FixPath(const std::wstring& relativeFilePath)
 {
-    return NarrowToWide(GetExePath()) + L"\\" + relativeFilePath;
+    std::filesystem::path exePath = NarrowToWide(GetExePath());
+    std::filesystem::path relPath = relativeFilePath;
+
+    return (exePath/relativeFilePath).wstring();
 }
 std::string WideToNarrow(const std::wstring& str)
 {
-    int size = WideCharToMultiByte(CP_UTF8, 0, str.c_str(), (int)str.length(), 0, 0, 0, 0);
-    std::string result(size, 0);
-    WideCharToMultiByte(CP_UTF8, 0, str.c_str(), -1, &result[0], size, 0, 0);
-    return result;
+    // Similar caveats as NarrowToWide
+    return std::string(str.begin(), str.end());
 }
 std::wstring NarrowToWide(const std::string& str)
 {
-    int size = MultiByteToWideChar(CP_UTF8, 0, str.c_str(), (int)str.length(), 0, 0);
-    std::wstring result(size, 0);
-    MultiByteToWideChar(CP_UTF8, 0, str.c_str(), -1, &result[0], size);
-    return result;
+    // This is a basic conversion and might not handle all encodings correctly
+    // It's generally better to work with UTF-8 std::string paths
+    // or use a more robust library for encoding conversions.
+    return std::wstring(str.begin(), str.end());
 }

@@ -1,28 +1,27 @@
 :root
 {
-    --bold-primary-color: #990000;
-    --bold-secondary-color: #440000;
-    --bold-tertiary-color: #660000;
+    --bold-primary-color: #690500;
+    --bold-secondary-color: #ff450e;
+    --bold-tertiary-color: #ff7500;
 
     --primary-color: #d3d7cf;
-    --secondary-color: #1f1c1c;
-    --tertiary-color: #322d2d;
+    --secondary-color: #3e3734;
+    --tertiary-color: #19181b;
 }
 
 *
 {
     border-color: var(--bold-secondary-color);
+    border-radius: 0;
 }
 
 window
 {
-    background-color: var(--secondary-color);
+    background-color: var(--tertiary-color);
     color: var(--primary-color);
-
-    border-radius: 0;
 }
 
-headerbar
+/*headerbar
 {
     padding: 0;
 
@@ -61,24 +60,53 @@ paned > separator > handle
 label
 {
     color: var(--primary-color);
+} */
+
+headerbar
+{
+    padding: 0;
+    
+    background: transparent;
+    color: var(--primary-color);
+}
+windowhandle
+{
+    background-color: var(--bold-primary-color);
 }
 
-box
+headerbar button
 {
     background-color: var(--secondary-color);
-
-    border-color: var(--bold-secondary-color);
-    border-radius: 0;
+    color: var(--primary-color);
+}
+headerbar button:hover
+{
+    background-color: var(--primary-color);
+    color: var(--secondary-color);
 }
 
-button
+/* button
 {
     background-color: var(--bold-secondary-color);
     color: #eeeeec;
     padding: 8px 12px;
-}
+} */
 
-button:hover
+/*button:hover
 {
     background-color: var(--bold-tertiary-color);
 }
+
+button
+{
+    background: var(--bold-secondary-color);
+}
+
+.activatable
+{
+    background-color: var(--tertiary-color);
+}
+.activatable:selected
+{
+    background-color: var(--bold-tertiary-color);
+} */

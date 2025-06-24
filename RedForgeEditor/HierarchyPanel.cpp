@@ -22,14 +22,6 @@ HierarchyPanel::HierarchyPanel() : Gtk::ScrolledWindow(), // "Hierarchy"
 	
 	contentArea.append(createEntityButton);
 	contentArea.append(entityList);
-
-	/*for(uint32_t i = 0; i < EntityManager::GetLastEntity(); i++)
-	{
-		Gtk::ListBoxRow row = Gtk::ListBoxRow();
-		Gtk::Label* l = new Gtk::Label("Entity" + std::to_string(i));
-		row.set_child(*l);
-		entityList.append(row);
-	}*/
 }
 HierarchyPanel::~HierarchyPanel()
 {
@@ -105,6 +97,7 @@ void HierarchyPanel::DestroyHierarchy()
 {
 	selectedEntity = INVALID_ENTITY;
 
-	entityList.remove_all();
+	while(auto child = entityList.get_first_child())
+		entityList.remove(*child);
 	entityRows.clear();
 }

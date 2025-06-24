@@ -3,6 +3,7 @@
 #include <unordered_map>
 #include <typeindex>
 #include <functional>
+#include <string>
 
 #include "Exports.h"
 
@@ -13,6 +14,10 @@ struct ComponentVariableInfo
 };
 struct ComponentInfo
 {
+	ComponentInfo() = default;
+	ComponentInfo(std::string componentName, std::function<std::vector<std::pair<void*, ComponentVariableInfo>>(void*)> getVariables) : 
+		componentName(componentName), getVariables(getVariables) {};
+
 	std::string componentName;
 	std::function<std::vector<std::pair<void*, ComponentVariableInfo>>(void*)> getVariables;
 };
@@ -38,12 +43,12 @@ struct RegisterComponent_##Type																															\
 			#Type,																																		\
 			[](void* rawComponent) -> std::vector<std::pair<void*, ComponentVariableInfo>>																\
 				{																																		\
-					##Type* component = static_cast<Type*>(rawComponent);																				\
+					Type* component = static_cast<Type*>(rawComponent);																				\
 																																						\
 					return																																\
 					{
 #define COMPONENT_VAR(variableType, variableName)																										\
-						{ &component->##variableName, { typeid(variableType), #variableName }},
+						{ &component->variableName, { typeid(variableType), #variableName }},
 #define REGISTER_COMPONENT_END(Type)																													\
 					};																																	\
 				} ));																																	\

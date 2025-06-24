@@ -32,9 +32,9 @@
 #include "imgui/imgui_impl_vulkan.h"
 #include "imgui/imgui_impl_glfw.h"
 
-#define WIN32_LEAN_AND_MEAN
-#define NOMINMAX
-#include <windows.h>
+//#define WIN32_LEAN_AND_MEAN
+//#define NOMINMAX
+//#include <windows.h>
 
 VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger)
 {
@@ -717,17 +717,31 @@ std::vector<const char*> GraphicsSystem::GetRequiredExtensions()
 }
 void GraphicsSystem::LoadExtensionFunctions()
 {
-    // Load memory functions
-    vkGetMemoryWin32HandleKHR = (PFN_vkGetMemoryWin32HandleKHR) vkGetDeviceProcAddr(device, "vkGetMemoryWin32HandleKHR");
+    #ifdef _WIN32
+        // Load memory functions
+        vkGetMemoryWin32HandleKHR = (PFN_vkGetMemoryWin32HandleKHR) vkGetDeviceProcAddr(device, "vkGetMemoryWin32HandleKHR");
 
-    if(!vkGetMemoryWin32HandleKHR)
-        throw std::runtime_error("Failed to load vkGetMemoryWin32HandleKHR!");
+        if(!vkGetMemoryWin32HandleKHR)
+            throw std::runtime_error("Failed to load vkGetMemoryWin32HandleKHR!");
 
-    // Load semaphore functions
-    vkGetSemaphoreWin32HandleKHR = (PFN_vkGetSemaphoreWin32HandleKHR) vkGetDeviceProcAddr(device, "vkGetSemaphoreWin32HandleKHR");
+        // Load semaphore functions
+        vkGetSemaphoreWin32HandleKHR = (PFN_vkGetSemaphoreWin32HandleKHR) vkGetDeviceProcAddr(device, "vkGetSemaphoreWin32HandleKHR");
 
-    if(!vkGetSemaphoreWin32HandleKHR)
-        throw std::runtime_error("Failed to load vkGetSemaphoreWin32HandleKHR!");
+        if(!vkGetSemaphoreWin32HandleKHR)
+            throw std::runtime_error("Failed to load vkGetSemaphoreWin32HandleKHR!");
+    #else
+        // Load memory functions
+        vkGetMemoryFdKHR = (PFN_vkGetMemoryFdKHR) vkGetDeviceProcAddr(device, "vkGetMemoryFdKHR");
+
+        if(!vkGetMemoryFdKHR)
+            throw std::runtime_error("Failed to load vkGetMemoryFdKHR!");
+
+        // Load semaphore functions
+        vkGetSemaphoreFdKHR = (PFN_vkGetSemaphoreFdKHR) vkGetDeviceProcAddr(device, "vkGetSemaphoreFdKHR");
+
+        if(!vkGetSemaphoreFdKHR)
+            throw std::runtime_error("Failed to load vkGetSemaphoreFdKHR!");
+    #endif
 }
 
 void GraphicsSystem::SetupDebugMessenger()
@@ -2676,8 +2690,11 @@ void GraphicsSystem::CreateExternalRenderSyncObjects()
     // Create Vulkan semaphores with external handle support
     VkExportSemaphoreCreateInfo exportInfo = {};
     exportInfo.sType = VK_STRUCTURE_TYPE_EXPORT_SEMAPHORE_CREATE_INFO;
-    exportInfo.handleTypes = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32_BIT;
-    //export_info.handleTypes = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_FD_BIT;
+    #ifdef _WIN32
+        exportInfo.handleTypes = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32_BIT;
+    #else
+        exportInfo.handleTypes = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_FD_BIT;
+    #endif
 
     VkSemaphoreCreateInfo semaphoreInfo = {};
     semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
@@ -2687,15 +2704,27 @@ void GraphicsSystem::CreateExternalRenderSyncObjects()
     vkCreateSemaphore(device, &semaphoreInfo, nullptr, &externalRenderReleaseSemaphore);
 
     // Export semaphore handles
-    VkSemaphoreGetWin32HandleInfoKHR handleInfo = {};
-    handleInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_GET_WIN32_HANDLE_INFO_KHR;
-    handleInfo.handleType = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32_BIT;
+    #ifdef _WIN32
+        VkSemaphoreGetWin32HandleInfoKHR handleInfo = {};
+        handleInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_GET_WIN32_HANDLE_INFO_KHR;
+        handleInfo.handleType = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32_BIT;
+        
+        handleInfo.semaphore = Instance->externalRenderCompleteSemaphore;
+        vkGetSemaphoreWin32HandleKHR(Instance->device, &handleInfo, &externalRenderCompleteSemaphoreHandle);
 
-    handleInfo.semaphore = Instance->externalRenderCompleteSemaphore;
-    vkGetSemaphoreWin32HandleKHR(Instance->device, &handleInfo, &externalRenderCompleteSemaphoreHandle);
+        handleInfo.semaphore = Instance->externalRenderReleaseSemaphore;
+        vkGetSemaphoreWin32HandleKHR(Instance->device, &handleInfo, &externalRenderReleaseSemaphoreHandle);
+    #else
+        VkSemaphoreGetFdInfoKHR handleInfo = {};
+        handleInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_GET_FD_INFO_KHR;
+        handleInfo.handleType = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_FD_BIT;
 
-    handleInfo.semaphore = Instance->externalRenderReleaseSemaphore;
-    vkGetSemaphoreWin32HandleKHR(Instance->device, &handleInfo, &externalRenderReleaseSemaphoreHandle);
+        handleInfo.semaphore = Instance->externalRenderCompleteSemaphore;
+        vkGetSemaphoreFdKHR(Instance->device, &handleInfo, &externalRenderCompleteSemaphoreFd);
+
+        handleInfo.semaphore = Instance->externalRenderReleaseSemaphore;
+        vkGetSemaphoreFdKHR(Instance->device, &handleInfo, &externalRenderReleaseSemaphoreFd);
+    #endif
 }
 void GraphicsSystem::CreateExternalRenderResources()
 {
@@ -2708,8 +2737,11 @@ void GraphicsSystem::CreateExternalRenderImage()
     // Create Vulkan image with external memory
     VkExternalMemoryImageCreateInfo externalInfo = {};
     externalInfo.sType = VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMAGE_CREATE_INFO;
-    externalInfo.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT; // Windows
-    //external_info.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT; // Linux
+    #ifdef _WIN32
+        externalInfo.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT; // Windows
+    #else
+        externalInfo.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT; // Linux
+    #endif
 
     VkImageCreateInfo imageInfo = {};
     imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -2732,8 +2764,11 @@ void GraphicsSystem::CreateExternalRenderImage()
 
     VkExportMemoryAllocateInfo exportInfo = {};
     exportInfo.sType = VK_STRUCTURE_TYPE_EXPORT_MEMORY_ALLOCATE_INFO;
-    exportInfo.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT; // Windows
-    //export_info.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT; // Linux
+    #ifdef _WIN32
+        exportInfo.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT; // Windows
+    #else
+        exportInfo.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT; // Linux
+    #endif
 
     VkMemoryAllocateInfo allocInfo = {};
     allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
@@ -2745,12 +2780,23 @@ void GraphicsSystem::CreateExternalRenderImage()
     vkBindImageMemory(device, externalRenderImage, externalRenderMemory, 0);
 
     // Export memory handle
-    VkMemoryGetWin32HandleInfoKHR handleInfo = {};
-    handleInfo.sType = VK_STRUCTURE_TYPE_MEMORY_GET_WIN32_HANDLE_INFO_KHR;
-    handleInfo.handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT;
-    handleInfo.memory = Instance->externalRenderMemory;
+    #ifdef _WIN32
+        VkMemoryGetWin32HandleInfoKHR handleInfo = {};
+        handleInfo.sType = VK_STRUCTURE_TYPE_MEMORY_GET_WIN32_HANDLE_INFO_KHR;
 
-    vkGetMemoryWin32HandleKHR(Instance->device, &handleInfo, &externalRenderMemoryHandle);
+        handleInfo.handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT;
+        handleInfo.memory = Instance->externalRenderMemory;
+
+        vkGetMemoryWin32HandleKHR(Instance->device, &handleInfo, &externalRenderMemoryHandle);
+    #else
+        VkMemoryGetFdInfoKHR handleInfo = {};
+        handleInfo.sType = VK_STRUCTURE_TYPE_MEMORY_GET_FD_INFO_KHR;
+
+        handleInfo.handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
+        handleInfo.memory = Instance->externalRenderMemory;
+
+        vkGetMemoryFdKHR(Instance->device, &handleInfo, &externalRenderMemoryFd);
+    #endif
 }
 void GraphicsSystem::CreateExternalRenderImageView()
 {

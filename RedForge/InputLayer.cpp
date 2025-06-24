@@ -15,7 +15,7 @@ void InputLayer::PreUpdate()
 void InputLayer::PostUpdate()
 {
 	// Update single-frame states
-	for(uint32_t i = 0; i < (uint32_t) KeyCode::MAX; i++)
+	for(uint32_t i = 0; i < (uint32_t) RFKeyCode::MAX; i++)
 	{
 		if(keysPressedThisFrame[i])
 			keysPressedThisFrame[i] = false;

@@ -20,7 +20,7 @@ private:
 	Entity selectedEntity = INVALID_ENTITY;
 
 public:
-	InspectorWindow* inspector;
+	InspectorWindow* inspector = nullptr;
 
 public:
 	HierarchyPanel();

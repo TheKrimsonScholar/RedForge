@@ -6,7 +6,7 @@ glm::mat4 ColliderComponent::GetInertiaTensor(float mass) const
 {
 	switch(colliderType)
 	{
-	case EColliderType::None: break;
+	case EColliderType::NoCollider: break;
 	case EColliderType::Box:
 	{
 		return glm::scale(glm::mat4(1.0f), glm::vec3(

@@ -3,18 +3,18 @@
 #include "GTKInputLayer.h"
 
 #include <gtkmm.h>
-#include <gdk/win32/gdkwin32.h>
 
 #include <epoxy/gl.h>
 
-// Windows OpenGL extensions
-#include <epoxy/wgl.h>
-
-#define VK_USE_PLATFORM_WIN32_KHR
-#define WIN32_LEAN_AND_MEAN
-#define NOMINMAX
-#include <windows.h>
-#include <windowsx.h>
+#ifdef _WIN32
+    #define VK_USE_PLATFORM_WIN32_KHR
+    #define WIN32_LEAN_AND_MEAN
+    #define NOMINMAX
+    #include <windows.h>
+    #include <windowsx.h>
+#else
+    #define VK_USE_PLATFORM_XLIB_KHR
+#endif
 #include <vulkan/vulkan.h>
 #include "Engine.h"
 #include "ViewportCamera.h"

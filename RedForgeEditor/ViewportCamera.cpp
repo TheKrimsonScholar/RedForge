@@ -31,17 +31,17 @@ void ViewportCamera::Update()
 		pitchYaw.y += mouseDelta.x * TimeManager::GetDeltaTime() * LOOK_SPEED;
 	}
 
-	if(InputSystem::IsKeyDown(KeyCode::A))
+	if(InputSystem::IsKeyDown(RFKeyCode::A))
 		location -= GetRight() * TimeManager::GetDeltaTime() * MOVE_SPEED;
-	if(InputSystem::IsKeyDown(KeyCode::D))
+	if(InputSystem::IsKeyDown(RFKeyCode::D))
 		location += GetRight() * TimeManager::GetDeltaTime() * MOVE_SPEED;
-	if(InputSystem::IsKeyDown(KeyCode::S))
+	if(InputSystem::IsKeyDown(RFKeyCode::S))
 		location -= GetForward() * TimeManager::GetDeltaTime() * MOVE_SPEED;
-	if(InputSystem::IsKeyDown(KeyCode::W))
+	if(InputSystem::IsKeyDown(RFKeyCode::W))
 		location += GetForward() * TimeManager::GetDeltaTime() * MOVE_SPEED;
-	if(InputSystem::IsKeyDown(KeyCode::LSHIFT))
+	if(InputSystem::IsKeyDown(RFKeyCode::LSHIFT))
 		location -= glm::vec3(0, 1, 0) * TimeManager::GetDeltaTime() * MOVE_SPEED;
-	if(InputSystem::IsKeyDown(KeyCode::SPACE))
+	if(InputSystem::IsKeyDown(RFKeyCode::SPACE))
 		location += glm::vec3(0, 1, 0) * TimeManager::GetDeltaTime() * MOVE_SPEED;
 
 	viewMatrix = glm::lookAt(location, location + GetForward(), -GetUp()); // Invert up vector to counteract Vulkan-OpenGL differences

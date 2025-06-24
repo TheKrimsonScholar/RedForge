@@ -3,7 +3,11 @@
 #include "VulkanViewport.h"
 
 #include "Exports.h"
-#define VK_USE_PLATFORM_WIN32_KHR
+#ifdef _WIN32
+    #define VK_USE_PLATFORM_WIN32_KHR
+#else
+    #define VK_USE_PLATFORM_XLIB_KHR
+#endif
 
 #include <gtkmm/application.h>
 #include <gtkmm/window.h>

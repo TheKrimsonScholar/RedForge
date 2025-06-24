@@ -10,43 +10,43 @@ static std::unordered_map<MouseButtonCode, int> GLFW_INPUT_MOUSE_BUTTON_MAP =
     { MouseButtonCode::Middle, GLFW_MOUSE_BUTTON_MIDDLE },
     { MouseButtonCode::Right, GLFW_MOUSE_BUTTON_RIGHT }
 };
-static std::unordered_map<KeyCode, int> GLFW_INPUT_KEY_MAP =
+static std::unordered_map<RFKeyCode, int> GLFW_INPUT_KEY_MAP =
 {
-    { KeyCode::A, GLFW_KEY_A },
-    { KeyCode::B, GLFW_KEY_B },
-    { KeyCode::C, GLFW_KEY_C },
-    { KeyCode::D, GLFW_KEY_D },
-    { KeyCode::E, GLFW_KEY_E },
-    { KeyCode::F, GLFW_KEY_F },
-    { KeyCode::G, GLFW_KEY_G },
-    { KeyCode::H, GLFW_KEY_H },
-    { KeyCode::I, GLFW_KEY_I },
-    { KeyCode::J, GLFW_KEY_J },
-    { KeyCode::K, GLFW_KEY_K },
-    { KeyCode::L, GLFW_KEY_L },
-    { KeyCode::M, GLFW_KEY_M },
-    { KeyCode::N, GLFW_KEY_N },
-    { KeyCode::O, GLFW_KEY_O },
-    { KeyCode::P, GLFW_KEY_P },
-    { KeyCode::Q, GLFW_KEY_Q },
-    { KeyCode::R, GLFW_KEY_R },
-    { KeyCode::S, GLFW_KEY_S },
-    { KeyCode::T, GLFW_KEY_T },
-    { KeyCode::U, GLFW_KEY_U },
-    { KeyCode::V, GLFW_KEY_V },
-    { KeyCode::W, GLFW_KEY_W },
-    { KeyCode::X, GLFW_KEY_X },
-    { KeyCode::Y, GLFW_KEY_Y },
-    { KeyCode::Z, GLFW_KEY_Z },
+    { RFKeyCode::A, GLFW_KEY_A },
+    { RFKeyCode::B, GLFW_KEY_B },
+    { RFKeyCode::C, GLFW_KEY_C },
+    { RFKeyCode::D, GLFW_KEY_D },
+    { RFKeyCode::E, GLFW_KEY_E },
+    { RFKeyCode::F, GLFW_KEY_F },
+    { RFKeyCode::G, GLFW_KEY_G },
+    { RFKeyCode::H, GLFW_KEY_H },
+    { RFKeyCode::I, GLFW_KEY_I },
+    { RFKeyCode::J, GLFW_KEY_J },
+    { RFKeyCode::K, GLFW_KEY_K },
+    { RFKeyCode::L, GLFW_KEY_L },
+    { RFKeyCode::M, GLFW_KEY_M },
+    { RFKeyCode::N, GLFW_KEY_N },
+    { RFKeyCode::O, GLFW_KEY_O },
+    { RFKeyCode::P, GLFW_KEY_P },
+    { RFKeyCode::Q, GLFW_KEY_Q },
+    { RFKeyCode::R, GLFW_KEY_R },
+    { RFKeyCode::S, GLFW_KEY_S },
+    { RFKeyCode::T, GLFW_KEY_T },
+    { RFKeyCode::U, GLFW_KEY_U },
+    { RFKeyCode::V, GLFW_KEY_V },
+    { RFKeyCode::W, GLFW_KEY_W },
+    { RFKeyCode::X, GLFW_KEY_X },
+    { RFKeyCode::Y, GLFW_KEY_Y },
+    { RFKeyCode::Z, GLFW_KEY_Z },
 
-    { KeyCode::LSHIFT, GLFW_KEY_LEFT_SHIFT },
-    { KeyCode::RSHIFT, GLFW_KEY_RIGHT_SHIFT },
-    { KeyCode::SPACE, GLFW_KEY_SPACE },
-    { KeyCode::ESCAPE, GLFW_KEY_ESCAPE },
-    { KeyCode::LCTRL, GLFW_KEY_LEFT_CONTROL },
-    { KeyCode::RCTRL, GLFW_KEY_RIGHT_CONTROL },
-    { KeyCode::LALT, GLFW_KEY_LEFT_ALT },
-    { KeyCode::RALT, GLFW_KEY_RIGHT_ALT }
+    { RFKeyCode::LSHIFT, GLFW_KEY_LEFT_SHIFT },
+    { RFKeyCode::RSHIFT, GLFW_KEY_RIGHT_SHIFT },
+    { RFKeyCode::SPACE, GLFW_KEY_SPACE },
+    { RFKeyCode::ESCAPE, GLFW_KEY_ESCAPE },
+    { RFKeyCode::LCTRL, GLFW_KEY_LEFT_CONTROL },
+    { RFKeyCode::RCTRL, GLFW_KEY_RIGHT_CONTROL },
+    { RFKeyCode::LALT, GLFW_KEY_LEFT_ALT },
+    { RFKeyCode::RALT, GLFW_KEY_RIGHT_ALT }
 };
 
 GLFWInputLayer::GLFWInputLayer() : 
@@ -89,9 +89,9 @@ void GLFWInputLayer::PreUpdate()
 		// Update stored button state
 		mouseButtonsDown[i] = glfwGetMouseButton(window, mouseButton) == GLFW_PRESS;
 	}
-	for(uint32_t i = 0; i < (uint32_t) KeyCode::MAX; i++)
+	for(uint32_t i = 0; i < (uint32_t) RFKeyCode::MAX; i++)
 	{
-        int key = GLFW_INPUT_KEY_MAP[(KeyCode) i];
+        int key = GLFW_INPUT_KEY_MAP[(RFKeyCode) i];
 
 		// This key was just pressed this frame if it was not pressed last frame and is pressed this frame
 		keysPressedThisFrame[i] =

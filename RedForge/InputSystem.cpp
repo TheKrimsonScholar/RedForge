@@ -38,7 +38,7 @@ void InputSystem::Update()
 			
 			for(auto& keyCallback : input.keyDownCallbacks)
 			{
-				if(InputSystem::IsKeyDown((KeyCode) keyCallback.first))
+				if(InputSystem::IsKeyDown((RFKeyCode) keyCallback.first))
 					keyCallback.second(e);
 			}
 		}

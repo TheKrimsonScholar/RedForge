@@ -6,7 +6,7 @@
 
 enum class EColliderType
 {
-    None,
+    NoCollider,
     Box,
     Sphere
 };

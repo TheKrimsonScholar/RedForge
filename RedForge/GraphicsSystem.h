@@ -1,5 +1,10 @@
 #pragma once
-#define VK_USE_PLATFORM_WIN32_KHR
+
+#ifdef _WIN32
+    #define VK_USE_PLATFORM_WIN32_KHR
+#else
+    //#define VK_USE_PLATFORM_XLIB_KHR
+#endif
 
 #include <vector>
 #include <cstring>
@@ -21,10 +26,14 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
-#define WIN32_LEAN_AND_MEAN
-#define NOMINMAX
-#include <windows.h>
-#include <vulkan/vulkan_win32.h>
+#ifdef _WIN32
+    #define WIN32_LEAN_AND_MEAN
+    #define NOMINMAX
+    #include <windows.h>
+    #include <vulkan/vulkan_win32.h>
+#else
+    //#include <vulkan/vulkan_xlib.h>
+#endif
 
 const uint32_t WIDTH = 800;
 const uint32_t HEIGHT = 600;
@@ -43,9 +52,14 @@ const std::vector<const char*> deviceExtensions =
 {
     VK_KHR_SWAPCHAIN_EXTENSION_NAME,
     VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME,
-    VK_KHR_EXTERNAL_MEMORY_WIN32_EXTENSION_NAME,
     VK_KHR_EXTERNAL_SEMAPHORE_EXTENSION_NAME,
-    VK_KHR_EXTERNAL_SEMAPHORE_WIN32_EXTENSION_NAME,
+    #ifdef _WIN32
+        VK_KHR_EXTERNAL_MEMORY_WIN32_EXTENSION_NAME,
+        VK_KHR_EXTERNAL_SEMAPHORE_WIN32_EXTENSION_NAME,
+    #else
+        VK_KHR_EXTERNAL_MEMORY_FD_EXTENSION_NAME,
+        VK_KHR_EXTERNAL_SEMAPHORE_FD_EXTENSION_NAME,
+    #endif
     "VK_EXT_descriptor_indexing"
 };
 const std::vector<const char*> instanceExtensions =
@@ -158,18 +172,28 @@ private:
     VkExtent2D externalRenderImageExtent;
     VkImage externalRenderImage;
     VkDeviceMemory externalRenderMemory;
-    HANDLE externalRenderMemoryHandle = INVALID_HANDLE_VALUE;
     size_t externalRenderMemorySize = 0;
     VkImageView externalRenderImageView;
     VkFramebuffer externalRenderFramebuffer;
     VkSemaphore externalRenderCompleteSemaphore;
     VkSemaphore externalRenderReleaseSemaphore;
-    HANDLE externalRenderCompleteSemaphoreHandle = INVALID_HANDLE_VALUE;
-    HANDLE externalRenderReleaseSemaphoreHandle = INVALID_HANDLE_VALUE;
+    #ifdef _WIN32
+        HANDLE externalRenderMemoryHandle = INVALID_HANDLE_VALUE;
+        HANDLE externalRenderCompleteSemaphoreHandle = INVALID_HANDLE_VALUE;
+        HANDLE externalRenderReleaseSemaphoreHandle = INVALID_HANDLE_VALUE;
 
-    // Function pointers for extension functions
-    PFN_vkGetMemoryWin32HandleKHR vkGetMemoryWin32HandleKHR = nullptr;
-    PFN_vkGetSemaphoreWin32HandleKHR vkGetSemaphoreWin32HandleKHR = nullptr;
+        // Function pointers for extension functions
+        PFN_vkGetMemoryWin32HandleKHR vkGetMemoryWin32HandleKHR = nullptr;
+        PFN_vkGetSemaphoreWin32HandleKHR vkGetSemaphoreWin32HandleKHR = nullptr;
+    #else
+	    int externalRenderMemoryFd = -1;
+	    int externalRenderCompleteSemaphoreFd = -1;
+	    int externalRenderReleaseSemaphoreFd = -1;
+
+	    // Function pointers for extension functions
+	    PFN_vkGetMemoryFdKHR vkGetMemoryFdKHR = nullptr;
+	    PFN_vkGetSemaphoreFdKHR vkGetSemaphoreFdKHR = nullptr;
+    #endif
 
     VkRenderPass renderPass;
     VkDescriptorSetLayout descriptorSetLayout;
@@ -388,10 +412,16 @@ public:
     void CreateExternalRenderImageView();
     void CreateExternalRenderFramebuffer();
 
-    static void* GetExternalRenderMemoryHandle() { return Instance->externalRenderMemoryHandle; };
     static size_t GetExternalRenderMemorySize() { return Instance->externalRenderMemorySize; };
-    static void* GetExternalRenderCompleteSemaphoreHandle() { return Instance->externalRenderCompleteSemaphoreHandle; };
-    static void* GetExternalRenderReleaseSemaphoreHandle() { return Instance->externalRenderReleaseSemaphoreHandle; };
+    #ifdef _WIN32
+        static void* GetExternalRenderMemoryHandle() { return Instance->externalRenderMemoryHandle; };
+        static void* GetExternalRenderCompleteSemaphoreHandle() { return Instance->externalRenderCompleteSemaphoreHandle; };
+        static void* GetExternalRenderReleaseSemaphoreHandle() { return Instance->externalRenderReleaseSemaphoreHandle; };
+    #else
+	    static int GetExternalRenderMemoryHandle() { return Instance->externalRenderMemoryFd; };
+	    static int GetExternalRenderCompleteSemaphoreHandle() { return Instance->externalRenderCompleteSemaphoreFd; };
+	    static int GetExternalRenderReleaseSemaphoreHandle() { return Instance->externalRenderReleaseSemaphoreFd; };
+    #endif
 
     void CleanupExternalRenderResources();
 

@@ -4,9 +4,9 @@
 
 #include "ComponentMacros.h"
 
-#include "gtkmm\expander.h"
-#include "gtkmm\label.h"
-#include "gtkmm\box.h"
+#include "gtkmm/expander.h"
+#include "gtkmm/label.h"
+#include "gtkmm/box.h"
 
 #include "ComponentVariableEntry.h"
 

@@ -9,7 +9,9 @@
 #define DEBUG_NEW new(_NORMAL_BLOCK, __FILE__, __LINE__)
 #define new DEBUG_NEW
 
-#undef GetCurrentTime()
+#ifdef _WIN32
+    #undef GetCurrentTime()
+#endif
 
 void Engine::Run()
 {
@@ -92,27 +94,27 @@ void Engine::Run()
                 transform.rotation = glm::normalize(transform.rotation);
             });
 		float movementSpeed = 5.0f;
-        input.keyDownCallbacks.emplace((uint32_t) KeyCode::D, [movementSpeed](Entity e)
+        input.keyDownCallbacks.emplace((uint32_t) RFKeyCode::D, [movementSpeed](Entity e)
             {
                 EntityManager::GetComponent<TransformComponent>(e).location += EntityManager::GetComponent<TransformComponent>(e).GetRight() * movementSpeed * TimeManager::GetDeltaTime();
             });
-        input.keyDownCallbacks.emplace((uint32_t) KeyCode::A, [movementSpeed](Entity e)
+        input.keyDownCallbacks.emplace((uint32_t) RFKeyCode::A, [movementSpeed](Entity e)
             {
                 EntityManager::GetComponent<TransformComponent>(e).location -= EntityManager::GetComponent<TransformComponent>(e).GetRight() * movementSpeed * TimeManager::GetDeltaTime();
             });
-        input.keyDownCallbacks.emplace((uint32_t) KeyCode::SPACE, [movementSpeed](Entity e)
+        input.keyDownCallbacks.emplace((uint32_t) RFKeyCode::SPACE, [movementSpeed](Entity e)
             {
                 EntityManager::GetComponent<TransformComponent>(e).location += glm::vec3(0, 1, 0) * movementSpeed * TimeManager::GetDeltaTime();
             });
-        input.keyDownCallbacks.emplace((uint32_t) KeyCode::LSHIFT, [movementSpeed](Entity e)
+        input.keyDownCallbacks.emplace((uint32_t) RFKeyCode::LSHIFT, [movementSpeed](Entity e)
             {
                 EntityManager::GetComponent<TransformComponent>(e).location -= glm::vec3(0, 1, 0) * movementSpeed * TimeManager::GetDeltaTime();
             });
-        input.keyDownCallbacks.emplace((uint32_t) KeyCode::W, [movementSpeed](Entity e)
+        input.keyDownCallbacks.emplace((uint32_t) RFKeyCode::W, [movementSpeed](Entity e)
             {
                 EntityManager::GetComponent<TransformComponent>(e).location += EntityManager::GetComponent<TransformComponent>(e).GetForward() * movementSpeed * TimeManager::GetDeltaTime();
             });
-        input.keyDownCallbacks.emplace((uint32_t) KeyCode::S, [movementSpeed](Entity e)
+        input.keyDownCallbacks.emplace((uint32_t) RFKeyCode::S, [movementSpeed](Entity e)
             {
                 EntityManager::GetComponent<TransformComponent>(e).location -= EntityManager::GetComponent<TransformComponent>(e).GetForward() * movementSpeed * TimeManager::GetDeltaTime();
             });

@@ -4,7 +4,6 @@
 
 #include <gdk/gdk.h>
 #include <gdk/gdkglcontext.h>
-#include <gdk/win32/gdkwin32.h>
 
 #include <gdkmm/texture.h>
 #include <glibmm/bytes.h>
@@ -94,13 +93,22 @@ void VulkanViewport::SetupOpenGLInterop()
 }
 void VulkanViewport::ImportVulkanMemory()
 {
-    // Get the exported memory handle from Vulkan engine
-    void* memoryHandle = GraphicsSystem::GetExternalRenderMemoryHandle();
     size_t memorySize = GraphicsSystem::GetExternalRenderMemorySize();
+    #ifdef _WIN32
+        // Get the exported memory handle from Vulkan engine
+        void* memoryHandle = GraphicsSystem::GetExternalRenderMemoryHandle();
 
-    // Create OpenGL memory object
-    glCreateMemoryObjectsEXT(1, &memoryObject);
-    glImportMemoryWin32HandleEXT(memoryObject, memorySize, GL_HANDLE_TYPE_OPAQUE_WIN32_EXT, memoryHandle);
+        // Create OpenGL memory object
+        glCreateMemoryObjectsEXT(1, &memoryObject);
+        glImportMemoryWin32HandleEXT(memoryObject, memorySize, GL_HANDLE_TYPE_OPAQUE_WIN32_EXT, memoryHandle);
+    #else
+        // Get the exported memory handle from Vulkan engine
+        int memoryFd = GraphicsSystem::GetExternalRenderMemoryHandle();
+
+        // Create OpenGL memory object
+        glCreateMemoryObjectsEXT(1, &memoryObject);
+        glImportMemoryFdEXT(memoryObject, memorySize, GL_HANDLE_TYPE_OPAQUE_FD_EXT, memoryFd);
+    #endif
 
     // Create OpenGL texture from imported memory
     glCreateTextures(GL_TEXTURE_2D, 1, &sharedTexture);
@@ -116,16 +124,29 @@ void VulkanViewport::ImportVulkanMemory()
 }
 void VulkanViewport::ImportVulkanSemaphores()
 {
-    // Get exported semaphore handles from Vulkan
-    void* renderCompleteHandle = GraphicsSystem::GetExternalRenderCompleteSemaphoreHandle();
-    void* renderReleaseHandle = GraphicsSystem::GetExternalRenderReleaseSemaphoreHandle();
+    #ifdef _WIN32
+        // Get exported semaphore handles from Vulkan
+        void* renderCompleteHandle = GraphicsSystem::GetExternalRenderCompleteSemaphoreHandle();
+        void* renderReleaseHandle = GraphicsSystem::GetExternalRenderReleaseSemaphoreHandle();
 
-    // Import semaphores into OpenGL
-    glGenSemaphoresEXT(1, &waitSemaphore);
-    glGenSemaphoresEXT(1, &signalSemaphore);
+        // Import semaphores into OpenGL
+        glGenSemaphoresEXT(1, &waitSemaphore);
+        glGenSemaphoresEXT(1, &signalSemaphore);
 
-    glImportSemaphoreWin32HandleEXT(waitSemaphore, GL_HANDLE_TYPE_OPAQUE_WIN32_EXT, renderCompleteHandle);
-    glImportSemaphoreWin32HandleEXT(signalSemaphore, GL_HANDLE_TYPE_OPAQUE_WIN32_EXT, renderReleaseHandle);
+        glImportSemaphoreWin32HandleEXT(waitSemaphore, GL_HANDLE_TYPE_OPAQUE_WIN32_EXT, renderCompleteHandle);
+        glImportSemaphoreWin32HandleEXT(signalSemaphore, GL_HANDLE_TYPE_OPAQUE_WIN32_EXT, renderReleaseHandle);
+    #else
+        // Get exported semaphore handles from Vulkan
+        int renderCompleteFd = GraphicsSystem::GetExternalRenderCompleteSemaphoreHandle();
+        int renderReleaseFd = GraphicsSystem::GetExternalRenderReleaseSemaphoreHandle();
+
+        // Import semaphores into OpenGL
+        glGenSemaphoresEXT(1, &waitSemaphore);
+        glGenSemaphoresEXT(1, &signalSemaphore);
+
+        glImportSemaphoreFdEXT(waitSemaphore, GL_HANDLE_TYPE_OPAQUE_FD_EXT, renderCompleteFd);
+        glImportSemaphoreFdEXT(signalSemaphore, GL_HANDLE_TYPE_OPAQUE_FD_EXT, renderReleaseFd);
+    #endif
 }
 void VulkanViewport::SetupOpenGLRendering()
 {
@@ -240,10 +261,12 @@ void VulkanViewport::CheckOpenGLExtensions()
 {
     if(!epoxy_has_gl_extension("GL_EXT_memory_object"))
         throw std::runtime_error("GL_EXT_memory_object not supported!");
-    if(!epoxy_has_gl_extension("GL_EXT_memory_object_win32"))
-        throw std::runtime_error("GL_EXT_memory_object_win32 not supported!");
     if(!epoxy_has_gl_extension("GL_EXT_semaphore"))
         throw std::runtime_error("GL_EXT_semaphore not supported!");
-    if(!epoxy_has_gl_extension("GL_EXT_semaphore_win32"))
-        throw std::runtime_error("GL_EXT_semaphore_win32 not supported!");
+    #ifdef _WIN32
+        if(!epoxy_has_gl_extension("GL_EXT_memory_object_win32"))
+            throw std::runtime_error("GL_EXT_memory_object_win32 not supported!");
+        if(!epoxy_has_gl_extension("GL_EXT_semaphore_win32"))
+            throw std::runtime_error("GL_EXT_semaphore_win32 not supported!");
+    #endif
 }

@@ -29,7 +29,8 @@ void InspectorWindow::SetTarget(Entity entity)
 {
 	entityLabel.set_label(std::to_string(entity));
 
-	componentsList.remove_all();
+	while(auto child = componentsList.get_first_child())
+		componentsList.remove(*child);
 
 	std::unordered_map<void*, std::type_index> components = EntityManager::GetAllComponents(entity);
 	std::vector<std::type_index> registeredComponentTypes = GetRegisteredComponentsList();
@@ -85,5 +86,6 @@ void InspectorWindow::ResetTarget()
 {
 	entityLabel.set_label("None");
 
-	componentsList.remove_all();
+	while(auto child = componentsList.get_first_child())
+		componentsList.remove(*child);
 }

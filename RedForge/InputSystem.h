@@ -31,7 +31,7 @@ public:
 	
 	REDFORGE_API void Update();
 
-	REDFORGE_API static bool IsKeyDown(KeyCode key) { return Instance->activeInputLayer ? Instance->activeInputLayer->IsKeyDown(key) : false; };
+	REDFORGE_API static bool IsKeyDown(RFKeyCode key) { return Instance->activeInputLayer ? Instance->activeInputLayer->IsKeyDown(key) : false; };
 	REDFORGE_API static bool WasButtonFirstPressedThisFrame(uint32_t buttonIndex) { return Instance->buttonsPressedThisFrame[buttonIndex]; };
 
 	REDFORGE_API static glm::dvec2 GetMousePosition() { return Instance->activeInputLayer ? Instance->activeInputLayer->GetMousePosition() : glm::dvec2(0, 0); };

@@ -4,13 +4,13 @@
 #include <unordered_map>
 #include <iostream>
 
+#include "rapidobj/rapidobj.hpp"
+
 #include "GraphicsSystem.h"
 #include "PathUtils.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image/stb_image.h"
-
-#include "rapidobj/rapidobj.hpp"
 
 void ResourceManager::Startup()
 {
@@ -544,7 +544,7 @@ std::unordered_map<std::wstring, std::wstring> ResourceManager::GetAllFilesInDir
     {
         if(std::filesystem::is_regular_file(entry))
         {
-            std::wstring filePath = entry.path();
+            std::wstring filePath = entry.path().wstring();
             size_t directoryEnd = filePath.find(directory) + directory.length();
             size_t extensionStart = filePath.find_last_of('.');
 
