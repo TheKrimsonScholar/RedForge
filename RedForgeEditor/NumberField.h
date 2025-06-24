@@ -33,6 +33,8 @@ public:
         : value(initial_value), speed(drag_speed), min_value(min_val),
         max_value(max_val), decimal_places(decimals)
     {
+        add_css_class("drag-scalar");
+
         // Set initial text
         update_display();
 

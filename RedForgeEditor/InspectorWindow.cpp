@@ -14,6 +14,8 @@ InspectorWindow::InspectorWindow() :
 {
 	set_focusable(false);
 
+	componentsList.add_css_class("inspector-list");
+
 	set_child(contentArea);
 
 	contentArea.append(windowLabel);
@@ -42,6 +44,7 @@ void InspectorWindow::SetTarget(Entity entity)
 				continue;
 
 			Gtk::Box* componentEntry = Gtk::manage(new Gtk::Box(Gtk::Orientation::HORIZONTAL));
+			componentEntry->add_css_class("component-entry");
 			componentEntry->set_halign(Gtk::Align::FILL);
 			
 			ComponentEntry* newEntry = Gtk::manage(new ComponentEntry(entity, component.second, component.first));

@@ -11,6 +11,8 @@ HierarchyPanel::HierarchyPanel() : Gtk::ScrolledWindow(), // "Hierarchy"
 {
 	set_child(contentArea);
 
+	entityList.add_css_class("entity-list");
+
 	createEntityButton.set_tooltip_text("Create a new entity");
 	createEntityButton.signal_clicked().connect(sigc::mem_fun(*this, &HierarchyPanel::CreateEntity), false);
 
