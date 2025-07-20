@@ -4,13 +4,13 @@
 #include "PathUtils.h"
 
 ComponentVariableEntry_Material::ComponentVariableEntry_Material(const std::string& label, void* variablePtr) : ComponentVariableEntry(label, variablePtr), 
-	variablePtr(static_cast<Material**>(variablePtr))
+	variablePtr(static_cast<MaterialRef*>(variablePtr))
 {
 	std::vector<Glib::ustring> materialNames;
 	for(auto& material : ResourceManager::GetMaterialMap())
 	{
 		materialNames.push_back(Glib::ustring(WideToNarrow(material.first)));
-		materials.push_back(material.second);
+		materials.push_back(material.first);
 	}
 	
 	dropdown = Gtk::DropDown(materialNames);

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <string>
 
 #include "Vertex.h"
 #include "Material.h"
@@ -18,6 +19,7 @@ public:
 
 	Material* defaultMaterial;
 
+    std::wstring identifier;
     // Index of the mesh in the global meshes array, assigned by the graphics system.
     uint32_t index = -1;
 

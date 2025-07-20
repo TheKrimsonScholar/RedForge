@@ -163,9 +163,12 @@
     <ClCompile Include="InputComponent.cpp" />
     <ClCompile Include="InputLayer.cpp" />
     <ClCompile Include="InputSystem.cpp" />
+    <ClCompile Include="LevelManager.cpp" />
     <ClCompile Include="LightComponent.cpp" />
     <ClCompile Include="Material.cpp" />
+    <ClCompile Include="MaterialRef.cpp" />
     <ClCompile Include="Mesh.cpp" />
+    <ClCompile Include="MeshRef.cpp" />
     <ClCompile Include="MeshRendererComponent.cpp" />
     <ClCompile Include="PathUtils.cpp" />
     <ClCompile Include="PhysicsComponent.cpp" />
@@ -201,9 +204,12 @@
     <ClInclude Include="InputComponent.h" />
     <ClInclude Include="InputLayer.h" />
     <ClInclude Include="InputSystem.h" />
+    <ClInclude Include="LevelManager.h" />
     <ClInclude Include="LightComponent.h" />
     <ClInclude Include="Material.h" />
+    <ClInclude Include="MaterialRef.h" />
     <ClInclude Include="Mesh.h" />
+    <ClInclude Include="MeshRef.h" />
     <ClInclude Include="MeshRendererComponent.h" />
     <ClInclude Include="PathUtils.h" />
     <ClInclude Include="PhysicsComponent.h" />

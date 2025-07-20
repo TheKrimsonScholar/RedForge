@@ -2,18 +2,18 @@
 
 #include "ComponentVariableEntry.h"
 
-#include "Material.h"
+#include "MaterialRef.h"
 
 #include <gtkmm/dropdown.h>
 
 class ComponentVariableEntry_Material : public ComponentVariableEntry
 {
 private:
-	Material** variablePtr;
+	MaterialRef* variablePtr;
 
 	Gtk::DropDown dropdown;
 
-	std::vector<Material*> materials;
+	std::vector<MaterialRef> materials;
 
 public:
 	ComponentVariableEntry_Material(const std::string& label, void* variablePtr);

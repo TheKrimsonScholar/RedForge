@@ -15,6 +15,7 @@
 
 #include "Engine.h"
 
+#include "EditorToolbar.h"
 #include "HierarchyPanel.h"
 
 #include "ViewportCamera.h"
@@ -25,11 +26,13 @@ protected:
     Engine* engine;
 
     Gtk::HeaderBar* headerBar;
+    Gtk::Paned* windowPanel;
+    EditorToolbar* toolbar;
     Gtk::Paned* mainPanel;
     Gtk::Paned* leftPanel;
     Gtk::Paned* rightPanel;
 
-    InspectorWindow* inspectorWindow;
+    InspectorPanel* inspectorWindow;
     HierarchyPanel* hierarchyPanel;
 
     VulkanViewport viewport;

@@ -1,7 +1,6 @@
 #pragma once
 
 #include <iostream>
+#include <format>
 
-#define LOG(format, ...)			\
-printf(format, __VA_ARGS__);		\
-std::cout << std::endl;
+#define LOG(Format, ...) std::cout << std::format(Format, __VA_ARGS__) << std::endl;

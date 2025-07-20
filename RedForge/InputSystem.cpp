@@ -5,6 +5,7 @@
 #include "GraphicsSystem.h"
 #include "CameraManager.h"
 #include "TimeManager.h"
+#include "LevelManager.h"
 
 #include "TransformComponent.h"
 #include "InputComponent.h"
@@ -25,21 +26,21 @@ void InputSystem::Update()
 
 	activeInputLayer->PreUpdate();
 
-	for(Entity e = 0; e < EntityManager::GetLastEntity(); e++)
-		if(EntityManager::HasComponent<InputComponent>(e))
+	for(Entity entity : LevelManager::GetAllEntities())
+		if(EntityManager::HasComponent<InputComponent>(entity))
 		{
-			InputComponent& input = EntityManager::GetComponent<InputComponent>(e);
+			InputComponent& input = EntityManager::GetComponent<InputComponent>(entity);
 
 			for(auto& mouseCallback : input.mouseDownCallbacks)
 			{
 				if(InputSystem::IsMouseButtonDown((MouseButtonCode) mouseCallback.first))
-					mouseCallback.second(e);
+					mouseCallback.second(entity);
 			}
 			
 			for(auto& keyCallback : input.keyDownCallbacks)
 			{
 				if(InputSystem::IsKeyDown((RFKeyCode) keyCallback.first))
-					keyCallback.second(e);
+					keyCallback.second(entity);
 			}
 		}
 

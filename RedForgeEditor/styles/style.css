@@ -45,10 +45,48 @@ headerbar button:hover
     color: var(--secondary-color);
 }
 
-/* SearchEntry */
-.search
+/* Toolbar */
+.toolbar
+{
+    padding: 0.25em;
+
+    background-color: var(--tertiary-color);
+}
+.toolbar-button
+{
+    min-width: 5em;
+
+    background-color: var(--tertiary-color);
+    
+    border: none;
+}
+.toolbar-button:hover
 {
     background-color: var(--secondary-color);
+}
+.toolbar-button > label
+{
+    background: transparent;
+}
+.toolbar-button:hover > label
+{
+    background: transparent;
+}
+
+/* Panels */
+.panel-label
+{
+    background-color: var(--bold-primary-color);
+}
+.panel-scrollarea
+{
+    background: transparent;
+}
+
+/* Console */
+.console-text
+{
+    background: transparent;
     color: var(--primary-color);
 }
 
@@ -59,6 +97,13 @@ headerbar button:hover
     color: var(--primary-color);
 }
 .component-entry
+{
+    background-color: var(--secondary-color);
+    color: var(--primary-color);
+}
+
+/* SearchEntry */
+.search
 {
     background-color: var(--secondary-color);
     color: var(--primary-color);

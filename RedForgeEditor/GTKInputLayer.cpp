@@ -90,6 +90,9 @@ void GTKInputLayer::OnMouseMotion(double x, double y)
 
 void GTKInputLayer::OnMouseButtonPressed(int n_press, double x, double y)
 {
+    // Manually grab focus for the viewport whenever a mouse button is pressed
+    widget->grab_focus();
+
     auto event = m_clickGesture->get_current_event();
 
     MouseButtonCode mouseButton = GDK_INPUT_MOUSE_BUTTON_MAP[event->get_button()];

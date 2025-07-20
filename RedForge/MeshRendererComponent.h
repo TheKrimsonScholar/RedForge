@@ -2,8 +2,8 @@
 
 #include <string>
 
-#include "Mesh.h"
-#include "Material.h"
+#include "MeshRef.h"
+#include "MaterialRef.h"
 
 #include "ComponentMacros.h"
 
@@ -11,8 +11,8 @@
 
 REDFORGE_API struct MeshRendererComponent
 {
-	Mesh* mesh;
-	Material* material;
+	MeshRef mesh;
+	MaterialRef material;
 
 	uint32_t rendererIndex;
 
@@ -21,6 +21,6 @@ public:
 };
 
 REGISTER_COMPONENT_BEGIN(MeshRendererComponent)
-COMPONENT_VAR(Mesh*, mesh)
-COMPONENT_VAR(Material*, material)
+COMPONENT_VAR(MeshRef, mesh)
+COMPONENT_VAR(MaterialRef, material)
 REGISTER_COMPONENT_END(MeshRendererComponent)

@@ -23,6 +23,8 @@
 #include <glibmm.h>
 #include <gdkmm/pixbuf.h>
 
+#include "ConsolePanel.h"
+
 MainEditorWindow::MainEditorWindow() : Gtk::Window(),
     viewport()
 {
@@ -37,37 +39,45 @@ MainEditorWindow::MainEditorWindow() : Gtk::Window(),
     set_title("RedForge Editor");
     set_default_size(1280, 720);
 
-    headerBar = new Gtk::HeaderBar();
+    headerBar = Gtk::manage(new Gtk::HeaderBar());
     set_titlebar(*headerBar);
 
     {
+        windowPanel = Gtk::manage(new Gtk::Paned(Gtk::Orientation::VERTICAL));
+
+        toolbar = Gtk::manage(new EditorToolbar());
+
         // Main horizontal split
-        mainPanel = new Gtk::Paned(Gtk::Orientation::HORIZONTAL);
+        mainPanel = Gtk::manage(new Gtk::Paned(Gtk::Orientation::HORIZONTAL));
 
         // Left dock area
-        leftPanel = new Gtk::Paned(Gtk::Orientation::VERTICAL);
-        inspectorWindow = new InspectorWindow();
-        hierarchyPanel = new HierarchyPanel();
+        leftPanel = Gtk::manage(new Gtk::Paned(Gtk::Orientation::VERTICAL));
+        inspectorWindow = Gtk::manage(new InspectorPanel());
+        hierarchyPanel = Gtk::manage(new HierarchyPanel());
         hierarchyPanel->inspector = inspectorWindow;
         leftPanel->set_start_child(*inspectorWindow);
         leftPanel->set_end_child(*hierarchyPanel);
 
         // Right side - viewport and bottom dock
-        rightPanel = new Gtk::Paned(Gtk::Orientation::VERTICAL);
+        rightPanel = Gtk::manage(new Gtk::Paned(Gtk::Orientation::VERTICAL));
         rightPanel->set_start_child(viewport);
-        auto bottomDock = new Gtk::Frame("Console");
+        auto bottomDock = Gtk::manage(new ConsolePanel());
         rightPanel->set_end_child(*bottomDock);
 
         // Combine
+        windowPanel->set_start_child(*toolbar);
+        windowPanel->set_end_child(*mainPanel);
+
         mainPanel->set_start_child(*leftPanel);
         mainPanel->set_end_child(*rightPanel);
 
         // Set initial positions
-        leftPanel->set_position(200);
+        windowPanel->set_position(64);
         mainPanel->set_position(400);
+        leftPanel->set_position(200);
         rightPanel->set_position(400);
 
-        set_child(*mainPanel);
+        set_child(*windowPanel);
     }
 
     viewport.onViewportInitialized = [this]()
@@ -96,12 +106,14 @@ MainEditorWindow::MainEditorWindow() : Gtk::Window(),
                 physics.mass = 1;
                 physics.isStatic = true;
 
-                Entity entity = EntityManager::CreateEntity();
-                EntityManager::AddComponent<TransformComponent>(entity, transform);
-                EntityManager::AddComponent<MeshRendererComponent>(entity, renderer);
+                //Entity entity = LevelManager::CreateEntity();
+                //EntityManager::AddComponent<TransformComponent>(entity, transform);
+                /*EntityManager::AddComponent<MeshRendererComponent>(entity, renderer);
                 EntityManager::AddComponent<ColliderComponent>(entity, collider);
-                EntityManager::AddComponent<PhysicsComponent>(entity, physics);
+                EntityManager::AddComponent<PhysicsComponent>(entity, physics);*/
             }
+
+            LevelManager::LoadLevel();
 
             hierarchyPanel->UpdateHierarchy();
         };
@@ -120,11 +132,6 @@ MainEditorWindow::MainEditorWindow() : Gtk::Window(),
 MainEditorWindow::~MainEditorWindow()
 {
     engine->Shutdown();
-
-    delete rightPanel;
-    delete leftPanel;
-    delete mainPanel;
-    delete headerBar;
 
     delete engine;
 }

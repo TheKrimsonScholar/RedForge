@@ -1,16 +1,14 @@
 #include "HierarchyPanel.h"
 
-#include "EntityManager.h"
+#include "LevelManager.h"
 
 #include <gtkmm/label.h>
 
 #include "DebugMacros.h"
 
-HierarchyPanel::HierarchyPanel() : Gtk::ScrolledWindow(), // "Hierarchy"
-	contentArea(Gtk::Orientation::VERTICAL), createEntityButton("New Entity"), entityList()
+HierarchyPanel::HierarchyPanel() : EditorPanel("Hierarchy"), 
+	createEntityButton("New Entity"), entityList()
 {
-	set_child(contentArea);
-
 	entityList.add_css_class("entity-list");
 
 	createEntityButton.set_tooltip_text("Create a new entity");
@@ -34,22 +32,22 @@ void HierarchyPanel::UpdateHierarchy()
 {
 	DestroyHierarchy();
 
-	for(Entity e = 0; e < EntityManager::GetLastEntity(); e++)
+	for(Entity& entity : LevelManager::GetAllEntities())
 	{
-		if(!EntityManager::IsEntityValid(e))
+		if(!EntityManager::IsEntityValid(entity))
 			continue;
 
 		Gtk::ListBoxRow* row = Gtk::manage(new Gtk::ListBoxRow());
 		Gtk::Box* box = Gtk::manage(new Gtk::Box(Gtk::Orientation::HORIZONTAL));
 		
-		Gtk::Label* entityLabel = Gtk::manage(new Gtk::Label("Entity" + std::to_string(e)));
+		Gtk::Label* entityLabel = Gtk::manage(new Gtk::Label(LevelManager::GetName(entity)));
 		Gtk::Box* spacer = Gtk::manage(new Gtk::Box(Gtk::Orientation::HORIZONTAL));
 		spacer->set_hexpand(true);
 
 		Gtk::Button* destroyButton = Gtk::manage(new Gtk::Button("X"));
 		destroyButton->set_halign(Gtk::Align::END);
 		destroyButton->set_tooltip_text("Destroy this entity");
-		destroyButton->signal_clicked().connect(sigc::bind(sigc::mem_fun(*this, &HierarchyPanel::DestroyEntity), e), false);
+		destroyButton->signal_clicked().connect(sigc::bind(sigc::mem_fun(*this, &HierarchyPanel::DestroyEntity), entity), false);
 		
 		box->append(*entityLabel);
 		box->append(*spacer);
@@ -58,13 +56,13 @@ void HierarchyPanel::UpdateHierarchy()
 		row->set_child(*box);
 
 		entityList.append(*row);
-		entityRows.emplace(row, e);
+		entityRows.emplace(row, entity);
 	}
 }
 
 void HierarchyPanel::CreateEntity()
 {
-	EntityManager::CreateEntity();
+	LevelManager::CreateEntity("", selectedEntity);
 
 	UpdateHierarchy();
 }
@@ -73,10 +71,10 @@ void HierarchyPanel::DestroyEntity(Entity entity)
 	if(selectedEntity == entity)
 	{
 		inspector->ResetTarget();
-		selectedEntity = INVALID_ENTITY;
+		selectedEntity = {};
 	}
 
-	EntityManager::DestroyEntity(entity);
+	LevelManager::DestroyEntity(entity);
 
 	UpdateHierarchy();
 }
@@ -97,7 +95,8 @@ void HierarchyPanel::OnSelectedRowsChanged()
 
 void HierarchyPanel::DestroyHierarchy()
 {
-	selectedEntity = INVALID_ENTITY;
+	// Invalidate selected entity
+	selectedEntity = {};
 
 	while(auto child = entityList.get_first_child())
 		entityList.remove(*child);

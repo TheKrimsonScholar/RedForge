@@ -2,18 +2,18 @@
 
 #include "ComponentVariableEntry.h"
 
-#include "Mesh.h"
+#include "MeshRef.h"
 
 #include <gtkmm/dropdown.h>
 
 class ComponentVariableEntry_Mesh : public ComponentVariableEntry
 {
 private:
-	Mesh** variablePtr;
+	MeshRef* variablePtr;
 
 	Gtk::DropDown dropdown;
 
-	std::vector<Mesh*> meshes;
+	std::vector<MeshRef> meshes;
 
 public:
 	ComponentVariableEntry_Mesh(const std::string& label, void* variablePtr);

@@ -1,6 +1,6 @@
-#include "InspectorWindow.h"
+#include "InspectorPanel.h"
 
-#include "EntityManager.h"
+#include "LevelManager.h"
 #include "DebugMacros.h"
 
 #include <gtkmm/button.h>
@@ -9,27 +9,22 @@
 
 #include "TransformComponent.h"
 
-InspectorWindow::InspectorWindow() : 
-	contentArea(Gtk::Orientation::VERTICAL), windowLabel("Inspector"), entityLabel("None"), componentsList()
+InspectorPanel::InspectorPanel() : EditorPanel("Inspector"),
+	entityLabel("None"), componentsList()
 {
-	set_focusable(false);
-
 	componentsList.add_css_class("inspector-list");
 
-	set_child(contentArea);
-
-	contentArea.append(windowLabel);
 	contentArea.append(entityLabel);
 	contentArea.append(componentsList);
 }
-InspectorWindow::~InspectorWindow()
+InspectorPanel::~InspectorPanel()
 {
 
 }
 
-void InspectorWindow::SetTarget(Entity entity)
+void InspectorPanel::SetTarget(Entity entity)
 {
-	entityLabel.set_label(std::to_string(entity));
+	entityLabel.set_label(LevelManager::GetName(entity));
 
 	while(auto child = componentsList.get_first_child())
 		componentsList.remove(*child);
@@ -85,7 +80,7 @@ void InspectorWindow::SetTarget(Entity entity)
 	componentsList.append(*addComponentField);
 }
 
-void InspectorWindow::ResetTarget()
+void InspectorPanel::ResetTarget()
 {
 	entityLabel.set_label("None");
 

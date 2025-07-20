@@ -230,7 +230,7 @@ Mesh* ResourceManager::LoadModel(const std::wstring& filePath)
 	        v3->tangent.z += tz;
         }
         // Ensure all of the tangents are orthogonal to the normals
-        for (int i = 0; i < mesh->vertices.size(); i++)
+        for(int i = 0; i < mesh->vertices.size(); i++)
         {
 	        // Grab the two vectors
 	        glm::vec3 normal = mesh->vertices[i].normal;
@@ -254,9 +254,10 @@ Mesh* ResourceManager::LoadModel(const std::wstring& filePath)
 
 		material->albedoTexture = LoadTexture(TEXTURES_PATH + NarrowToWide(mat.diffuse_texname));
 
+        material->identifier = NarrowToWide(mat.name);
         material->index = Instance->materials.size();
         Instance->materials.push_back(material);
-        Instance->materialMap.emplace(NarrowToWide(mat.name), material);
+        Instance->materialMap.emplace(material->identifier, material);
 
 		mesh->defaultMaterial = material;
     }
@@ -264,6 +265,7 @@ Mesh* ResourceManager::LoadModel(const std::wstring& filePath)
     GraphicsSystem::CreateVertexBuffer(mesh->vertices, mesh->vertexBuffer, mesh->vertexBufferMemory);
     GraphicsSystem::CreateIndexBuffer(mesh->indices, mesh->indexBuffer, mesh->indexBufferMemory);
 
+    mesh->identifier = identifier;
 	mesh->index = Instance->meshes.size();
     Instance->meshes.push_back(mesh);
     Instance->meshMap.emplace(identifier, mesh);

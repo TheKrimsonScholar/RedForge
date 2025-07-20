@@ -15,7 +15,7 @@ private:
 	glm::mat4* viewMatrixOverride = nullptr;
 	glm::mat4* projectionMatrixOverride = nullptr;
 
-	Entity mainCameraEntity = -1;
+	Entity mainCameraEntity = {};
 
 public:
 	CameraManager() {};

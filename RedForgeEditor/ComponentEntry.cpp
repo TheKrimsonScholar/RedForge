@@ -13,7 +13,7 @@
 #include "ComponentVariableEntry_Mesh.h"
 #include "ComponentVariableEntry_Material.h"
 
-ComponentEntry::ComponentEntry(uint32_t entity, std::type_index componentTypeID, void* componentPtr) : Gtk::Expander(GET_COMPONENT_NAME(componentTypeID)), 
+ComponentEntry::ComponentEntry(Entity entity, std::type_index componentTypeID, void* componentPtr) : Gtk::Expander(GET_COMPONENT_NAME(componentTypeID)), 
 	entity(entity), componentTypeID(componentTypeID), variablesBox(Gtk::Orientation::VERTICAL)
 {
 	set_child(variablesBox);
@@ -47,8 +47,8 @@ void ComponentEntry::AppendVariableWidget(ComponentVariableInfo variableInfo, vo
 	if(variableInfo.variableType == typeid(glm::vec2)) varEntry = new ComponentVariableEntry_Vector2(variableInfo.variableName, variablePtr);
 	if(variableInfo.variableType == typeid(glm::vec3)) varEntry = new ComponentVariableEntry_Vector3(variableInfo.variableName, variablePtr);
 	if(variableInfo.variableType == typeid(glm::quat)) varEntry = new ComponentVariableEntry_QuaternionEuler(variableInfo.variableName, variablePtr);
-	if(variableInfo.variableType == typeid(Mesh*)) varEntry = new ComponentVariableEntry_Mesh(variableInfo.variableName, variablePtr);
-	if(variableInfo.variableType == typeid(Material*)) varEntry = new ComponentVariableEntry_Material(variableInfo.variableName, variablePtr);
+	if(variableInfo.variableType == typeid(MeshRef)) varEntry = new ComponentVariableEntry_Mesh(variableInfo.variableName, variablePtr);
+	if(variableInfo.variableType == typeid(MaterialRef)) varEntry = new ComponentVariableEntry_Material(variableInfo.variableName, variablePtr);
 	
 	assert(varEntry && "Serialized component variable's type is not registered!");
 

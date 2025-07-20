@@ -4,6 +4,6 @@
 
 void MeshRendererComponent::UseMeshDefaults(const std::wstring& meshIdentifier)
 {
-	mesh = ResourceManager::GetMesh(meshIdentifier);
-	material = mesh->defaultMaterial;
+	mesh = MeshRef(meshIdentifier);
+	material = MaterialRef(ResourceManager::GetMesh(meshIdentifier)->defaultMaterial->identifier);
 }

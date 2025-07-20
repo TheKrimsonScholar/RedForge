@@ -1,26 +1,25 @@
 #pragma once
 
+#include "EditorPanel.h"
+
 #include "gtkmm/frame.h"
 #include "gtkmm/listbox.h"
 #include "gtkmm/button.h"
-#include "gtkmm/scrolledwindow.h"
 
-#include "InspectorWindow.h"
+#include "InspectorPanel.h"
 
-class HierarchyPanel : public Gtk::ScrolledWindow
+class HierarchyPanel : public EditorPanel
 {
 private:
-	Gtk::Box contentArea;
-
 	Gtk::Button createEntityButton;
 
 	Gtk::ListBox entityList;
 	std::unordered_map<Gtk::ListBoxRow*, Entity> entityRows;
 
-	Entity selectedEntity = INVALID_ENTITY;
+	Entity selectedEntity = {};
 
 public:
-	InspectorWindow* inspector = nullptr;
+	InspectorPanel* inspector = nullptr;
 
 public:
 	HierarchyPanel();

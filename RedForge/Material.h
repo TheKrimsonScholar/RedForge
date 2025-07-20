@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <string>
 
 #include "Texture.h"
 
@@ -14,6 +15,7 @@ public:
 
 	VkDescriptorSet descriptorSets[2];
 
+	std::wstring identifier;
 	// Index of the material in the global materials array, assigned by the graphics system.
 	uint32_t index = -1;
 };

@@ -5,6 +5,7 @@
 
 #include "TimeManager.h"
 #include "DebugManager.h"
+#include "LevelManager.h"
 
 void PhysicsSystem::Startup()
 {
@@ -23,13 +24,13 @@ void PhysicsSystem::Update()
 
 	simulationTimeLeft += TimeManager::GetDeltaTime();
 
-	for(Entity e = 0; e < EntityManager::GetLastEntity(); e++)
+	for(Entity entity : LevelManager::GetAllEntities())
 	{
-		if(!EntityManager::HasComponent<TransformComponent>(e) || !EntityManager::HasComponent<ColliderComponent>(e))
+		if(!EntityManager::HasComponent<TransformComponent>(entity) || !EntityManager::HasComponent<ColliderComponent>(entity))
 			continue;
 
-		TransformComponent& transform = EntityManager::GetComponent<TransformComponent>(e);
-		ColliderComponent& collider = EntityManager::GetComponent<ColliderComponent>(e);
+		TransformComponent& transform = EntityManager::GetComponent<TransformComponent>(entity);
+		ColliderComponent& collider = EntityManager::GetComponent<ColliderComponent>(entity);
 
 		DebugManager::DrawDebugBox(transform.location, transform.rotation, collider.halfSize, glm::vec4(0, 0, 0, 0));
 	}
@@ -40,12 +41,12 @@ void PhysicsSystem::Update()
 
 		/* Physics Update */
 
-		for(Entity e = 0; e < EntityManager::GetLastEntity(); e++)
+		for(Entity entity : LevelManager::GetAllEntities())
 		{
-			if(EntityManager::HasComponent<PhysicsComponent>(e) && EntityManager::HasComponent<ColliderComponent>(e) && EntityManager::HasComponent<TransformComponent>(e))
+			if(EntityManager::HasComponent<PhysicsComponent>(entity) && EntityManager::HasComponent<ColliderComponent>(entity) && EntityManager::HasComponent<TransformComponent>(entity))
 			{
-				TransformComponent& transform = EntityManager::GetComponent<TransformComponent>(e);
-				PhysicsComponent& rb = EntityManager::GetComponent<PhysicsComponent>(e);
+				TransformComponent& transform = EntityManager::GetComponent<TransformComponent>(entity);
+				PhysicsComponent& rb = EntityManager::GetComponent<PhysicsComponent>(entity);
 
 				rb.ApplyGravity();
 
@@ -55,30 +56,30 @@ void PhysicsSystem::Update()
 
 		/* Collision Detection and Contact Generation */
 
-		for(Entity e1 = 0; e1 < EntityManager::GetLastEntity(); e1++)
+		for(Entity entityA : LevelManager::GetAllEntities())
 		{
-			if(!EntityManager::HasComponent<PhysicsComponent>(e1) || !EntityManager::HasComponent<ColliderComponent>(e1))
+			if(!EntityManager::HasComponent<PhysicsComponent>(entityA) || !EntityManager::HasComponent<ColliderComponent>(entityA))
 				continue;
-				
-			for(Entity e2 = 0; e2 < EntityManager::GetLastEntity(); e2++)
+			
+			for(Entity entityB : LevelManager::GetAllEntities())
 			{
-				if(!EntityManager::HasComponent<PhysicsComponent>(e2) || !EntityManager::HasComponent<ColliderComponent>(e2))
+				if(!EntityManager::HasComponent<PhysicsComponent>(entityB) || !EntityManager::HasComponent<ColliderComponent>(entityB))
 					continue;
 
-				if(e1 == e2)
+				if(entityA == entityB)
 					continue;
 
-				TransformComponent& transformA = EntityManager::GetComponent<TransformComponent>(e1);
-				TransformComponent& transformB = EntityManager::GetComponent<TransformComponent>(e2);
-				ColliderComponent& colliderA = EntityManager::GetComponent<ColliderComponent>(e1);
-				ColliderComponent& colliderB = EntityManager::GetComponent<ColliderComponent>(e2);
+				TransformComponent& transformA = EntityManager::GetComponent<TransformComponent>(entityA);
+				TransformComponent& transformB = EntityManager::GetComponent<TransformComponent>(entityB);
+				ColliderComponent& colliderA = EntityManager::GetComponent<ColliderComponent>(entityA);
+				ColliderComponent& colliderB = EntityManager::GetComponent<ColliderComponent>(entityB);
 
 				std::vector<ContactPoint> contactPoints;
 				if(GJK(transformA, colliderA, transformB, colliderB, contactPoints))
 				{
 					CollisionData collisionData{};
-					collisionData.entityA = e1;
-					collisionData.entityB = e2;
+					collisionData.entityA = entityA;
+					collisionData.entityB = entityB;
 					collisionData.colliderPair = CollisionPair(&colliderA, &colliderB);
 					collisionData.contacts = contactPoints;
 

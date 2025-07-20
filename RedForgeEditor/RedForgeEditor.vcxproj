@@ -191,9 +191,12 @@ gobject-2.0.lib
     <ClCompile Include="ComponentVariableEntry_Vector2.cpp" />
     <ClCompile Include="ComponentVariableEntry_Vector3.cpp" />
     <ClCompile Include="ComponentVariableEntry.cpp" />
+    <ClCompile Include="ConsolePanel.cpp" />
+    <ClCompile Include="EditorPanel.cpp" />
+    <ClCompile Include="EditorToolbar.cpp" />
     <ClCompile Include="GTKInputLayer.cpp" />
     <ClCompile Include="HierarchyPanel.cpp" />
-    <ClCompile Include="InspectorWindow.cpp" />
+    <ClCompile Include="InspectorPanel.cpp" />
     <ClCompile Include="MainEditorWindow.cpp" />
     <ClCompile Include="NumberField.cpp" />
     <ClCompile Include="RedForgeEditor.cpp">
@@ -213,9 +216,12 @@ gobject-2.0.lib
     <ClInclude Include="ComponentVariableEntry_Vector2.h" />
     <ClInclude Include="ComponentVariableEntry_Vector3.h" />
     <ClInclude Include="ComponentVariableEntry.h" />
+    <ClInclude Include="ConsolePanel.h" />
+    <ClInclude Include="EditorPanel.h" />
+    <ClInclude Include="EditorToolbar.h" />
     <ClInclude Include="GTKInputLayer.h" />
     <ClInclude Include="HierarchyPanel.h" />
-    <ClInclude Include="InspectorWindow.h" />
+    <ClInclude Include="InspectorPanel.h" />
     <ClInclude Include="MainEditorWindow.h" />
     <ClInclude Include="NumberField.h" />
     <ClInclude Include="resource.h" />

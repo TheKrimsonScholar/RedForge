@@ -60,13 +60,13 @@ private:
 	static std::unordered_map<std::wstring, std::wstring> GetAllFilesInDirectory(std::wstring directory, std::vector<std::wstring> extensions);
 
 public:
-	static Texture* GetTexture(const std::wstring& identifier) { return GetTexture(Instance->textureMap[identifier]->index); };
+	static Texture* GetTexture(const std::wstring& identifier) { return Instance->textureMap[identifier]; };
 	static Texture* GetTexture(uint32_t index) { return Instance->textures[index]; };
-	static TextureCube* GetTextureCube(const std::wstring& identifier) { return GetTextureCube(Instance->textureCubeMap[identifier]->index); };
+	static TextureCube* GetTextureCube(const std::wstring& identifier) { return Instance->textureCubeMap[identifier]; };
 	static TextureCube* GetTextureCube(uint32_t index) { return Instance->textureCubes[index]; };
-	static Material* GetMaterial(const std::wstring& identifier) { return GetMaterial(Instance->materialMap[identifier]->index); };
+	static Material* GetMaterial(const std::wstring& identifier) { return Instance->materialMap[identifier]; };
 	static Material* GetMaterial(uint32_t index) { return Instance->materials[index]; };
-	static Mesh* GetMesh(const std::wstring& identifier) { return GetMesh(Instance->meshMap[identifier]->index); };
+	static Mesh* GetMesh(const std::wstring& identifier) { return Instance->meshMap[identifier]; };
 	static Mesh* GetMesh(uint32_t index) { return Instance->meshes[index]; };
 
 	static std::vector<Texture*> GetTextures() { return Instance->textures; };

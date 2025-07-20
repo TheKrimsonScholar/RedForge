@@ -9,17 +9,40 @@
 
 #include "Exports.h"
 
-using Entity = uint32_t;
+//using Entity = uint32_t;
 
-static const Entity INVALID_ENTITY = 0xFFFFFFFF;
+static const uint32_t INVALID_ENTITY = 0xFFFFFFFF;
 static const uint32_t MAX_ENTITIES = 256;
+
+struct Entity
+{
+private:
+	uint32_t index = INVALID_ENTITY;
+	uint32_t generation = INVALID_ENTITY;
+
+	// Entity data should only be managed by EntityManager and LevelManager
+	friend class EntityManager;
+	friend class LevelManager;
+
+public:
+	bool operator==(const Entity& other) const { return index == other.index && generation == other.generation; }
+	bool operator!=(const Entity& other) const { return !(*this == other); }
+};
+template <>
+struct std::formatter<Entity, char> {
+	constexpr auto parse(std::format_parse_context& ctx) { return ctx.begin(); }
+	auto format(const Entity& e, std::format_context& ctx) const {
+		// Customize output as needed
+		return std::format_to(ctx.out(), "Entity(index={}, generation={})", 0, 0);
+	}
+};
 
 class IComponentArray
 {
 public:
 	virtual ~IComponentArray() = default;
 
-	virtual void Add(uint32_t entity) = 0;
+	virtual void* Add(uint32_t entity) = 0;
 	virtual void Remove(uint32_t entity) = 0;
 	virtual bool Has(uint32_t entity) = 0;
 
@@ -34,7 +57,7 @@ private:
 	std::priority_queue<uint32_t> freeQueue;
 
 	T components[MAX_ENTITIES] = {};
-	std::unordered_map<Entity, uint32_t> entityToComponentIndex;
+	std::unordered_map<uint32_t, uint32_t> entityToComponentIndex;
 
 	size_t componentStride;
 
@@ -42,8 +65,8 @@ public:
 	ComponentArray();
 	~ComponentArray() override;
 
-	void Add(uint32_t entity, T component);
-	void Add(uint32_t entity) override;
+	T* Add(uint32_t entity, T component);
+	void* Add(uint32_t entity) override;
 	void Remove(uint32_t entity) override;
 	bool Has(uint32_t entity) override;
 	T& Get(uint32_t entity);
@@ -63,7 +86,7 @@ inline ComponentArray<T>::~ComponentArray()
 }
 
 template<typename T>
-void ComponentArray<T>::Add(uint32_t entity, T component)
+T* ComponentArray<T>::Add(uint32_t entity, T component)
 {
 	/* Determine next component index */
 
@@ -78,11 +101,13 @@ void ComponentArray<T>::Add(uint32_t entity, T component)
 
 	components[componentIndex] = component;
 	entityToComponentIndex[entity] = componentIndex;
+
+	return &components[componentIndex];
 }
 template<typename T>
-inline void ComponentArray<T>::Add(uint32_t entity)
+inline void* ComponentArray<T>::Add(uint32_t entity)
 {
-	Add(entity, T()); // Default construct the component
+	return Add(entity, T()); // Default construct the component
 }
 template<typename T>
 void ComponentArray<T>::Remove(uint32_t entity)
@@ -133,10 +158,10 @@ class EntityManager
 private:
 	REDFORGE_API static inline EntityManager* Instance;
 
-	Entity lastEntity = 0;
+	uint32_t lastEntity = 0;
 	bool entityStates[MAX_ENTITIES] = {};
 	// Queue of free entity indices less than lastEntity, sorted by index
-	std::priority_queue<Entity> freeQueue;
+	std::priority_queue<uint32_t> freeQueue;
 	uint32_t generationCounts[MAX_ENTITIES] = {};
 
 	std::unordered_map<std::type_index, IComponentArray*> componentArrays;
@@ -151,29 +176,34 @@ public:
 	void Startup();
 	void Shutdown();
 
-	REDFORGE_API static Entity CreateEntity();
-	REDFORGE_API static void DestroyEntity(Entity entity);
-
-	static inline Entity GetLastEntity() { return Instance->lastEntity; };
+	static inline uint32_t GetLastEntity() { return Instance->lastEntity; };
 
 	template<typename T>
 	inline void RegisterComponent();
 	template<typename T>
-	static inline void AddComponent(uint32_t entity, T component);
+	static inline void AddComponent(Entity entity, T component);
 	template<typename T>
-	static inline void RemoveComponent(uint32_t entity);
+	static inline void RemoveComponent(Entity entity);
 	template<typename T>
-	static inline bool HasComponent(uint32_t entity);
+	static inline bool HasComponent(Entity entity);
 	template<typename T>
-	static inline T& GetComponent(uint32_t entity);
+	static inline T& GetComponent(Entity entity);
 
-	REDFORGE_API static void AddComponentOfType(uint32_t entity, std::type_index componentType);
-	REDFORGE_API static void RemoveComponentOfType(uint32_t entity, std::type_index componentType);
+	REDFORGE_API static void* AddComponentOfType(Entity entity, std::type_index componentType);
+	REDFORGE_API static void RemoveComponentOfType(Entity entity, std::type_index componentType);
 
-	REDFORGE_API static std::unordered_map<void*, std::type_index> GetAllComponents(uint32_t entity);
+	REDFORGE_API static std::unordered_map<void*, std::type_index> GetAllComponents(Entity entity);
 
-	REDFORGE_API static bool IsEntityValid(uint32_t entity);
-	REDFORGE_API static bool IsComponentValid(uint32_t entity, std::type_index componentType);
+	REDFORGE_API static bool IsEntityValid(Entity entity);
+	REDFORGE_API static bool IsComponentValid(Entity entity, std::type_index componentType);
+
+private:
+	static Entity CreateEntity();
+	static void DestroyEntity(Entity entity);
+
+	static Entity GetEntityByIndex(uint32_t index);
+
+	friend class LevelManager;
 };
 
 template<typename T>
@@ -183,26 +213,34 @@ inline void EntityManager::RegisterComponent()
 	Instance->registeredComponentSizes[typeid(T)] = sizeof(T);
 }
 template<typename T>
-inline void EntityManager::AddComponent(uint32_t entity, T component)
+inline void EntityManager::AddComponent(Entity entity, T component)
 {
+	assert(IsEntityValid(entity) && "Attempting to modify invalid entity.");
+
 	assert(Instance->componentArrays.find(typeid(T)) != Instance->componentArrays.end() && "Component has not been registered.");
-	static_cast<ComponentArray<T>*>(Instance->componentArrays[typeid(T)])->Add(entity, component);
+	static_cast<ComponentArray<T>*>(Instance->componentArrays[typeid(T)])->Add(entity.index, component);
 }
 template<typename T>
-inline void EntityManager::RemoveComponent(uint32_t entity)
+inline void EntityManager::RemoveComponent(Entity entity)
 {
+	assert(IsEntityValid(entity) && "Attempting to modify invalid entity.");
+
 	assert(Instance->componentArrays.find(typeid(T)) != Instance->componentArrays.end() && "Component has not been registered.");
-	static_cast<ComponentArray<T>*>(Instance->componentArrays[typeid(T)])->Remove(entity);
+	static_cast<ComponentArray<T>*>(Instance->componentArrays[typeid(T)])->Remove(entity.index);
 }
 template<typename T>
-inline bool EntityManager::HasComponent(uint32_t entity)
+inline bool EntityManager::HasComponent(Entity entity)
 {
+	assert(IsEntityValid(entity) && "Attempting to access invalid entity.");
+
 	assert(Instance->componentArrays.find(typeid(T)) != Instance->componentArrays.end() && "Component has not been registered.");
-	return static_cast<ComponentArray<T>*>(Instance->componentArrays[typeid(T)])->Has(entity);
+	return static_cast<ComponentArray<T>*>(Instance->componentArrays[typeid(T)])->Has(entity.index);
 }
 template<typename T>
-inline T& EntityManager::GetComponent(uint32_t entity)
+inline T& EntityManager::GetComponent(Entity entity)
 {
+	assert(IsEntityValid(entity) && "Attempting to access invalid entity.");
+
 	assert(Instance->componentArrays.find(typeid(T)) != Instance->componentArrays.end() && "Component has not been registered.");
-	return static_cast<ComponentArray<T>*>(Instance->componentArrays[typeid(T)])->Get(entity);
+	return static_cast<ComponentArray<T>*>(Instance->componentArrays[typeid(T)])->Get(entity.index);
 }

@@ -35,24 +35,26 @@ Entity EntityManager::CreateEntity()
 {
 	/* Determine next entity index */
 
-	Entity entity;
+	Entity entity = {};
 	if(!Instance->freeQueue.empty())
 	{
-		entity = Instance->freeQueue.top();
+		entity.index = Instance->freeQueue.top();
 		Instance->freeQueue.pop();
 	}
 	else
-		entity = Instance->lastEntity++;
+		entity.index = Instance->lastEntity++;
 
-	Instance->entityStates[entity] = true;
-	Instance->generationCounts[entity]++;
+	Instance->entityStates[entity.index] = true;
+	entity.generation = ++Instance->generationCounts[entity.index];
 
 	return entity;
 }
 void EntityManager::DestroyEntity(Entity entity)
 {
+	assert(IsEntityValid(entity) && "Attempting to destroy invalid entity.");
+
 	// If the entity has the highest index of all valid entities, "shrink" the valid range
-	if(entity == Instance->lastEntity - 1)
+	if(entity.index == Instance->lastEntity - 1)
 	{
 		Instance->lastEntity--;
 		// Keep moving lastEntity down until we hit a non-empty index
@@ -64,34 +66,50 @@ void EntityManager::DestroyEntity(Entity entity)
 	}
 	// Otherwise the entity is in the valid range, so add it to free queue
 	else
-		Instance->freeQueue.push(entity);
+		Instance->freeQueue.push(entity.index);
 
+	// Remove all of the entity's components (prevents conflict if this entity slot is reused)
 	for(auto& componentArray : Instance->componentArrays)
-		componentArray.second->Remove(entity);
+		componentArray.second->Remove(entity.index);
 
-	Instance->entityStates[entity] = false;
+	Instance->entityStates[entity.index] = false;
 }
 
-void EntityManager::AddComponentOfType(uint32_t entity, std::type_index componentType)
+Entity EntityManager::GetEntityByIndex(uint32_t index)
 {
+	Entity entity = {};
+	entity.index = index;
+	entity.generation = index == INVALID_ENTITY ? INVALID_ENTITY : Instance->generationCounts[index];
+
+	return entity;
+}
+
+void* EntityManager::AddComponentOfType(Entity entity, std::type_index componentType)
+{
+	assert(IsEntityValid(entity) && "Attempting to modify invalid entity.");
+
 	assert(Instance->componentArrays.find(componentType) != Instance->componentArrays.end() && "Component has not been registered.");
-	Instance->componentArrays[componentType]->Add(entity);
+	return Instance->componentArrays[componentType]->Add(entity.index);
 }
-void EntityManager::RemoveComponentOfType(uint32_t entity, std::type_index componentType)
+void EntityManager::RemoveComponentOfType(Entity entity, std::type_index componentType)
 {
+	assert(IsEntityValid(entity) && "Attempting to modify invalid entity.");
+
 	assert(Instance->componentArrays.find(componentType) != Instance->componentArrays.end() && "Component has not been registered.");
-	Instance->componentArrays[componentType]->Remove(entity);
+	Instance->componentArrays[componentType]->Remove(entity.index);
 }
 
-std::unordered_map<void*, std::type_index> EntityManager::GetAllComponents(uint32_t entity)
+std::unordered_map<void*, std::type_index> EntityManager::GetAllComponents(Entity entity)
 {
+	assert(IsEntityValid(entity) && "Attempting to access invalid entity.");
+
 	std::unordered_map<void*, std::type_index> components;
 	
 	for(auto& componentArray : Instance->componentArrays)
 	{
-		if(componentArray.second->Has(entity))
+		if(componentArray.second->Has(entity.index))
 		{
-			void* componentPtr = componentArray.second->GetRaw(Instance->registeredComponentSizes[componentArray.first], entity);
+			void* componentPtr = componentArray.second->GetRaw(Instance->registeredComponentSizes[componentArray.first], entity.index);
 
 			components.emplace(componentPtr, componentArray.first);
 		}
@@ -100,18 +118,21 @@ std::unordered_map<void*, std::type_index> EntityManager::GetAllComponents(uint3
 	return components;
 }
 
-bool EntityManager::IsEntityValid(uint32_t entity)
+bool EntityManager::IsEntityValid(Entity entity)
 {
-	return Instance->entityStates[entity];
+	// Entity index must be active and of the same generation
+	return entity.index != INVALID_ENTITY && Instance->entityStates[entity.index] && Instance->generationCounts[entity.index] == entity.generation;
 }
-bool EntityManager::IsComponentValid(uint32_t entity, std::type_index componentType)
+bool EntityManager::IsComponentValid(Entity entity, std::type_index componentType)
 {
 	if(!Instance)
 		return false;
+
+	assert(IsEntityValid(entity) && "Attempting to access invalid entity.");
 
 	// Component is invalid if it isn't registered
 	if(Instance->componentArrays.find(componentType) == Instance->componentArrays.end())
 		return false;
 
-	return Instance->componentArrays[componentType]->Has(entity);
+	return Instance->componentArrays[componentType]->Has(entity.index);
 }

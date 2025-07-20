@@ -4,9 +4,11 @@
 #include <functional>
 #include <cstdint>
 
+#include "EntityManager.h"
+
 struct InputComponent
 {
-	std::unordered_map<uint32_t, std::function<void(uint32_t)>> mouseDownCallbacks;
+	std::unordered_map<uint32_t, std::function<void(Entity)>> mouseDownCallbacks;
 
-	std::unordered_map<uint32_t, std::function<void(uint32_t)>> keyDownCallbacks;
+	std::unordered_map<uint32_t, std::function<void(Entity)>> keyDownCallbacks;
 };

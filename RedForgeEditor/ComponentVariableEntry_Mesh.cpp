@@ -4,13 +4,13 @@
 #include "PathUtils.h"
 
 ComponentVariableEntry_Mesh::ComponentVariableEntry_Mesh(const std::string& label, void* variablePtr) : ComponentVariableEntry(label, variablePtr), 
-	variablePtr(static_cast<Mesh**>(variablePtr))
+	variablePtr(static_cast<MeshRef*>(variablePtr))
 {
 	std::vector<Glib::ustring> meshNames;
 	for(auto& mesh : ResourceManager::GetMeshMap())
 	{
 		meshNames.push_back(Glib::ustring(WideToNarrow(mesh.first)));
-		meshes.push_back(mesh.second);
+		meshes.emplace_back(mesh.first);
 	}
 	
 	dropdown = Gtk::DropDown(meshNames);
