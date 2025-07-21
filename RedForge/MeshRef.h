@@ -7,7 +7,7 @@ struct MeshRef
 {
 	std::filesystem::path identifier;
 
-	MeshRef(const std::wstring& identifier = L"") : identifier(identifier) {}
+	MeshRef(const std::wstring& identifier = L"default.obj") : identifier(identifier) {}
 
 	friend std::ostream& operator<<(std::ostream& os, const MeshRef& mesh)
 	{

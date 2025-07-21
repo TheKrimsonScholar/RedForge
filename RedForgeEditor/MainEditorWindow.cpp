@@ -94,7 +94,7 @@ MainEditorWindow::MainEditorWindow() : Gtk::Window(),
                 transform.scale = { 0.25f, 0.25f, 0.25f };
 
                 MeshRendererComponent renderer{};
-                renderer.UseMeshDefaults(L"KhaimBook.obj");
+                //renderer.UseMeshDefaults(L"KhaimBook.obj");
 
                 ColliderComponent collider{};
                 collider.colliderType = EColliderType::Box;

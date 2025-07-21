@@ -59,11 +59,13 @@ void LevelManager::LoadLevel()
 	{
 		std::string name;
 		std::getline(file, name);
+		uint32_t parentLevelIndex;
+		file >> parentLevelIndex;
 
-		Entity newEntity = CreateEntity();
+		// We can assume the parent exists in the level already if it's valid, since the ordering of the entity hierarchy ensures children come after their parent
+		Entity parent = GetEntity(parentLevelIndex);
 
-		uint32_t parent;
-		file >> parent;
+		Entity newEntity = CreateEntity(name, parent);
 
 		uint32_t componentsCount;
 		file >> componentsCount;
@@ -177,6 +179,11 @@ Entity LevelManager::GetParent(Entity entity)
 
 	assert(Instance->entityLevelDataMap.find(entity.index) != Instance->entityLevelDataMap.end() && "Entity not in level.");
 	return EntityManager::GetEntityByIndex(Instance->entityLevelDataMap[entity.index].parentIndex);
+}
+
+Entity LevelManager::GetEntity(uint32_t levelIndex)
+{
+	return levelIndex < Instance->entities.size() ? Instance->entities[levelIndex] : Entity();
 }
 
 void LevelManager::SaveEntity(std::ofstream outFile, Entity entity)

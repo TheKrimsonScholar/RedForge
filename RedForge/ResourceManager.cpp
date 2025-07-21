@@ -144,6 +144,7 @@ Mesh* ResourceManager::LoadModel(const std::wstring& filePath)
     Mesh* mesh = new Mesh();
 
     rapidobj::Result obj = rapidobj::ParseFile(filePath.c_str());
+    std::string errorMessage = obj.error.code.message();
 
     std::unordered_map<Vertex, uint32_t> vertexMap;
 
@@ -261,6 +262,8 @@ Mesh* ResourceManager::LoadModel(const std::wstring& filePath)
 
 		mesh->defaultMaterial = material;
     }
+
+    assert(mesh->vertices.size() > 0 && mesh->indices.size() > 0 && "Attempting to load empty mesh file.");
 
     GraphicsSystem::CreateVertexBuffer(mesh->vertices, mesh->vertexBuffer, mesh->vertexBufferMemory);
     GraphicsSystem::CreateIndexBuffer(mesh->indices, mesh->indexBuffer, mesh->indexBufferMemory);

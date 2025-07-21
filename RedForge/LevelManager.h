@@ -35,6 +35,8 @@ public:
 	REDFORGE_API static std::string GetName(Entity entity);
 	REDFORGE_API static Entity GetParent(Entity entity);
 
+	REDFORGE_API static Entity GetEntity(uint32_t levelIndex);
+
 	REDFORGE_API static std::vector<Entity> GetAllEntities() { return Instance->entities; };
 
 	REDFORGE_API static void SaveLevel();

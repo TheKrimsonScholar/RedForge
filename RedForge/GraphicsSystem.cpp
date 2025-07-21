@@ -2341,11 +2341,14 @@ void GraphicsSystem::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t
     // TODO - Move to UpdateGlobalBuffers()?
     // TODO - Make instanceData persist through frames?
 	instanceData.clear();
+    std::unordered_map<Entity, uint32_t> entityInstanceIndices;
     std::vector<LightData> lightsData;
     for(Entity entity : LevelManager::GetAllEntities())
     {
         if(EntityManager::HasComponent<MeshRendererComponent>(entity) && EntityManager::HasComponent<TransformComponent>(entity))
         {
+            Entity parent = LevelManager::GetParent(entity);
+
             MeshRendererComponent& renderer = EntityManager::GetComponent<MeshRendererComponent>(entity);
             TransformComponent& transform = EntityManager::GetComponent<TransformComponent>(entity);
 
@@ -2354,9 +2357,13 @@ void GraphicsSystem::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t
             instance.meshIndex = ResourceManager::GetMesh(renderer.mesh.identifier)->index;
             instance.materialIndex = ResourceManager::GetMaterial(renderer.material.identifier)->index;
 
+            entityInstanceIndices.emplace(entity, instanceData.size());
             instanceData.push_back(instance);
 
-            modelMatrices[instance.rendererIndex] = transform.GetMatrix();
+            // Combine this transform with its parent's
+            // Because we know the parent has already been processed (by the order of the LevelManager's entity hierarchy), this gives the world transform of the current entity
+            glm::mat4 parentMatrix = parent.IsValid() ? modelMatrices[entityInstanceIndices[parent]] : glm::mat4(1.0f);
+            modelMatrices[instance.rendererIndex] = parentMatrix * transform.GetMatrix();
         }
 
         if(EntityManager::HasComponent<LightComponent>(entity))

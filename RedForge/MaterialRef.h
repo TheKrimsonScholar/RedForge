@@ -7,7 +7,7 @@ struct MaterialRef
 {
 	std::filesystem::path identifier;
 
-	MaterialRef(const std::wstring& identifier = L"") : identifier(identifier) {}
+	MaterialRef(const std::wstring& identifier = L"default") : identifier(identifier) {}
 
 	friend std::ostream& operator<<(std::ostream& os, const MaterialRef& material)
 	{

@@ -24,18 +24,34 @@ private:
 	friend class EntityManager;
 	friend class LevelManager;
 
+	friend struct std::formatter<Entity, char>;
+	friend struct std::hash<Entity>;
+
 public:
 	bool operator==(const Entity& other) const { return index == other.index && generation == other.generation; }
 	bool operator!=(const Entity& other) const { return !(*this == other); }
+
+	bool IsValid() { return index != INVALID_ENTITY && generation != INVALID_ENTITY; }
 };
 template <>
-struct std::formatter<Entity, char> {
+struct std::formatter<Entity, char>
+{
 	constexpr auto parse(std::format_parse_context& ctx) { return ctx.begin(); }
-	auto format(const Entity& e, std::format_context& ctx) const {
-		// Customize output as needed
-		return std::format_to(ctx.out(), "Entity(index={}, generation={})", 0, 0);
+	auto format(const Entity& e, std::format_context& ctx) const
+	{
+		return std::format_to(ctx.out(), "Entity(index={}, generation={})", e.index, e.generation);
 	}
 };
+namespace std
+{
+	template<> struct hash<Entity>
+	{
+		size_t operator()(const Entity& e) const
+		{
+			return hash<float>()(e.index) ^ hash<float>()(e.generation);
+		}
+	};
+}
 
 class IComponentArray
 {

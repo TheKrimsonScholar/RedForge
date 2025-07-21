@@ -1,4 +1,12 @@
-1
+2
 Entity 1
 4,294,967,295
+2
+TransformComponent
+0 3.8 0 -0.0313639 -0.769919 -0.536019 0.344854 1.5 1 1 MeshRendererComponent
+"default.obj" "default" Entity 2
 0
+2
+TransformComponent
+1.3 2.8 0 0.644218 4.86371e-08 -0.764842 5.7744e-08 1 1 1 MeshRendererComponent
+"default.obj" "default" 
