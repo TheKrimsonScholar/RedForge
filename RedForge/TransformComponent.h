@@ -47,9 +47,11 @@ public:
 //static RegisterComponent_TransformComponent k;
 
 REGISTER_COMPONENT_BEGIN(TransformComponent)
+COMPONENT_VARS_BEGIN
 COMPONENT_VAR(glm::vec3, location)
 COMPONENT_VAR(glm::quat, rotation)
 COMPONENT_VAR(glm::vec3, scale)
+COMPONENT_VARS_END
 REGISTER_COMPONENT_END(TransformComponent)
 
 //COMPONENT_BEGIN(TransformComponent)

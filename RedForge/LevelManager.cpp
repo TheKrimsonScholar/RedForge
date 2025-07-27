@@ -207,107 +207,18 @@ void LevelManager::SaveLevel()
 	std::ofstream fileOut("level.txt");
 	FileManager::SaveObject(fileOut, levelObject);
 	fileOut.close();
-
-	//std::vector<Entity> entities;
-	//std::unordered_map<Entity, uint32_t> entityLevelIndices = { { Entity(), INVALID_ENTITY } }; // Root node should be associated with index INVALID_ENTITY; it's not in the entities list
-	//ForEachEntity([&entities, &entityLevelIndices](const Entity& entity)
-	//	{
-	//		entityLevelIndices.emplace(entity, entities.size());
-	//		entities.push_back(entity);
-	//	});
-
-	//file << entities.size() << "\n";
-
-	//for(Entity& entity : entities)
-	//{
-	//	assert(EntityManager::IsEntityValid(entity) && "Invalid entity in level!");
-
-	//	file << GetName(entity) << "\n";
-	//	file << entityLevelIndices[GetParent(entity)] << "\n";
-
-	//	std::unordered_map<void*, std::type_index> components = EntityManager::GetAllComponents(entity);
-	//	file << components.size() << "\n";
-	//	for(auto& component : components)
-	//	{
-	//		file << GET_COMPONENT_NAME(component.second) << "\n";
-
-	//		std::vector<std::pair<void*, ComponentVariableInfo>> variables = GET_COMPONENT_VARS(component.second, component.first);
-	//		for(std::pair<void*, ComponentVariableInfo>& variable : variables)
-	//		{
-	//			//file << variable.second.variableType.name() << "\n";
-
-	//			variable.second.writeToFile(file, variable.first);
-	//		}
-	//	}
-	//}
-
-	//file.close();
 }
 void LevelManager::LoadLevel()
 {
 	/* Load the object from file */
 
-	std::ifstream file("level.txt");
-	SerializedObject levelObject = FileManager::LoadObject(file);
-	file.close();
+	std::ifstream fileIn("level.txt");
+	SerializedObject levelObject = FileManager::LoadObject(fileIn);
+	fileIn.close();
 
 	// Load each top-level entity as a child of the root (each entity will recursively load its children)
 	for(SerializedObject& child : levelObject.children)
 		LoadEntity(child, {});
-
-	//uint32_t entityCount;
-	//file >> entityCount;
-
-	//// Skip line break
-	//file.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-
-	//std::vector<Entity> entities;
-
-	//// Read in all entities
-	//for(uint32_t i = 0; i < entityCount; i++)
-	//{
-	//	std::string name;
-	//	std::getline(file, name);
-	//	uint32_t parentLevelIndex;
-	//	file >> parentLevelIndex;
-
-	//	// We can assume the parent exists in the level already if it's valid, since the ordering of the entity hierarchy ensures children come after their parent
-	//	Entity parent = parentLevelIndex != INVALID_ENTITY ? entities[parentLevelIndex] : Entity();
-
-	//	Entity newEntity = CreateEntity(name, parent);
-	//	entities.push_back(newEntity);
-
-	//	uint32_t componentsCount;
-	//	file >> componentsCount;
-
-	//	// Read in all components
-	//	for(uint32_t i = 0; i < componentsCount; i++)
-	//	{
-	//		std::string componentName;
-	//		file >> componentName;
-
-	//		uint32_t componentTypeIndex = 0xFFFFFFFF;
-
-	//		// Find the component type with the given name
-	//		for(uint32_t j = 0; j < GetRegisteredComponentsList().size(); j++)
-	//			if(GET_COMPONENT_NAME(GetRegisteredComponentsList()[j]) == componentName)
-	//			{
-	//				componentTypeIndex = j;
-	//				break;
-	//			}
-
-	//		assert(componentTypeIndex < 0xFFFFFFFF && "Unregistered component read in from file!");
-
-	//		std::type_index componentType = GetRegisteredComponentsList()[componentTypeIndex];
-
-	//		void* newComponent = EntityManager::AddComponentOfType(newEntity, componentType);
-	//		std::vector<std::pair<void*, ComponentVariableInfo>> variables = GET_COMPONENT_VARS(componentType, newComponent);
-	//		for(auto& variable : variables)
-	//			variable.second.readFromFile(file, variable.first);
-	//	}
-	//}
-
-	//file.close();
 }
 
 SerializedObject LevelManager::SaveEntity(Entity entity)

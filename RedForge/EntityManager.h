@@ -207,6 +207,7 @@ public:
 
 	REDFORGE_API static void* AddComponentOfType(Entity entity, std::type_index componentType);
 	REDFORGE_API static void RemoveComponentOfType(Entity entity, std::type_index componentType);
+	REDFORGE_API static bool HasComponentOfType(Entity entity, std::type_index componentType);
 
 	REDFORGE_API static std::unordered_map<void*, std::type_index> GetAllComponents(Entity entity);
 
@@ -234,6 +235,12 @@ inline void EntityManager::AddComponent(Entity entity, T component)
 	assert(IsEntityValid(entity) && "Attempting to modify invalid entity.");
 
 	assert(Instance->componentArrays.find(typeid(T)) != Instance->componentArrays.end() && "Component has not been registered.");
+
+	// First add all components that the given component depends on
+	for(std::type_index dependencyID : GET_COMPONENT_DEPENDENCIES(typeid(T)))
+		if(!HasComponentOfType(entity, dependencyID))
+			AddComponentOfType(entity, dependencyID);
+
 	static_cast<ComponentArray<T>*>(Instance->componentArrays[typeid(T)])->Add(entity.index, component);
 }
 template<typename T>
@@ -242,7 +249,13 @@ inline void EntityManager::RemoveComponent(Entity entity)
 	assert(IsEntityValid(entity) && "Attempting to modify invalid entity.");
 
 	assert(Instance->componentArrays.find(typeid(T)) != Instance->componentArrays.end() && "Component has not been registered.");
+
 	static_cast<ComponentArray<T>*>(Instance->componentArrays[typeid(T)])->Remove(entity.index);
+
+	// After removing the component, also remove all components that depend on it
+	for(std::type_index dependent : GET_COMPONENT_DEPENDENTS(typeid(T)))
+		if(HasComponentOfType(entity, dependent))
+			RemoveComponentOfType(entity, dependent);
 }
 template<typename T>
 inline bool EntityManager::HasComponent(Entity entity)
@@ -250,6 +263,7 @@ inline bool EntityManager::HasComponent(Entity entity)
 	assert(IsEntityValid(entity) && "Attempting to access invalid entity.");
 
 	assert(Instance->componentArrays.find(typeid(T)) != Instance->componentArrays.end() && "Component has not been registered.");
+
 	return static_cast<ComponentArray<T>*>(Instance->componentArrays[typeid(T)])->Has(entity.index);
 }
 template<typename T>
@@ -258,5 +272,6 @@ inline T& EntityManager::GetComponent(Entity entity)
 	assert(IsEntityValid(entity) && "Attempting to access invalid entity.");
 
 	assert(Instance->componentArrays.find(typeid(T)) != Instance->componentArrays.end() && "Component has not been registered.");
+
 	return static_cast<ComponentArray<T>*>(Instance->componentArrays[typeid(T)])->Get(entity.index);
 }

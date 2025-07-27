@@ -31,6 +31,7 @@ public:
 };
 
 REGISTER_COMPONENT_BEGIN(PhysicsComponent)
+COMPONENT_VARS_BEGIN
 COMPONENT_VAR(float, mass)
 COMPONENT_VAR(float, bounciness)
 COMPONENT_VAR(float, staticFriction)
@@ -38,4 +39,5 @@ COMPONENT_VAR(float, dynamicFriction)
 COMPONENT_VAR(glm::vec3, gravity)
 COMPONENT_VAR(glm::vec3, velocity)
 COMPONENT_VAR(glm::vec3, angularVelocity)
+COMPONENT_VARS_END
 REGISTER_COMPONENT_END(PhysicsComponent)

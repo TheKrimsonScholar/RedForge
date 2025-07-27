@@ -89,6 +89,12 @@ void* EntityManager::AddComponentOfType(Entity entity, std::type_index component
 	assert(IsEntityValid(entity) && "Attempting to modify invalid entity.");
 
 	assert(Instance->componentArrays.find(componentType) != Instance->componentArrays.end() && "Component has not been registered.");
+
+	// First add all components that the given component depends on
+	for(std::type_index dependencyID : GET_COMPONENT_DEPENDENCIES(componentType))
+		if(!HasComponentOfType(entity, dependencyID))
+			AddComponentOfType(entity, dependencyID);
+
 	return Instance->componentArrays[componentType]->Add(entity.index);
 }
 void EntityManager::RemoveComponentOfType(Entity entity, std::type_index componentType)
@@ -96,7 +102,21 @@ void EntityManager::RemoveComponentOfType(Entity entity, std::type_index compone
 	assert(IsEntityValid(entity) && "Attempting to modify invalid entity.");
 
 	assert(Instance->componentArrays.find(componentType) != Instance->componentArrays.end() && "Component has not been registered.");
+
 	Instance->componentArrays[componentType]->Remove(entity.index);
+
+	// After removing the component, also remove all components that depend on it
+	for(std::type_index dependent : GET_COMPONENT_DEPENDENTS(componentType))
+		if(HasComponentOfType(entity, dependent))
+			RemoveComponentOfType(entity, dependent);
+}
+bool EntityManager::HasComponentOfType(Entity entity, std::type_index componentType)
+{
+	assert(IsEntityValid(entity) && "Attempting to access invalid entity.");
+
+	assert(Instance->componentArrays.find(componentType) != Instance->componentArrays.end() && "Component has not been registered.");
+
+	return Instance->componentArrays[componentType]->Has(entity.index);
 }
 
 std::unordered_map<void*, std::type_index> EntityManager::GetAllComponents(Entity entity)
