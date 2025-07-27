@@ -24,7 +24,7 @@ InspectorPanel::~InspectorPanel()
 
 void InspectorPanel::SetTarget(Entity entity)
 {
-	entityLabel.set_label(LevelManager::GetName(entity));
+	entityLabel.set_label(LevelManager::GetEntityName(entity));
 
 	while(auto child = componentsList.get_first_child())
 		componentsList.remove(*child);

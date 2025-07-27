@@ -151,6 +151,7 @@
     <ClCompile Include="Engine.cpp" />
     <ClCompile Include="EntityManager.cpp" />
     <ClCompile Include="Exports.cpp" />
+    <ClCompile Include="FileManager.cpp" />
     <ClCompile Include="GLFWInputLayer.cpp" />
     <ClCompile Include="GraphicsSystem.cpp" />
     <ClCompile Include="include\imgui\imgui.cpp" />
@@ -191,6 +192,7 @@
     <ClInclude Include="Engine.h" />
     <ClInclude Include="EntityManager.h" />
     <ClInclude Include="Exports.h" />
+    <ClInclude Include="FileManager.h" />
     <ClInclude Include="GLFWInputLayer.h" />
     <ClInclude Include="GraphicsSystem.h" />
     <ClInclude Include="include\imgui\imconfig.h" />

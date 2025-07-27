@@ -1,5 +1,7 @@
 #include "LevelManager.h"
 
+#include <sstream>
+
 #include "EntityManager.h"
 
 void LevelManager::Startup()
@@ -9,95 +11,6 @@ void LevelManager::Startup()
 void LevelManager::Shutdown()
 {
 
-}
-
-void LevelManager::SaveLevel()
-{
-	std::ofstream file("level.txt");
-
-	std::vector<Entity> entities = GetAllEntities();
-
-	file << entities.size() << "\n";
-
-	for(Entity& entity : entities)
-	{
-		assert(EntityManager::IsEntityValid(entity) && "Invalid entity in level!");
-
-		file << GetName(entity) << "\n";
-		file << GetLevelIndex(GetParent(entity)) << "\n";
-
-		std::unordered_map<void*, std::type_index> components = EntityManager::GetAllComponents(entity);
-		file << components.size() << "\n";
-		for(auto& component : components)
-		{
-			file << GET_COMPONENT_NAME(component.second) << "\n";
-
-			std::vector<std::pair<void*, ComponentVariableInfo>> variables = GET_COMPONENT_VARS(component.second, component.first);
-			for(std::pair<void*, ComponentVariableInfo>& variable : variables)
-			{
-				//file << variable.second.variableType.name() << "\n";
-
-				variable.second.writeToFile(file, variable.first);
-			}
-		}
-	}
-
-	file.close();
-}
-void LevelManager::LoadLevel()
-{
-	std::ifstream file("level.txt");
-
-	uint32_t entityCount;
-	file >> entityCount;
-
-	// Skip line break
-	file.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-
-	// Read in all entities
-	for(uint32_t i = 0; i < entityCount; i++)
-	{
-		std::string name;
-		std::getline(file, name);
-		uint32_t parentLevelIndex;
-		file >> parentLevelIndex;
-
-		// We can assume the parent exists in the level already if it's valid, since the ordering of the entity hierarchy ensures children come after their parent
-		Entity parent = GetEntity(parentLevelIndex);
-
-		Entity newEntity = CreateEntity(name, parent);
-
-		uint32_t componentsCount;
-		file >> componentsCount;
-
-		// Read in all components
-		for(uint32_t i = 0; i < componentsCount; i++)
-		{
-			std::string componentName;
-			file >> componentName;
-
-			uint32_t componentTypeIndex = 0xFFFFFFFF;
-
-			// Find the component type with the given name
-			for(uint32_t j = 0; j < GetRegisteredComponentsList().size(); j++)
-				if(GET_COMPONENT_NAME(GetRegisteredComponentsList()[j]) == componentName)
-				{
-					componentTypeIndex = j;
-					break;
-				}
-
-			assert(componentTypeIndex < 0xFFFFFFFF && "Unregistered component read in from file!");
-
-			std::type_index componentType = GetRegisteredComponentsList()[componentTypeIndex];
-
-			void* newComponent = EntityManager::AddComponentOfType(newEntity, componentType);
-			std::vector<std::pair<void*, ComponentVariableInfo>> variables = GET_COMPONENT_VARS(componentType, newComponent);
-			for(auto& variable : variables)
-				variable.second.readFromFile(file, variable.first);
-		}
-	}
-
-	file.close();
 }
 
 Entity LevelManager::CreateEntity(std::string name, Entity parent)
@@ -111,86 +24,369 @@ Entity LevelManager::CreateEntity(std::string name, Entity parent)
 
 	/* Determine the level index of the new entity (insert it as the parent's last child) */
 
-	uint32_t newEntityLevelIndex = Instance->entities.size(); // If no parent, insert at the end of the entities list
+	//uint32_t newEntityLevelIndex = Instance->entities.size(); // If no parent, insert at the end of the entities list
+	Entity lastSibling = {};
 	if(EntityManager::IsEntityValid(parent))
 	{
-		assert(Instance->entityLevelDataMap.find(parent.index) != Instance->entityLevelDataMap.end() && "Parent entity not in level.");
+		assert(Instance->entityLevelDataMap.find(parent) != Instance->entityLevelDataMap.end() && "Parent entity not in level.");
 		
-		// Find the last child index of the parent
-		newEntityLevelIndex = GetLevelIndex(parent) + 1;
-		/*while(GetParent(Instance->entities[newEntityLevelIndex]) == parent)
-			newEntityLevelIndex++;*/
+		// Find the last child of the parent
+		lastSibling = GetEntityFirstChild(parent);
+		while(GetEntityNextSibling(lastSibling).IsValid())
+			lastSibling = GetEntityNextSibling(lastSibling);
 	}
+	else
+		parent = {};
 
 	// Shift up each entity that comes after the insertion point
-	for(uint32_t i = newEntityLevelIndex; i < Instance->entities.size(); i++)
-		Instance->entityLevelDataMap[Instance->entities[i].index].levelIndex++;
+	//for(uint32_t i = newEntityLevelIndex; i < Instance->entities.size(); i++)
+		//Instance->entityLevelDataMap[Instance->entities[i].index].levelIndex++;
 	
 	Entity newEntity = EntityManager::CreateEntity();
 
-	EntityLevelData sceneData = {};
-	sceneData.levelIndex = newEntityLevelIndex;
-	sceneData.name = name == "" ? "Entity " + std::to_string(createdCount) : name;
-	sceneData.parentIndex = parent.index;
+	EntityLevelData entityLevelData = {};
+	//entityLevelData.levelIndex = newEntityLevelIndex;
+	entityLevelData.name = name == "" ? "Entity " + std::to_string(createdCount) : name;
+	entityLevelData.parent = parent;
+	entityLevelData.firstChild = {};
+	entityLevelData.nextSibling = {};
+	entityLevelData.lastSibling = lastSibling;
+	entityLevelData.depth = GetEntityDepth(parent) + 1;
 
-	//Instance->entities.push_back(newEntity);
-	Instance->entities.insert(Instance->entities.begin() + newEntityLevelIndex, newEntity);
-	Instance->entityLevelDataMap.emplace(newEntity.index, sceneData);
+	// If parent doesn't have any children yet, this is the first child
+	if(!Instance->entityLevelDataMap[parent].firstChild.IsValid())
+		Instance->entityLevelDataMap[parent].firstChild = newEntity;
+	// If there is a sibling before this entity, update it
+	if(lastSibling.IsValid())
+		Instance->entityLevelDataMap[lastSibling].nextSibling = newEntity;
+
+	//Instance->entities.insert(Instance->entities.begin() + newEntityLevelIndex, newEntity);
+	Instance->entityLevelDataMap.emplace(newEntity, entityLevelData);
 
 	return newEntity;
 }
 void LevelManager::DestroyEntity(Entity entity)
 {
 	assert(EntityManager::IsEntityValid(entity) && "Attempting to destroy invalid entity.");
+	assert(Instance->entityLevelDataMap.find(entity) != Instance->entityLevelDataMap.end() && "Attempting to destroy entity not in level.");
 
-	uint32_t entityLevelIndex = GetLevelIndex(entity);
+	/* Destroy all children first - gather list before destroying so hierarchy isn't destroyed while traversing it */
+
+	std::vector<Entity> children;
+	ForEachEntity([entity, &children](const Entity& child)
+		{
+			// Don't destroy this entity yet; only its children
+			if(child == entity)
+				return;
+
+			children.push_back(child);
+		}, entity);
+	// Destroy the children
+	for(Entity& child : children)
+	{
+		// Remove child from level - don't need to update linking between nodes because all linked nodes will also be removed
+		Instance->entityLevelDataMap.erase(child);
+
+		// Destroy child
+		EntityManager::DestroyEntity(child);
+	}
+
+	//uint32_t entityLevelIndex = GetLevelIndex(entity);
 
 	// Shift down each entity that comes after the one being destroyed
-	for(uint32_t i = entityLevelIndex + 1; i < Instance->entities.size(); i++)
-		Instance->entityLevelDataMap[Instance->entities[i].index].levelIndex--;
+	//for(uint32_t i = entityLevelIndex + 1; i < Instance->entities.size(); i++)
+		//Instance->entityLevelDataMap[Instance->entities[i].index].levelIndex--;
+
+	Entity parent = GetEntityParent(entity);
+	Entity lastSibling = GetEntityLastSibling(entity);
+	Entity nextSibling = GetEntityNextSibling(entity);
+	
+	// If this entity is the first child, set its next sibling as first child
+	if(Instance->entityLevelDataMap[parent].firstChild == entity)
+		Instance->entityLevelDataMap[parent].firstChild = nextSibling;
+	// If the last sibling exists, set its next sibling to the sibling after this entity
+	if(lastSibling.IsValid())
+		Instance->entityLevelDataMap[lastSibling].nextSibling = Instance->entityLevelDataMap[entity].nextSibling;
+	// If the next sibling exists, set its last sibling to the sibling before this entity
+	if(nextSibling.IsValid())
+		Instance->entityLevelDataMap[nextSibling].lastSibling = Instance->entityLevelDataMap[entity].lastSibling;
 
 	// Remove entity from level
-	Instance->entities.erase(Instance->entities.begin() + entityLevelIndex);
-	Instance->entityLevelDataMap.erase(entity.index);
+	//Instance->entities.erase(Instance->entities.begin() + entityLevelIndex);
+	Instance->entityLevelDataMap.erase(entity);
 
 	// Destroy entity
 	EntityManager::DestroyEntity(entity);
 }
 
-uint32_t LevelManager::GetLevelIndex(Entity entity)
+//uint32_t LevelManager::GetLevelIndex(Entity entity)
+//{
+//	// If valid and in level, get from data map
+//	if(EntityManager::IsEntityValid(entity) && Instance->entityLevelDataMap.find(entity.index) != Instance->entityLevelDataMap.end())
+//		return Instance->entityLevelDataMap[entity.index].levelIndex;
+//	// Otherwise return invalid
+//	else
+//		return INVALID_ENTITY;
+//}
+std::string LevelManager::GetEntityName(Entity entity)
 {
-	// If valid and in level, get from data map
-	if(EntityManager::IsEntityValid(entity) && Instance->entityLevelDataMap.find(entity.index) != Instance->entityLevelDataMap.end())
-		return Instance->entityLevelDataMap[entity.index].levelIndex;
-	// Otherwise return invalid
-	else
-		return INVALID_ENTITY;
-}
-std::string LevelManager::GetName(Entity entity)
-{
-	assert(EntityManager::IsEntityValid(entity) && "Trying to access invalid entity.");
+	//assert(EntityManager::IsEntityValid(entity) && "Trying to access invalid entity.");
 
-	assert(Instance->entityLevelDataMap.find(entity.index) != Instance->entityLevelDataMap.end() && "Entity not in level.");
-	return Instance->entityLevelDataMap[entity.index].name;
+	assert(Instance->entityLevelDataMap.find(entity) != Instance->entityLevelDataMap.end() && "Entity not in level.");
+	return Instance->entityLevelDataMap[entity].name;
 }
-Entity LevelManager::GetParent(Entity entity)
+Entity LevelManager::GetEntityParent(Entity entity)
 {
-	assert(EntityManager::IsEntityValid(entity) && "Trying to access invalid entity.");
+	//assert(EntityManager::IsEntityValid(entity) && "Trying to access invalid entity.");
 
-	assert(Instance->entityLevelDataMap.find(entity.index) != Instance->entityLevelDataMap.end() && "Entity not in level.");
-	return EntityManager::GetEntityByIndex(Instance->entityLevelDataMap[entity.index].parentIndex);
+	assert(Instance->entityLevelDataMap.find(entity) != Instance->entityLevelDataMap.end() && "Entity not in level.");
+	return Instance->entityLevelDataMap[entity].parent;
+}
+Entity LevelManager::GetEntityFirstChild(Entity entity)
+{
+	//assert(EntityManager::IsEntityValid(entity) && "Trying to access invalid entity.");
+
+	assert(Instance->entityLevelDataMap.find(entity) != Instance->entityLevelDataMap.end() && "Entity not in level.");
+	return Instance->entityLevelDataMap[entity].firstChild;
+}
+Entity LevelManager::GetEntityNextSibling(Entity entity)
+{
+	//assert(EntityManager::IsEntityValid(entity) && "Trying to access invalid entity.");
+
+	assert(Instance->entityLevelDataMap.find(entity) != Instance->entityLevelDataMap.end() && "Entity not in level.");
+	return Instance->entityLevelDataMap[entity].nextSibling;
+}
+Entity LevelManager::GetEntityLastSibling(Entity entity)
+{
+	//assert(EntityManager::IsEntityValid(entity) && "Trying to access invalid entity.");
+
+	assert(Instance->entityLevelDataMap.find(entity) != Instance->entityLevelDataMap.end() && "Entity not in level.");
+	return Instance->entityLevelDataMap[entity].lastSibling;
+}
+uint32_t LevelManager::GetEntityDepth(Entity entity)
+{
+	//assert(EntityManager::IsEntityValid(entity) && "Trying to access invalid entity.");
+
+	assert(Instance->entityLevelDataMap.find(entity) != Instance->entityLevelDataMap.end() && "Entity not in level.");
+	return Instance->entityLevelDataMap[entity].depth;
 }
 
-Entity LevelManager::GetEntity(uint32_t levelIndex)
+void LevelManager::ForEachEntity(std::function<void(const Entity&)> callback, Entity root)
 {
-	return levelIndex < Instance->entities.size() ? Instance->entities[levelIndex] : Entity();
+	if(EntityManager::IsEntityValid(root))
+		callback(root);
+
+	/* Depth-first traversal; check for first child then next sibling */
+
+	Entity firstChild = GetEntityFirstChild(root);
+	Entity nextSibling = GetEntityNextSibling(root);
+	if(firstChild.IsValid())
+		ForEachEntity(callback, firstChild);
+	if(nextSibling.IsValid())
+		ForEachEntity(callback, nextSibling);
 }
 
-void LevelManager::SaveEntity(std::ofstream outFile, Entity entity)
+void LevelManager::SaveLevel()
 {
-	std::unordered_map<void*, std::type_index> components = EntityManager::GetAllComponents(entity);
-	for(auto& componentPtrType : components)
+	SerializedObject levelObject = {};
+	levelObject.typeName = "Level";
+	levelObject.parameters.emplace("Name", "Level0");
+
+	/* Save all top-level entities in the level (each entity will recursively save their children) */
+
+	Entity entity = GetEntityFirstChild({});
+	while(entity.IsValid())
 	{
-		GET_COMPONENT_VARS(componentPtrType.second, componentPtrType.first);
+		levelObject.children.push_back(SaveEntity(entity));
+
+		entity = GetEntityNextSibling(entity);
+	}
+
+	/* Save the object to file */
+
+	std::ofstream fileOut("level.txt");
+	FileManager::SaveObject(fileOut, levelObject);
+	fileOut.close();
+
+	//std::vector<Entity> entities;
+	//std::unordered_map<Entity, uint32_t> entityLevelIndices = { { Entity(), INVALID_ENTITY } }; // Root node should be associated with index INVALID_ENTITY; it's not in the entities list
+	//ForEachEntity([&entities, &entityLevelIndices](const Entity& entity)
+	//	{
+	//		entityLevelIndices.emplace(entity, entities.size());
+	//		entities.push_back(entity);
+	//	});
+
+	//file << entities.size() << "\n";
+
+	//for(Entity& entity : entities)
+	//{
+	//	assert(EntityManager::IsEntityValid(entity) && "Invalid entity in level!");
+
+	//	file << GetName(entity) << "\n";
+	//	file << entityLevelIndices[GetParent(entity)] << "\n";
+
+	//	std::unordered_map<void*, std::type_index> components = EntityManager::GetAllComponents(entity);
+	//	file << components.size() << "\n";
+	//	for(auto& component : components)
+	//	{
+	//		file << GET_COMPONENT_NAME(component.second) << "\n";
+
+	//		std::vector<std::pair<void*, ComponentVariableInfo>> variables = GET_COMPONENT_VARS(component.second, component.first);
+	//		for(std::pair<void*, ComponentVariableInfo>& variable : variables)
+	//		{
+	//			//file << variable.second.variableType.name() << "\n";
+
+	//			variable.second.writeToFile(file, variable.first);
+	//		}
+	//	}
+	//}
+
+	//file.close();
+}
+void LevelManager::LoadLevel()
+{
+	/* Load the object from file */
+
+	std::ifstream file("level.txt");
+	SerializedObject levelObject = FileManager::LoadObject(file);
+	file.close();
+
+	// Load each top-level entity as a child of the root (each entity will recursively load its children)
+	for(SerializedObject& child : levelObject.children)
+		LoadEntity(child, {});
+
+	//uint32_t entityCount;
+	//file >> entityCount;
+
+	//// Skip line break
+	//file.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+
+	//std::vector<Entity> entities;
+
+	//// Read in all entities
+	//for(uint32_t i = 0; i < entityCount; i++)
+	//{
+	//	std::string name;
+	//	std::getline(file, name);
+	//	uint32_t parentLevelIndex;
+	//	file >> parentLevelIndex;
+
+	//	// We can assume the parent exists in the level already if it's valid, since the ordering of the entity hierarchy ensures children come after their parent
+	//	Entity parent = parentLevelIndex != INVALID_ENTITY ? entities[parentLevelIndex] : Entity();
+
+	//	Entity newEntity = CreateEntity(name, parent);
+	//	entities.push_back(newEntity);
+
+	//	uint32_t componentsCount;
+	//	file >> componentsCount;
+
+	//	// Read in all components
+	//	for(uint32_t i = 0; i < componentsCount; i++)
+	//	{
+	//		std::string componentName;
+	//		file >> componentName;
+
+	//		uint32_t componentTypeIndex = 0xFFFFFFFF;
+
+	//		// Find the component type with the given name
+	//		for(uint32_t j = 0; j < GetRegisteredComponentsList().size(); j++)
+	//			if(GET_COMPONENT_NAME(GetRegisteredComponentsList()[j]) == componentName)
+	//			{
+	//				componentTypeIndex = j;
+	//				break;
+	//			}
+
+	//		assert(componentTypeIndex < 0xFFFFFFFF && "Unregistered component read in from file!");
+
+	//		std::type_index componentType = GetRegisteredComponentsList()[componentTypeIndex];
+
+	//		void* newComponent = EntityManager::AddComponentOfType(newEntity, componentType);
+	//		std::vector<std::pair<void*, ComponentVariableInfo>> variables = GET_COMPONENT_VARS(componentType, newComponent);
+	//		for(auto& variable : variables)
+	//			variable.second.readFromFile(file, variable.first);
+	//	}
+	//}
+
+	//file.close();
+}
+
+SerializedObject LevelManager::SaveEntity(Entity entity)
+{
+	SerializedObject entityObject = {};
+	entityObject.typeName = "Entity";
+	entityObject.parameters.emplace("Name", GetEntityName(entity));
+
+	std::unordered_map<void*, std::type_index> components = EntityManager::GetAllComponents(entity);
+	for(auto& component : components)
+	{
+		SerializedObject componentObject;
+		componentObject.typeName = "Component";
+		componentObject.parameters.emplace("TypeName", GET_COMPONENT_NAME(component.second));
+
+		std::vector<std::pair<void*, ComponentVariableInfo>> variables = GET_COMPONENT_VARS(component.second, component.first);
+		for(std::pair<void*, ComponentVariableInfo>& variable : variables)
+		{
+			/* Use a string stream to write the value to a string */
+
+			std::stringstream ss;
+			variable.second.writeToFile(ss, variable.first);
+			
+			std::string valueString;
+			std::getline(ss, valueString);
+
+			componentObject.parameters.emplace(variable.second.variableName, valueString);
+		}
+
+		entityObject.children.push_back(componentObject);
+	}
+
+	/* Add all child entities as children of the serialized object */
+	Entity child = GetEntityFirstChild(entity);
+	while(child.IsValid())
+	{
+		entityObject.children.push_back(SaveEntity(child));
+
+		child = GetEntityNextSibling(child);
+	}
+
+	return entityObject;
+}
+void LevelManager::LoadEntity(const SerializedObject& entityObject, Entity parent)
+{
+	assert(entityObject.typeName == "Entity");
+
+	Entity newEntity = CreateEntity(entityObject.parameters.at("Name"), parent);
+
+	for(const SerializedObject& child : entityObject.children)
+	{
+		if(child.typeName == "Component")
+		{
+			uint32_t componentTypeIndex = 0xFFFFFFFF;
+
+			// Find the component type with the given name
+			for(uint32_t j = 0; j < GetRegisteredComponentsList().size(); j++)
+				if(GET_COMPONENT_NAME(GetRegisteredComponentsList()[j]) == child.parameters.at("TypeName"))
+				{
+					componentTypeIndex = j;
+					break;
+				}
+
+			assert(componentTypeIndex < 0xFFFFFFFF && "Unregistered component read in from file!");
+
+			std::type_index componentType = GetRegisteredComponentsList()[componentTypeIndex];
+
+			void* newComponent = EntityManager::AddComponentOfType(newEntity, componentType);
+			std::vector<std::pair<void*, ComponentVariableInfo>> variables = GET_COMPONENT_VARS(componentType, newComponent);
+			// Load variable values as string streams and parse them by type
+			// Variables are searched for by name
+			for(auto& variable : variables)
+			{
+				std::stringstream ss(child.parameters.at(variable.second.variableName));
+				variable.second.readFromFile(ss, variable.first);
+			}
+		}
+		// Load child entities recursively
+		if(child.typeName == "Entity")
+			LoadEntity(child, newEntity);
 	}
 }

@@ -208,16 +208,16 @@ void Engine::Run()
         DebugManager::DrawDebugSphere(
             glm::vec3(2, 3, 1), glm::angleAxis(glm::radians(60.0f * (float) TimeManager::GetCurrentTime()), glm::normalize(glm::vec3(1, 1, 1))), glm::vec3(0.5f, 0.5f, 0.5f), glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
 
-        for(Entity entity : LevelManager::GetAllEntities())
-        {
-            if(EntityManager::HasComponent<TransformComponent>(entity))
+        LevelManager::ForEachEntity([this](const Entity& entity)
             {
-				//EntityManager::GetComponent<TransformComponent>(e).location += glm::vec3(0.0f, 0.0f, 1.0f) * TimeManager::GetDeltaTime();
-                //EntityManager::GetComponent<TransformComponent>(e).rotation *= glm::angleAxis(glm::radians(60.0f * TimeManager::GetDeltaTime()), glm::normalize(glm::vec3(0, 0, 1)));
-                //EntityManager::GetComponent<TransformComponent>(e).rotation = glm::angleAxis(glm::radians(60.0f * TimeManager::GetDeltaTime()), glm::normalize(glm::vec3(0, 0, 1))) * EntityManager::GetComponent<TransformComponent>(e).rotation;
-				//EntityManager::GetComponent<TransformComponent>(e).scale += glm::vec3(-0.01f, -0.01f, -0.01f) * TimeManager::GetDeltaTime();
-            }
-        }
+                if(EntityManager::HasComponent<TransformComponent>(entity))
+                {
+				    //EntityManager::GetComponent<TransformComponent>(e).location += glm::vec3(0.0f, 0.0f, 1.0f) * TimeManager::GetDeltaTime();
+                    //EntityManager::GetComponent<TransformComponent>(e).rotation *= glm::angleAxis(glm::radians(60.0f * TimeManager::GetDeltaTime()), glm::normalize(glm::vec3(0, 0, 1)));
+                    //EntityManager::GetComponent<TransformComponent>(e).rotation = glm::angleAxis(glm::radians(60.0f * TimeManager::GetDeltaTime()), glm::normalize(glm::vec3(0, 0, 1))) * EntityManager::GetComponent<TransformComponent>(e).rotation;
+				    //EntityManager::GetComponent<TransformComponent>(e).scale += glm::vec3(-0.01f, -0.01f, -0.01f) * TimeManager::GetDeltaTime();
+                }
+            });
     }
 
     Shutdown();
@@ -237,6 +237,7 @@ void Engine::Startup(bool shouldOverrideFramebuffer, unsigned int overrideExtent
     cameraManager.Startup();
     debugManager.Startup();
     physicsSystem.Startup();
+	fileManager.Startup();
 	levelManager.Startup();
 }
 void Engine::Shutdown()
@@ -245,6 +246,7 @@ void Engine::Shutdown()
     vkDeviceWaitIdle(GraphicsSystem::GetDevice());
 
 	levelManager.Shutdown();
+	fileManager.Shutdown();
     physicsSystem.Shutdown();
     debugManager.Shutdown();
     cameraManager.Shutdown();
@@ -273,12 +275,14 @@ REDFORGE_API void Engine::Update()
     DebugManager::DrawDebugSphere(
         glm::vec3(2, 3, 1), glm::angleAxis(glm::radians(60.0f * (float) TimeManager::GetCurrentTime()), glm::normalize(glm::vec3(1, 1, 1))), glm::vec3(0.5f, 0.5f, 0.5f), glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
 
-    for(Entity entity : LevelManager::GetAllEntities())
-        if(EntityManager::HasComponent<TransformComponent>(entity))
+    LevelManager::ForEachEntity([this](const Entity& entity)
         {
-			//EntityManager::GetComponent<TransformComponent>(e).location += glm::vec3(0.0f, 0.0f, 1.0f) * TimeManager::GetDeltaTime();
-            //EntityManager::GetComponent<TransformComponent>(e).rotation *= glm::angleAxis(glm::radians(60.0f * TimeManager::GetDeltaTime()), glm::normalize(glm::vec3(0, 0, 1)));
-            //EntityManager::GetComponent<TransformComponent>(e).rotation = glm::angleAxis(glm::radians(60.0f * TimeManager::GetDeltaTime()), glm::normalize(glm::vec3(0, 0, 1))) * EntityManager::GetComponent<TransformComponent>(e).rotation;
-			//EntityManager::GetComponent<TransformComponent>(e).scale += glm::vec3(-0.01f, -0.01f, -0.01f) * TimeManager::GetDeltaTime();
-        }
+            if(EntityManager::HasComponent<TransformComponent>(entity))
+            {
+			    //EntityManager::GetComponent<TransformComponent>(e).location += glm::vec3(0.0f, 0.0f, 1.0f) * TimeManager::GetDeltaTime();
+                //EntityManager::GetComponent<TransformComponent>(e).rotation *= glm::angleAxis(glm::radians(60.0f * TimeManager::GetDeltaTime()), glm::normalize(glm::vec3(0, 0, 1)));
+                //EntityManager::GetComponent<TransformComponent>(e).rotation = glm::angleAxis(glm::radians(60.0f * TimeManager::GetDeltaTime()), glm::normalize(glm::vec3(0, 0, 1))) * EntityManager::GetComponent<TransformComponent>(e).rotation;
+			    //EntityManager::GetComponent<TransformComponent>(e).scale += glm::vec3(-0.01f, -0.01f, -0.01f) * TimeManager::GetDeltaTime();
+            }
+        });
 }

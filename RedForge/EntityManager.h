@@ -31,7 +31,7 @@ public:
 	bool operator==(const Entity& other) const { return index == other.index && generation == other.generation; }
 	bool operator!=(const Entity& other) const { return !(*this == other); }
 
-	bool IsValid() { return index != INVALID_ENTITY && generation != INVALID_ENTITY; }
+	bool IsValid() const { return index != INVALID_ENTITY && generation != INVALID_ENTITY; }
 };
 template <>
 struct std::formatter<Entity, char>

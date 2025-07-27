@@ -2343,46 +2343,46 @@ void GraphicsSystem::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t
 	instanceData.clear();
     std::unordered_map<Entity, uint32_t> entityInstanceIndices;
     std::vector<LightData> lightsData;
-    for(Entity entity : LevelManager::GetAllEntities())
-    {
-        if(EntityManager::HasComponent<MeshRendererComponent>(entity) && EntityManager::HasComponent<TransformComponent>(entity))
+    LevelManager::ForEachEntity([this, &entityInstanceIndices, &lightsData](const Entity& entity)
         {
-            Entity parent = LevelManager::GetParent(entity);
+            if(EntityManager::HasComponent<MeshRendererComponent>(entity) && EntityManager::HasComponent<TransformComponent>(entity))
+            {
+                Entity parent = LevelManager::GetEntityParent(entity);
 
-            MeshRendererComponent& renderer = EntityManager::GetComponent<MeshRendererComponent>(entity);
-            TransformComponent& transform = EntityManager::GetComponent<TransformComponent>(entity);
+                MeshRendererComponent& renderer = EntityManager::GetComponent<MeshRendererComponent>(entity);
+                TransformComponent& transform = EntityManager::GetComponent<TransformComponent>(entity);
 
-            InstanceData instance{};
-            instance.rendererIndex = instanceData.size();
-            instance.meshIndex = ResourceManager::GetMesh(renderer.mesh.identifier)->index;
-            instance.materialIndex = ResourceManager::GetMaterial(renderer.material.identifier)->index;
+                InstanceData instance{};
+                instance.rendererIndex = instanceData.size();
+                instance.meshIndex = ResourceManager::GetMesh(renderer.mesh.identifier)->index;
+                instance.materialIndex = ResourceManager::GetMaterial(renderer.material.identifier)->index;
 
-            entityInstanceIndices.emplace(entity, instanceData.size());
-            instanceData.push_back(instance);
+                entityInstanceIndices.emplace(entity, instanceData.size());
+                instanceData.push_back(instance);
 
-            // Combine this transform with its parent's
-            // Because we know the parent has already been processed (by the order of the LevelManager's entity hierarchy), this gives the world transform of the current entity
-            glm::mat4 parentMatrix = parent.IsValid() ? modelMatrices[entityInstanceIndices[parent]] : glm::mat4(1.0f);
-            modelMatrices[instance.rendererIndex] = parentMatrix * transform.GetMatrix();
-        }
+                // Combine this transform with its parent's
+                // Because we know the parent has already been processed (by the order of the LevelManager's entity hierarchy), this gives the world transform of the current entity
+                glm::mat4 parentMatrix = parent.IsValid() ? modelMatrices[entityInstanceIndices[parent]] : glm::mat4(1.0f);
+                modelMatrices[instance.rendererIndex] = parentMatrix * transform.GetMatrix();
+            }
 
-        if(EntityManager::HasComponent<LightComponent>(entity))
-        {
-            LightComponent& light = EntityManager::GetComponent<LightComponent>(entity);
+            if(EntityManager::HasComponent<LightComponent>(entity))
+            {
+                LightComponent& light = EntityManager::GetComponent<LightComponent>(entity);
 
-            LightData lightData{};
-            lightData.direction = light.direction;
-            lightData.lightType = light.lightType;
-            lightData.color = light.color;
-            lightData.intensity = light.intensity;
-            lightData.location = light.location;
-            lightData.range = light.range;
-            lightData.spotInnerAngle = light.spotInnerAngle;
-            lightData.spotOuterAngle = light.spotOuterAngle;
+                LightData lightData{};
+                lightData.direction = light.direction;
+                lightData.lightType = light.lightType;
+                lightData.color = light.color;
+                lightData.intensity = light.intensity;
+                lightData.location = light.location;
+                lightData.range = light.range;
+                lightData.spotInnerAngle = light.spotInnerAngle;
+                lightData.spotOuterAngle = light.spotOuterAngle;
 
-            lightsData.push_back(lightData);
-        }
-    }
+                lightsData.push_back(lightData);
+            }
+        });
 
     memcpy(transformBufferMapped[currentFrame], modelMatrices, sizeof(glm::mat4) * MAX_INSTANCES);
     
@@ -2599,62 +2599,64 @@ void GraphicsSystem::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t
         ImGui::Begin("Entities");
         if(ImGui::TreeNode("Entities"))
         {
-            for(Entity entity : LevelManager::GetAllEntities())
-                if(EntityManager::HasComponent<TransformComponent>(entity))
-                    if(ImGui::TreeNode(std::format("Entity {}", entity).c_str()))
-                    {
-                        TransformComponent& transform = EntityManager::GetComponent<TransformComponent>(entity);
-
-                        if(ImGui::TreeNode("Transform"))
+            LevelManager::ForEachEntity([this](const Entity& entity)
+                {
+                    if(EntityManager::HasComponent<TransformComponent>(entity))
+                        if(ImGui::TreeNode(std::format("Entity {}", entity).c_str()))
                         {
-                            glm::vec3 location = transform.location;
-                            glm::vec3 eulerAngles = glm::eulerAngles(transform.rotation);
-                            glm::vec3 scale = transform.scale;
-                            ImGui::DragFloat3("Location", &location.x, 0.1f, -5.0f, 5.0f);
-                            ImGui::DragFloat3("Rotation", &eulerAngles.x, 0.1f, -5.0f, 5.0f);
-                            ImGui::DragFloat3("Scale", &scale.x, 0.1f, -5.0f, 5.0f);
+                            TransformComponent& transform = EntityManager::GetComponent<TransformComponent>(entity);
 
-                            if(location != transform.location)
-                                transform.location = location;
-                            if(eulerAngles != glm::eulerAngles(transform.rotation))
+                            if(ImGui::TreeNode("Transform"))
                             {
-                                glm::vec3 eulerDeltas = eulerAngles - glm::eulerAngles(transform.rotation);
+                                glm::vec3 location = transform.location;
+                                glm::vec3 eulerAngles = glm::eulerAngles(transform.rotation);
+                                glm::vec3 scale = transform.scale;
+                                ImGui::DragFloat3("Location", &location.x, 0.1f, -5.0f, 5.0f);
+                                ImGui::DragFloat3("Rotation", &eulerAngles.x, 0.1f, -5.0f, 5.0f);
+                                ImGui::DragFloat3("Scale", &scale.x, 0.1f, -5.0f, 5.0f);
 
-                                transform.rotation =
-                                    glm::angleAxis(eulerDeltas.x, glm::vec3(1, 0, 0))
-                                    * glm::angleAxis(eulerDeltas.y, glm::vec3(0, 1, 0))
-                                    * glm::angleAxis(eulerDeltas.z, glm::vec3(0, 0, 1)) * transform.rotation;
-                            }
-                            if(scale != transform.scale)
-                                transform.scale = scale;
+                                if(location != transform.location)
+                                    transform.location = location;
+                                if(eulerAngles != glm::eulerAngles(transform.rotation))
+                                {
+                                    glm::vec3 eulerDeltas = eulerAngles - glm::eulerAngles(transform.rotation);
 
-                            ImGui::TreePop();
-                        }
-
-                        if(EntityManager::HasComponent<MeshRendererComponent>(entity))
-                        {
-                            MeshRendererComponent& meshRenderer = EntityManager::GetComponent<MeshRendererComponent>(entity);
-
-                            if(ImGui::TreeNode("MeshRenderer"))
-                            {
-                                ImGui::Text("Renderer Index: %i", meshRenderer.rendererIndex);
-
-                                int meshIndex = ResourceManager::GetMesh(meshRenderer.mesh.identifier)->index;
-                                int materialIndex = ResourceManager::GetMaterial(meshRenderer.material.identifier)->index;
-                                ImGui::DragInt("Mesh Index", &meshIndex, 0.1f, 0, ResourceManager::GetMeshes().size() - 1);
-                                ImGui::DragInt("Material Index", &materialIndex, 0.1f, 0, ResourceManager::GetMaterials().size() - 1);
-
-                                if(meshIndex != ResourceManager::GetMesh(meshRenderer.mesh.identifier)->index)
-                                    meshRenderer.mesh = MeshRef(ResourceManager::GetMesh(meshIndex)->identifier);
-                                if(materialIndex != ResourceManager::GetMaterial(meshRenderer.material.identifier)->index)
-                                    meshRenderer.material = MaterialRef(ResourceManager::GetMaterial(materialIndex)->identifier);
+                                    transform.rotation =
+                                        glm::angleAxis(eulerDeltas.x, glm::vec3(1, 0, 0))
+                                        * glm::angleAxis(eulerDeltas.y, glm::vec3(0, 1, 0))
+                                        * glm::angleAxis(eulerDeltas.z, glm::vec3(0, 0, 1)) * transform.rotation;
+                                }
+                                if(scale != transform.scale)
+                                    transform.scale = scale;
 
                                 ImGui::TreePop();
                             }
-                        }
 
-                        ImGui::TreePop();
-                    }
+                            if(EntityManager::HasComponent<MeshRendererComponent>(entity))
+                            {
+                                MeshRendererComponent& meshRenderer = EntityManager::GetComponent<MeshRendererComponent>(entity);
+
+                                if(ImGui::TreeNode("MeshRenderer"))
+                                {
+                                    ImGui::Text("Renderer Index: %i", meshRenderer.rendererIndex);
+
+                                    int meshIndex = ResourceManager::GetMesh(meshRenderer.mesh.identifier)->index;
+                                    int materialIndex = ResourceManager::GetMaterial(meshRenderer.material.identifier)->index;
+                                    ImGui::DragInt("Mesh Index", &meshIndex, 0.1f, 0, ResourceManager::GetMeshes().size() - 1);
+                                    ImGui::DragInt("Material Index", &materialIndex, 0.1f, 0, ResourceManager::GetMaterials().size() - 1);
+
+                                    if(meshIndex != ResourceManager::GetMesh(meshRenderer.mesh.identifier)->index)
+                                        meshRenderer.mesh = MeshRef(ResourceManager::GetMesh(meshIndex)->identifier);
+                                    if(materialIndex != ResourceManager::GetMaterial(meshRenderer.material.identifier)->index)
+                                        meshRenderer.material = MaterialRef(ResourceManager::GetMaterial(materialIndex)->identifier);
+
+                                    ImGui::TreePop();
+                                }
+                            }
+
+                            ImGui::TreePop();
+                        }
+                });
 
             ImGui::TreePop();
         }

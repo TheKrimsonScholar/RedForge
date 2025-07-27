@@ -30,34 +30,34 @@ HierarchyPanel::~HierarchyPanel()
 
 void HierarchyPanel::UpdateHierarchy()
 {
+	static const int CHILD_DEPTH_PADDING = 32;
+
 	DestroyHierarchy();
 
-	for(Entity& entity : LevelManager::GetAllEntities())
-	{
-		if(!EntityManager::IsEntityValid(entity))
-			continue;
-
-		Gtk::ListBoxRow* row = Gtk::manage(new Gtk::ListBoxRow());
-		Gtk::Box* box = Gtk::manage(new Gtk::Box(Gtk::Orientation::HORIZONTAL));
+	LevelManager::ForEachEntity([this](const Entity& entity)
+		{
+			Gtk::ListBoxRow* row = Gtk::manage(new Gtk::ListBoxRow());
+			Gtk::Box* box = Gtk::manage(new Gtk::Box(Gtk::Orientation::HORIZONTAL));
 		
-		Gtk::Label* entityLabel = Gtk::manage(new Gtk::Label(LevelManager::GetName(entity)));
-		Gtk::Box* spacer = Gtk::manage(new Gtk::Box(Gtk::Orientation::HORIZONTAL));
-		spacer->set_hexpand(true);
+			Gtk::Label* entityLabel = Gtk::manage(new Gtk::Label(LevelManager::GetEntityName(entity)));
+			entityLabel->set_margin_start(CHILD_DEPTH_PADDING * (LevelManager::GetEntityDepth(entity) - 1));
+			Gtk::Box* spacer = Gtk::manage(new Gtk::Box(Gtk::Orientation::HORIZONTAL));
+			spacer->set_hexpand(true);
 
-		Gtk::Button* destroyButton = Gtk::manage(new Gtk::Button("X"));
-		destroyButton->set_halign(Gtk::Align::END);
-		destroyButton->set_tooltip_text("Destroy this entity");
-		destroyButton->signal_clicked().connect(sigc::bind(sigc::mem_fun(*this, &HierarchyPanel::DestroyEntity), entity), false);
+			Gtk::Button* destroyButton = Gtk::manage(new Gtk::Button("X"));
+			destroyButton->set_halign(Gtk::Align::END);
+			destroyButton->set_tooltip_text("Destroy this entity");
+			destroyButton->signal_clicked().connect(sigc::bind(sigc::mem_fun(*this, &HierarchyPanel::DestroyEntity), entity), false);
 		
-		box->append(*entityLabel);
-		box->append(*spacer);
-		box->append(*destroyButton);
+			box->append(*entityLabel);
+			box->append(*spacer);
+			box->append(*destroyButton);
 
-		row->set_child(*box);
+			row->set_child(*box);
 
-		entityList.append(*row);
-		entityRows.emplace(row, entity);
-	}
+			entityList.append(*row);
+			entityRows.emplace(row, entity);
+		});
 }
 
 void HierarchyPanel::CreateEntity()

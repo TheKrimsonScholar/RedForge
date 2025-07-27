@@ -39,20 +39,22 @@ REDFORGE_API std::unordered_map<std::type_index, ComponentInfo>& GetRegisteredCo
 
 inline std::ostream& operator<<(std::ostream& os, const glm::vec3& v)
 {
-	return os << v.x << ' ' << v.y << ' ' << v.z;
+	return os << '(' << v.x << ", " << v.y << ", " << v.z << ')';
 }
 inline std::istream& operator>>(std::istream& is, glm::vec3& v)
 {
-	return is >> v.x >> v.y >> v.z;
+	char filler;
+	return is >> filler >> v.x >> filler >> v.y >> filler >> v.z >> filler;
 }
 
 inline std::ostream& operator<<(std::ostream& os, const glm::quat& q)
 {
-	return os << q.x << ' ' << q.y << ' ' << q.z << ' ' << q.w;
+	return os << '(' << q.x << ", " << q.y << ", " << q.z << ", " << q.w << ')';
 }
 inline std::istream& operator>>(std::istream& is, glm::quat& q)
 {
-	return is >> q.x >> q.y >> q.z >> q.w;
+	char filler;
+	return is >> filler >> q.x >> filler >> q.y >> filler >> q.z >> filler >> q.w >> filler;
 }
 
 #define REGISTER_COMPONENT_BEGIN(Type)																													\

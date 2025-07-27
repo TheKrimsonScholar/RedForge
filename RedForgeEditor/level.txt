@@ -1,12 +1,27 @@
-2
-Entity 1
-4,294,967,295
-2
-TransformComponent
-0 3.8 0 -0.0313639 -0.769919 -0.536019 0.344854 1.5 1 1 MeshRendererComponent
-"default.obj" "default" Entity 2
-0
-2
-TransformComponent
-1.3 2.8 0 0.644218 4.86371e-08 -0.764842 5.7744e-08 1 1 1 MeshRendererComponent
-"default.obj" "default" 
+$Level
+	Name=Level0
+	$Entity
+		Name=Entity 1
+		$Component
+			location=(3.1, 0, 0) 
+			TypeName=TransformComponent
+			rotation=(0.709575, -0.405816, -0.572663, -0.0622374) 
+			scale=(1, 1, 1) 
+		$$
+		$Entity
+			Name=Entity 3
+		$$
+		$Entity
+			Name=Entity 4
+			$Component
+				location=(0, 0, 0) 
+				TypeName=TransformComponent
+				rotation=(7.54816e-08, -0.999784, -0.0207949, 1.56997e-09) 
+				scale=(1, 1, 1) 
+			$$
+		$$
+		$Entity
+			Name=Entity 10
+		$$
+	$$
+$$

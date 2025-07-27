@@ -8,6 +8,7 @@
 #include "CameraManager.h"
 #include "DebugManager.h"
 #include "PhysicsSystem.h"
+#include "FileManager.h"
 #include "LevelManager.h"
 
 #include "Exports.h"
@@ -23,6 +24,7 @@ private:
 	CameraManager cameraManager;
 	DebugManager debugManager;
 	PhysicsSystem physicsSystem;
+	FileManager fileManager;
 	LevelManager levelManager;
 
 	bool isRunning = false;

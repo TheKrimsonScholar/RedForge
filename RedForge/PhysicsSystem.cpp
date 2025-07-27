@@ -24,16 +24,16 @@ void PhysicsSystem::Update()
 
 	simulationTimeLeft += TimeManager::GetDeltaTime();
 
-	for(Entity entity : LevelManager::GetAllEntities())
-	{
-		if(!EntityManager::HasComponent<TransformComponent>(entity) || !EntityManager::HasComponent<ColliderComponent>(entity))
-			continue;
+	LevelManager::ForEachEntity([this](const Entity& entity)
+		{
+			if(!EntityManager::HasComponent<TransformComponent>(entity) || !EntityManager::HasComponent<ColliderComponent>(entity))
+				return;
 
-		TransformComponent& transform = EntityManager::GetComponent<TransformComponent>(entity);
-		ColliderComponent& collider = EntityManager::GetComponent<ColliderComponent>(entity);
+			TransformComponent& transform = EntityManager::GetComponent<TransformComponent>(entity);
+			ColliderComponent& collider = EntityManager::GetComponent<ColliderComponent>(entity);
 
-		DebugManager::DrawDebugBox(transform.location, transform.rotation, collider.halfSize, glm::vec4(0, 0, 0, 0));
-	}
+			DebugManager::DrawDebugBox(transform.location, transform.rotation, collider.halfSize, glm::vec4(0, 0, 0, 0));
+		});
 
 	while(simulationTimeLeft >= PHYSICS_TICK)
 	{
@@ -41,52 +41,52 @@ void PhysicsSystem::Update()
 
 		/* Physics Update */
 
-		for(Entity entity : LevelManager::GetAllEntities())
-		{
-			if(EntityManager::HasComponent<PhysicsComponent>(entity) && EntityManager::HasComponent<ColliderComponent>(entity) && EntityManager::HasComponent<TransformComponent>(entity))
+		LevelManager::ForEachEntity([this](const Entity& entity)
 			{
-				TransformComponent& transform = EntityManager::GetComponent<TransformComponent>(entity);
-				PhysicsComponent& rb = EntityManager::GetComponent<PhysicsComponent>(entity);
+				if(EntityManager::HasComponent<PhysicsComponent>(entity) && EntityManager::HasComponent<ColliderComponent>(entity) && EntityManager::HasComponent<TransformComponent>(entity))
+				{
+					TransformComponent& transform = EntityManager::GetComponent<TransformComponent>(entity);
+					PhysicsComponent& rb = EntityManager::GetComponent<PhysicsComponent>(entity);
 
-				rb.ApplyGravity();
+					rb.ApplyGravity();
 
-				UpdatePhysics(transform, rb, tickPhysics ? PHYSICS_TICK : 0);
-			}
-		}
+					UpdatePhysics(transform, rb, tickPhysics ? PHYSICS_TICK : 0);
+				}
+			});
 
 		/* Collision Detection and Contact Generation */
 
-		for(Entity entityA : LevelManager::GetAllEntities())
-		{
-			if(!EntityManager::HasComponent<PhysicsComponent>(entityA) || !EntityManager::HasComponent<ColliderComponent>(entityA))
-				continue;
-			
-			for(Entity entityB : LevelManager::GetAllEntities())
+		LevelManager::ForEachEntity([&](const Entity& entityA)
 			{
-				if(!EntityManager::HasComponent<PhysicsComponent>(entityB) || !EntityManager::HasComponent<ColliderComponent>(entityB))
-					continue;
+				if(!EntityManager::HasComponent<PhysicsComponent>(entityA) || !EntityManager::HasComponent<ColliderComponent>(entityA))
+					return;
+			
+				LevelManager::ForEachEntity([&](const Entity& entityB)
+					{
+						if(!EntityManager::HasComponent<PhysicsComponent>(entityB) || !EntityManager::HasComponent<ColliderComponent>(entityB))
+							return;
 
-				if(entityA == entityB)
-					continue;
+						if(entityA == entityB)
+							return;
 
-				TransformComponent& transformA = EntityManager::GetComponent<TransformComponent>(entityA);
-				TransformComponent& transformB = EntityManager::GetComponent<TransformComponent>(entityB);
-				ColliderComponent& colliderA = EntityManager::GetComponent<ColliderComponent>(entityA);
-				ColliderComponent& colliderB = EntityManager::GetComponent<ColliderComponent>(entityB);
+						TransformComponent& transformA = EntityManager::GetComponent<TransformComponent>(entityA);
+						TransformComponent& transformB = EntityManager::GetComponent<TransformComponent>(entityB);
+						ColliderComponent& colliderA = EntityManager::GetComponent<ColliderComponent>(entityA);
+						ColliderComponent& colliderB = EntityManager::GetComponent<ColliderComponent>(entityB);
 
-				std::vector<ContactPoint> contactPoints;
-				if(GJK(transformA, colliderA, transformB, colliderB, contactPoints))
-				{
-					CollisionData collisionData{};
-					collisionData.entityA = entityA;
-					collisionData.entityB = entityB;
-					collisionData.colliderPair = CollisionPair(&colliderA, &colliderB);
-					collisionData.contacts = contactPoints;
+						std::vector<ContactPoint> contactPoints;
+						if(GJK(transformA, colliderA, transformB, colliderB, contactPoints))
+						{
+							CollisionData collisionData{};
+							collisionData.entityA = entityA;
+							collisionData.entityB = entityB;
+							collisionData.colliderPair = CollisionPair(&colliderA, &colliderB);
+							collisionData.contacts = contactPoints;
 
-					collisions.push_back(collisionData);
-				}
-			}
-		}
+							collisions.push_back(collisionData);
+						}
+					});
+			});
 
 		/* Collision Resolution */
 

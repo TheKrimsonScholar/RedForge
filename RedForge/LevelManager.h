@@ -3,14 +3,19 @@
 #include <fstream>
 
 #include "EntityManager.h"
+#include "FileManager.h"
 
 #include "Exports.h"
 
 struct EntityLevelData
 {
-	uint32_t levelIndex;
+	//uint32_t levelIndex;
 	std::string name = "";
-	uint32_t parentIndex = INVALID_ENTITY;
+	Entity parent = {};
+	Entity firstChild = {};
+	Entity nextSibling = {};
+	Entity lastSibling = {};
+	uint32_t depth = 0;
 };
 
 class LevelManager
@@ -18,8 +23,10 @@ class LevelManager
 private:
 	static inline LevelManager* Instance;
 
-	std::vector<Entity> entities;
-	std::unordered_map<uint32_t, EntityLevelData> entityLevelDataMap;
+	//std::vector<Entity> entities;
+	//std::unordered_map<uint32_t, EntityLevelData> entityLevelDataMap;
+	// Invalid (default) entity is mapped to the root node of the level
+	std::unordered_map<Entity, EntityLevelData> entityLevelDataMap = { {}, {} };
 
 public:
 	LevelManager() {};
@@ -31,17 +38,23 @@ public:
 	REDFORGE_API static Entity CreateEntity(std::string name = "", Entity parent = {});
 	REDFORGE_API static void DestroyEntity(Entity entity);
 
-	REDFORGE_API static uint32_t GetLevelIndex(Entity entity);
-	REDFORGE_API static std::string GetName(Entity entity);
-	REDFORGE_API static Entity GetParent(Entity entity);
+	//REDFORGE_API static uint32_t GetLevelIndex(Entity entity);
+	REDFORGE_API static std::string GetEntityName(Entity entity);
+	REDFORGE_API static Entity GetEntityParent(Entity entity);
+	REDFORGE_API static Entity GetEntityFirstChild(Entity entity);
+	REDFORGE_API static Entity GetEntityNextSibling(Entity entity);
+	REDFORGE_API static Entity GetEntityLastSibling(Entity entity);
+	REDFORGE_API static uint32_t GetEntityDepth(Entity entity);
 
-	REDFORGE_API static Entity GetEntity(uint32_t levelIndex);
+	// Recursively traverses the level's entity hierarchy, performing the callback on each valid entity.
+	REDFORGE_API static void ForEachEntity(std::function<void(const Entity&)> callback, Entity root = {});
 
-	REDFORGE_API static std::vector<Entity> GetAllEntities() { return Instance->entities; };
+	//REDFORGE_API static std::vector<Entity> GetAllEntities() { return Instance->entities; };
 
 	REDFORGE_API static void SaveLevel();
 	REDFORGE_API static void LoadLevel();
 
 private:
-	void SaveEntity(std::ofstream outFile, Entity entity);
+	static SerializedObject SaveEntity(Entity entity);
+	static void LoadEntity(const SerializedObject& entityObject, Entity parent);
 };
