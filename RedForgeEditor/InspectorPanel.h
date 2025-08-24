@@ -21,6 +21,7 @@ public:
 	~InspectorPanel();
 
 	void SetTarget(Entity entity);
+	void SetTargets(const std::vector<Entity>& entities);
 
 	void ResetTarget();
 };

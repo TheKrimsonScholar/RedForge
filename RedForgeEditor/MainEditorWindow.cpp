@@ -115,7 +115,7 @@ MainEditorWindow::MainEditorWindow() : Gtk::Window(),
 
             LevelManager::LoadLevel();
 
-            hierarchyPanel->UpdateHierarchy();
+            hierarchyPanel->Initialize();
         };
 	viewport.onViewportResized = [this]()
 		{

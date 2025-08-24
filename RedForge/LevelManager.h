@@ -2,6 +2,7 @@
 
 #include <fstream>
 
+#include "Event.h"
 #include "EntityManager.h"
 #include "FileManager.h"
 
@@ -22,6 +23,9 @@ class LevelManager
 {
 private:
 	static inline LevelManager* Instance;
+
+	Event<const Entity&> onEntityCreated;
+	Event<const Entity&> onEntityDestroyed;
 
 	//std::vector<Entity> entities;
 	//std::unordered_map<uint32_t, EntityLevelData> entityLevelDataMap;
@@ -46,6 +50,12 @@ public:
 	REDFORGE_API static Entity GetEntityLastSibling(Entity entity);
 	REDFORGE_API static uint32_t GetEntityDepth(Entity entity);
 
+	REDFORGE_API static bool SetEntityParent(Entity entity, Entity newParent);
+	REDFORGE_API static bool MoveEntityBefore(Entity entity, Entity next);
+	REDFORGE_API static bool MoveEntityAfter(Entity entity, Entity previous);
+
+	REDFORGE_API static bool IsEntityChildOf(Entity parent, Entity child);
+
 	// Recursively traverses the level's entity hierarchy, performing the callback on each valid entity.
 	REDFORGE_API static void ForEachEntity(std::function<void(const Entity&)> callback, Entity root = {});
 
@@ -53,6 +63,9 @@ public:
 
 	REDFORGE_API static void SaveLevel();
 	REDFORGE_API static void LoadLevel();
+
+	REDFORGE_API static Event<const Entity&>* GetOnEntityCreated() { return Instance ? &Instance->onEntityCreated : nullptr; }
+	REDFORGE_API static Event<const Entity&>* GetOnEntityDestroyed() { return Instance ? &Instance->onEntityDestroyed : nullptr; }
 
 private:
 	static SerializedObject SaveEntity(Entity entity);

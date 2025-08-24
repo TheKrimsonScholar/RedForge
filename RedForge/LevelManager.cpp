@@ -22,25 +22,16 @@ Entity LevelManager::CreateEntity(std::string name, Entity parent)
 
 	//assert(EntityManager::IsEntityValid(parent) && "Parent entity is invalid."); Invalid parent will instead be interpreted as no parent
 
-	/* Determine the level index of the new entity (insert it as the parent's last child) */
+	/* Insert the new entity as parent's last child */
 
 	//uint32_t newEntityLevelIndex = Instance->entities.size(); // If no parent, insert at the end of the entities list
-	Entity lastSibling = {};
-	if(EntityManager::IsEntityValid(parent))
-	{
-		assert(Instance->entityLevelDataMap.find(parent) != Instance->entityLevelDataMap.end() && "Parent entity not in level.");
-		
-		// Find the last child of the parent
-		lastSibling = GetEntityFirstChild(parent);
-		while(GetEntityNextSibling(lastSibling).IsValid())
-			lastSibling = GetEntityNextSibling(lastSibling);
-	}
-	else
-		parent = {};
-
-	// Shift up each entity that comes after the insertion point
-	//for(uint32_t i = newEntityLevelIndex; i < Instance->entities.size(); i++)
-		//Instance->entityLevelDataMap[Instance->entities[i].index].levelIndex++;
+	
+	//assert(Instance->entityLevelDataMap.find(parent) != Instance->entityLevelDataMap.end() && "Parent entity not in level.");
+	
+	Entity lastSibling = GetEntityFirstChild(parent);
+	// Find the last child of the parent
+	while(GetEntityNextSibling(lastSibling).IsValid())
+		lastSibling = GetEntityNextSibling(lastSibling);
 	
 	Entity newEntity = EntityManager::CreateEntity();
 
@@ -63,12 +54,16 @@ Entity LevelManager::CreateEntity(std::string name, Entity parent)
 	//Instance->entities.insert(Instance->entities.begin() + newEntityLevelIndex, newEntity);
 	Instance->entityLevelDataMap.emplace(newEntity, entityLevelData);
 
+	Instance->onEntityCreated.Broadcast(newEntity);
+
 	return newEntity;
 }
 void LevelManager::DestroyEntity(Entity entity)
 {
 	assert(EntityManager::IsEntityValid(entity) && "Attempting to destroy invalid entity.");
 	assert(Instance->entityLevelDataMap.find(entity) != Instance->entityLevelDataMap.end() && "Attempting to destroy entity not in level.");
+
+	Instance->onEntityDestroyed.Broadcast(entity);
 
 	/* Destroy all children first - gather list before destroying so hierarchy isn't destroyed while traversing it */
 
@@ -171,19 +166,153 @@ uint32_t LevelManager::GetEntityDepth(Entity entity)
 	return Instance->entityLevelDataMap[entity].depth;
 }
 
+bool LevelManager::SetEntityParent(Entity entity, Entity newParent)
+{
+	assert((entity.IsValid() && newParent.IsValid()) && "Invalid entities.");
+
+    // If trying to parent the entity to itself or its children, ignore
+    if(IsEntityChildOf(entity, newParent))
+        return false;
+
+    /* Update entity level data to set entity as the last child of newParent */
+
+    // Update parent's firstChild if this is the first child
+    if(Instance->entityLevelDataMap[Instance->entityLevelDataMap[entity].parent].firstChild == entity)
+		Instance->entityLevelDataMap[Instance->entityLevelDataMap[entity].parent].firstChild = Instance->entityLevelDataMap[entity].nextSibling;
+    // Update last sibling's nextSibling if last sibling is valid
+    if(Instance->entityLevelDataMap[entity].lastSibling.IsValid())
+		Instance->entityLevelDataMap[Instance->entityLevelDataMap[entity].lastSibling].nextSibling = Instance->entityLevelDataMap[entity].nextSibling;
+    // Update next sibling's lastSibling if next sibling is valid
+    if(Instance->entityLevelDataMap[entity].nextSibling.IsValid())
+		Instance->entityLevelDataMap[Instance->entityLevelDataMap[entity].nextSibling].lastSibling = Instance->entityLevelDataMap[entity].lastSibling;
+
+    Entity lastSibling = Instance->entityLevelDataMap[newParent].firstChild;
+    // Find last child of newParent
+    while(Instance->entityLevelDataMap[lastSibling].nextSibling.IsValid())
+        lastSibling = Instance->entityLevelDataMap[lastSibling].nextSibling;
+
+    // If lastSibling is valid, set entity as the next child after it
+    if(lastSibling.IsValid())
+		Instance->entityLevelDataMap[lastSibling].nextSibling = entity;
+    // Otherwise newParent has no children, so set entity as firstChild instead
+    else
+		Instance->entityLevelDataMap[newParent].firstChild = entity;
+
+    // Update entity's level data
+    Instance->entityLevelDataMap[entity].parent = newParent;
+    Instance->entityLevelDataMap[entity].nextSibling = {};
+    Instance->entityLevelDataMap[entity].lastSibling = lastSibling;
+    Instance->entityLevelDataMap[entity].depth = Instance->entityLevelDataMap[newParent].depth + 1;
+
+    return true;
+}
+bool LevelManager::MoveEntityBefore(Entity entity, Entity next)
+{
+	assert((entity.IsValid() && next.IsValid()) && "Invalid entities.");
+
+    // If trying to move the entity to be a sibling of itself or one of its children, ignore
+    if(IsEntityChildOf(entity, next))
+        return false;
+
+    /* Update entity level data to set entity as the last sibling before next */
+
+    // Update parent's firstChild if this is the first child
+    if(Instance->entityLevelDataMap[Instance->entityLevelDataMap[entity].parent].firstChild == entity)
+		Instance->entityLevelDataMap[Instance->entityLevelDataMap[entity].parent].firstChild = Instance->entityLevelDataMap[entity].nextSibling;
+    // Update last sibling's nextSibling if last sibling is valid
+    if(Instance->entityLevelDataMap[entity].lastSibling.IsValid())
+		Instance->entityLevelDataMap[Instance->entityLevelDataMap[entity].lastSibling].nextSibling = Instance->entityLevelDataMap[entity].nextSibling;
+    // Update next sibling's lastSibling if next sibling is valid
+    if(Instance->entityLevelDataMap[entity].nextSibling.IsValid())
+		Instance->entityLevelDataMap[Instance->entityLevelDataMap[entity].nextSibling].lastSibling = Instance->entityLevelDataMap[entity].lastSibling;
+
+    Entity parent = Instance->entityLevelDataMap[next].parent;
+    Entity previous = Instance->entityLevelDataMap[next].lastSibling;
+
+    // If next was the first child of its parent, entity will now be the first child instead
+    if(Instance->entityLevelDataMap[parent].firstChild == next)
+		Instance->entityLevelDataMap[parent].firstChild = entity;
+    // Set entity as the last sibling before next
+    if(previous.IsValid())
+		Instance->entityLevelDataMap[previous].nextSibling = entity;
+	Instance->entityLevelDataMap[next].lastSibling = entity;
+
+    // Update entity's level data
+    Instance->entityLevelDataMap[entity].parent = parent;
+    Instance->entityLevelDataMap[entity].nextSibling = next;
+    Instance->entityLevelDataMap[entity].lastSibling = previous;
+    Instance->entityLevelDataMap[entity].depth = Instance->entityLevelDataMap[next].depth;
+
+    return true;
+}
+bool LevelManager::MoveEntityAfter(Entity entity, Entity previous)
+{
+	assert((entity.IsValid() && previous.IsValid()) && "Invalid entities.");
+
+    // If trying to parent the entity to itself or its children, ignore
+    if(IsEntityChildOf(entity, previous))
+        return false;
+
+    /* Update entity level data to set entity as the next sibling after previous */
+
+    // Update parent's firstChild if this is the first child
+    if(Instance->entityLevelDataMap[Instance->entityLevelDataMap[entity].parent].firstChild == entity)
+		Instance->entityLevelDataMap[Instance->entityLevelDataMap[entity].parent].firstChild = Instance->entityLevelDataMap[entity].nextSibling;
+    // Update last sibling's nextSibling if last sibling is valid
+    if(Instance->entityLevelDataMap[entity].lastSibling.IsValid())
+		Instance->entityLevelDataMap[Instance->entityLevelDataMap[entity].lastSibling].nextSibling = Instance->entityLevelDataMap[entity].nextSibling;
+    // Update next sibling's lastSibling if next sibling is valid
+    if(Instance->entityLevelDataMap[entity].nextSibling.IsValid())
+		Instance->entityLevelDataMap[Instance->entityLevelDataMap[entity].nextSibling].lastSibling = Instance->entityLevelDataMap[entity].lastSibling;
+
+    Entity parent = Instance->entityLevelDataMap[previous].parent;
+    Entity next = Instance->entityLevelDataMap[previous].nextSibling;
+
+    // Set entity as the next sibling after previous
+    if(next.IsValid())
+		Instance->entityLevelDataMap[next].lastSibling = entity;
+	Instance->entityLevelDataMap[previous].nextSibling = entity;
+
+    // Update entity's level data
+    Instance->entityLevelDataMap[entity].parent = parent;
+    Instance->entityLevelDataMap[entity].nextSibling = next;
+    Instance->entityLevelDataMap[entity].lastSibling = previous;
+    Instance->entityLevelDataMap[entity].depth = Instance->entityLevelDataMap[previous].depth;
+
+    return true;
+}
+
+bool LevelManager::IsEntityChildOf(Entity parent, Entity child)
+{
+	bool isChild = false;
+    // Look for the entity in parent's children
+    ForEachEntity([child, &isChild](const Entity& entity)
+        {
+            if(entity == child)
+            {
+                isChild = true;
+                return;
+            }
+        }, parent);
+
+    return isChild;
+}
+
 void LevelManager::ForEachEntity(std::function<void(const Entity&)> callback, Entity root)
 {
 	if(EntityManager::IsEntityValid(root))
 		callback(root);
 
-	/* Depth-first traversal; check for first child then next sibling */
+	/* Depth-first recursive traversal; check for first child then next sibling */
 
-	Entity firstChild = GetEntityFirstChild(root);
-	Entity nextSibling = GetEntityNextSibling(root);
-	if(firstChild.IsValid())
-		ForEachEntity(callback, firstChild);
-	if(nextSibling.IsValid())
-		ForEachEntity(callback, nextSibling);
+	Entity child = GetEntityFirstChild(root);
+	while(child.IsValid())
+	{
+		ForEachEntity(callback, child);
+
+		// Next child
+		child = GetEntityNextSibling(child);
+	}
 }
 
 void LevelManager::SaveLevel()

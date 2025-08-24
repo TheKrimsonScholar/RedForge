@@ -195,6 +195,7 @@ gobject-2.0.lib
     <ClCompile Include="EditorPanel.cpp" />
     <ClCompile Include="EditorToolbar.cpp" />
     <ClCompile Include="GTKInputLayer.cpp" />
+    <ClCompile Include="HierarchicalEntityList.cpp" />
     <ClCompile Include="HierarchyPanel.cpp" />
     <ClCompile Include="InspectorPanel.cpp" />
     <ClCompile Include="MainEditorWindow.cpp" />
@@ -220,6 +221,7 @@ gobject-2.0.lib
     <ClInclude Include="EditorPanel.h" />
     <ClInclude Include="EditorToolbar.h" />
     <ClInclude Include="GTKInputLayer.h" />
+    <ClInclude Include="HierarchicalEntityList.h" />
     <ClInclude Include="HierarchyPanel.h" />
     <ClInclude Include="InspectorPanel.h" />
     <ClInclude Include="MainEditorWindow.h" />

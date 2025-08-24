@@ -26,6 +26,7 @@ void InspectorPanel::SetTarget(Entity entity)
 {
 	entityLabel.set_label(LevelManager::GetEntityName(entity));
 
+	// Clear any existing component entries
 	while(auto child = componentsList.get_first_child())
 		componentsList.remove(*child);
 
@@ -64,7 +65,10 @@ void InspectorPanel::SetTarget(Entity entity)
 			componentsList.append(*componentEntry);
 		}
 
+	/* Search field for adding new components to the entity */
+
 	std::vector<std::string> componentNames;
+	// Get the names of all registered component types
 	for(std::type_index componentTypeIndex : GetRegisteredComponentsList())
 		componentNames.push_back(GET_COMPONENT_NAME(componentTypeIndex));
 
@@ -79,11 +83,20 @@ void InspectorPanel::SetTarget(Entity entity)
 		});
 	componentsList.append(*addComponentField);
 }
+void InspectorPanel::SetTargets(const std::vector<Entity>& entities)
+{
+	entityLabel.set_label("Multiple entities selected (This is not yet supported).");
+
+	// Clear any existing component entries
+	while(auto child = componentsList.get_first_child())
+		componentsList.remove(*child);
+}
 
 void InspectorPanel::ResetTarget()
 {
 	entityLabel.set_label("None");
 
+	// Clear any existing component entries
 	while(auto child = componentsList.get_first_child())
 		componentsList.remove(*child);
 }
