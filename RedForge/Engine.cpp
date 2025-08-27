@@ -239,12 +239,14 @@ void Engine::Startup(bool shouldOverrideFramebuffer, unsigned int overrideExtent
     physicsSystem.Startup();
 	fileManager.Startup();
 	levelManager.Startup();
+	networkSystem.Startup();
 }
 void Engine::Shutdown()
 {
     // Wait for device to finish operations before exiting
     vkDeviceWaitIdle(GraphicsSystem::GetDevice());
 
+    networkSystem.Shutdown();
 	levelManager.Shutdown();
 	fileManager.Shutdown();
     physicsSystem.Shutdown();
@@ -259,14 +261,15 @@ void Engine::Shutdown()
     isRunning = false;
 }
 
-REDFORGE_API void Engine::Update()
+void Engine::Update()
 {
     glfwPollEvents();
 
     timeManager.Update();
     inputSystem.Update();
-    graphics.Update();
     physicsSystem.Update();
+    networkSystem.Update();
+    graphics.Update();
 
     //EntityManager::GetComponent<TransformComponent>(0).rotation = glm::angleAxis(1.0f * TimeManager::GetDeltaTime(), glm::vec3(1, 0, 0)) * glm::angleAxis(1.0f * TimeManager::GetDeltaTime(), glm::vec3(0, 1, 0)) * glm::angleAxis(1.0f * TimeManager::GetDeltaTime(), glm::vec3(0, 0, 1)) * EntityManager::GetComponent<TransformComponent>(0).rotation;
 

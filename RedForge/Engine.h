@@ -10,6 +10,7 @@
 #include "PhysicsSystem.h"
 #include "FileManager.h"
 #include "LevelManager.h"
+#include "NetworkSystem.h"
 
 #include "Exports.h"
 
@@ -26,6 +27,7 @@ private:
 	PhysicsSystem physicsSystem;
 	FileManager fileManager;
 	LevelManager levelManager;
+	NetworkSystem networkSystem;
 
 	bool isRunning = false;
 

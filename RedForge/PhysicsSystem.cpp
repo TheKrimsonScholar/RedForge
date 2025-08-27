@@ -43,7 +43,7 @@ void PhysicsSystem::Update()
 
 		LevelManager::ForEachEntity([this](const Entity& entity)
 			{
-				if(EntityManager::HasComponent<PhysicsComponent>(entity) && EntityManager::HasComponent<ColliderComponent>(entity) && EntityManager::HasComponent<TransformComponent>(entity))
+				if(EntityManager::HasComponent<PhysicsComponent>(entity))
 				{
 					TransformComponent& transform = EntityManager::GetComponent<TransformComponent>(entity);
 					PhysicsComponent& rb = EntityManager::GetComponent<PhysicsComponent>(entity);

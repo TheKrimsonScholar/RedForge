@@ -2,6 +2,8 @@
 
 #include <glm/glm.hpp>
 
+#include "TransformComponent.h"
+
 #include "ComponentMacros.h"
 
 enum class EColliderType
@@ -23,6 +25,7 @@ public:
 };
 
 REGISTER_COMPONENT_BEGIN(ColliderComponent)
+COMPONENT_REQUIRES(TransformComponent)
 COMPONENT_VARS_BEGIN
 //COMPONENT_VAR(EColliderType, colliderType)
 COMPONENT_VAR(glm::vec3, center)

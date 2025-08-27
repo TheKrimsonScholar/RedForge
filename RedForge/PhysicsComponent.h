@@ -2,6 +2,8 @@
 
 #include <glm/glm.hpp>
 
+#include "TransformComponent.h"
+
 #include "ComponentMacros.h"
 
 struct PhysicsComponent
@@ -31,6 +33,7 @@ public:
 };
 
 REGISTER_COMPONENT_BEGIN(PhysicsComponent)
+COMPONENT_REQUIRES(TransformComponent)
 COMPONENT_VARS_BEGIN
 COMPONENT_VAR(float, mass)
 COMPONENT_VAR(float, bounciness)

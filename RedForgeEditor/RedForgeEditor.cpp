@@ -12,7 +12,7 @@ int main(int argc, char* argv[])
 
     // Disable hardware acceleration (causes flickering on Windows)
     g_setenv("GSK_RENDERER", "cairo", TRUE);
-    auto app = Gtk::Application::create("org.krimson.RedForgeEditor");
+    auto app = Gtk::Application::create("org.krimson.RedForgeEditor", Gio::Application::Flags::NON_UNIQUE); // Allow multiple instances of the app for testing
 
     /* Apply CSS styles */
     try
