@@ -242,7 +242,7 @@ gobject-2.0.lib
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>C:\msys64\mingw64\lib\;C:\VulkanSDK\1.4.304.0\Lib;C:\vcpkg\installed\x64-windows\lib\;$(SolutionDir)x64\$(Configuration)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>RedForge.lib;gtkmm-4.0.lib;
+      <AdditionalDependencies>RedForgeClient.lib;gtkmm-4.0.lib;
 gtk-4.lib
 ;glibmm-2.68.lib
 ;cairomm-1.16.lib;
@@ -268,7 +268,7 @@ gobject-2.0.lib
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>C:\msys64\mingw64\lib\;C:\VulkanSDK\1.4.304.0\Lib;C:\vcpkg\installed\x64-windows\lib\;$(SolutionDir)x64\$(Configuration)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>RedForge.lib;gtkmm-4.0.lib;
+      <AdditionalDependencies>RedForgeServer.lib;gtkmm-4.0.lib;
 gtk-4.lib
 ;glibmm-2.68.lib
 ;cairomm-1.16.lib;
@@ -328,7 +328,7 @@ gobject-2.0.lib
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>C:\msys64\mingw64\lib\;C:\VulkanSDK\1.4.304.0\Lib;C:\vcpkg\installed\x64-windows\lib\;$(SolutionDir)x64\$(Configuration)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>RedForge.lib;gtkmm-4.0.lib;
+      <AdditionalDependencies>RedForgeClient.lib;gtkmm-4.0.lib;
 gtk-4.lib
 ;glibmm-2.68.lib
 ;cairomm-1.16.lib;
@@ -358,7 +358,7 @@ gobject-2.0.lib
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>C:\msys64\mingw64\lib\;C:\VulkanSDK\1.4.304.0\Lib;C:\vcpkg\installed\x64-windows\lib\;$(SolutionDir)x64\$(Configuration)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>RedForge.lib;gtkmm-4.0.lib;
+      <AdditionalDependencies>RedForgeServer.lib;gtkmm-4.0.lib;
 gtk-4.lib
 ;glibmm-2.68.lib
 ;cairomm-1.16.lib;
@@ -410,7 +410,7 @@ gobject-2.0.lib
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>C:\msys64\mingw64\lib\;C:\VulkanSDK\1.4.304.0\Lib;C:\vcpkg\installed\x64-windows\lib\;$(SolutionDir)x64\$(Configuration)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>RedForge.lib;gtkmm-4.0.lib;
+      <AdditionalDependencies>RedForgeClient.lib;gtkmm-4.0.lib;
 gtk-4.lib
 ;glibmm-2.68.lib
 ;cairomm-1.16.lib;
@@ -436,7 +436,7 @@ gobject-2.0.lib
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>C:\msys64\mingw64\lib\;C:\VulkanSDK\1.4.304.0\Lib;C:\vcpkg\installed\x64-windows\lib\;$(SolutionDir)x64\$(Configuration)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>RedForge.lib;gtkmm-4.0.lib;
+      <AdditionalDependencies>RedForgeServer.lib;gtkmm-4.0.lib;
 gtk-4.lib
 ;glibmm-2.68.lib
 ;cairomm-1.16.lib;
@@ -496,7 +496,7 @@ gobject-2.0.lib
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>C:\msys64\mingw64\lib\;C:\VulkanSDK\1.4.304.0\Lib;C:\vcpkg\installed\x64-windows\lib\;$(SolutionDir)x64\$(Configuration)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>RedForge.lib;gtkmm-4.0.lib;
+      <AdditionalDependencies>RedForgeClient.lib;gtkmm-4.0.lib;
 gtk-4.lib
 ;glibmm-2.68.lib
 ;cairomm-1.16.lib;
@@ -526,7 +526,7 @@ gobject-2.0.lib
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>C:\msys64\mingw64\lib\;C:\VulkanSDK\1.4.304.0\Lib;C:\vcpkg\installed\x64-windows\lib\;$(SolutionDir)x64\$(Configuration)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>RedForge.lib;gtkmm-4.0.lib;
+      <AdditionalDependencies>RedForgeServer.lib;gtkmm-4.0.lib;
 gtk-4.lib
 ;glibmm-2.68.lib
 ;cairomm-1.16.lib;
@@ -596,6 +596,11 @@ gobject-2.0.lib
   </ItemGroup>
   <ItemGroup>
     <Image Include="icon.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\RedForge\RedForge.vcxproj">
+      <Project>{1c302570-fe8f-453f-90e3-c4e2811ec474}</Project>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

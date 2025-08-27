@@ -5,9 +5,8 @@ MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "RedForge", "RedForge\RedForge.vcxproj", "{1C302570-FE8F-453F-90E3-C4E2811EC474}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "RedForgeEditor", "RedForgeEditor\RedForgeEditor.vcxproj", "{81381700-1A21-4E75-8B39-0A15A5AEC202}"
-	ProjectSection(ProjectDependencies) = postProject
-		{1C302570-FE8F-453F-90E3-C4E2811EC474} = {1C302570-FE8F-453F-90E3-C4E2811EC474}
-	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "RedForgeGame", "RedForgeGame\RedForgeGame.vcxproj", "{8E9414DE-F30D-4B16-8E60-4B63494D1AB2}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -73,6 +72,30 @@ Global
 		{81381700-1A21-4E75-8B39-0A15A5AEC202}.Release|x64.Build.0 = Release|x64
 		{81381700-1A21-4E75-8B39-0A15A5AEC202}.Release|x86.ActiveCfg = Release|Win32
 		{81381700-1A21-4E75-8B39-0A15A5AEC202}.Release|x86.Build.0 = Release|Win32
+		{8E9414DE-F30D-4B16-8E60-4B63494D1AB2}.Debug Client|x64.ActiveCfg = Debug Client|x64
+		{8E9414DE-F30D-4B16-8E60-4B63494D1AB2}.Debug Client|x64.Build.0 = Debug Client|x64
+		{8E9414DE-F30D-4B16-8E60-4B63494D1AB2}.Debug Client|x86.ActiveCfg = Debug|Win32
+		{8E9414DE-F30D-4B16-8E60-4B63494D1AB2}.Debug Client|x86.Build.0 = Debug|Win32
+		{8E9414DE-F30D-4B16-8E60-4B63494D1AB2}.Debug Server|x64.ActiveCfg = Debug Server|x64
+		{8E9414DE-F30D-4B16-8E60-4B63494D1AB2}.Debug Server|x64.Build.0 = Debug Server|x64
+		{8E9414DE-F30D-4B16-8E60-4B63494D1AB2}.Debug Server|x86.ActiveCfg = Debug|Win32
+		{8E9414DE-F30D-4B16-8E60-4B63494D1AB2}.Debug Server|x86.Build.0 = Debug|Win32
+		{8E9414DE-F30D-4B16-8E60-4B63494D1AB2}.Debug|x64.ActiveCfg = Debug|x64
+		{8E9414DE-F30D-4B16-8E60-4B63494D1AB2}.Debug|x64.Build.0 = Debug|x64
+		{8E9414DE-F30D-4B16-8E60-4B63494D1AB2}.Debug|x86.ActiveCfg = Debug|Win32
+		{8E9414DE-F30D-4B16-8E60-4B63494D1AB2}.Debug|x86.Build.0 = Debug|Win32
+		{8E9414DE-F30D-4B16-8E60-4B63494D1AB2}.Release Client|x64.ActiveCfg = Release Client|x64
+		{8E9414DE-F30D-4B16-8E60-4B63494D1AB2}.Release Client|x64.Build.0 = Release Client|x64
+		{8E9414DE-F30D-4B16-8E60-4B63494D1AB2}.Release Client|x86.ActiveCfg = Release|Win32
+		{8E9414DE-F30D-4B16-8E60-4B63494D1AB2}.Release Client|x86.Build.0 = Release|Win32
+		{8E9414DE-F30D-4B16-8E60-4B63494D1AB2}.Release Server|x64.ActiveCfg = Release Server|x64
+		{8E9414DE-F30D-4B16-8E60-4B63494D1AB2}.Release Server|x64.Build.0 = Release Server|x64
+		{8E9414DE-F30D-4B16-8E60-4B63494D1AB2}.Release Server|x86.ActiveCfg = Release|Win32
+		{8E9414DE-F30D-4B16-8E60-4B63494D1AB2}.Release Server|x86.Build.0 = Release|Win32
+		{8E9414DE-F30D-4B16-8E60-4B63494D1AB2}.Release|x64.ActiveCfg = Release|x64
+		{8E9414DE-F30D-4B16-8E60-4B63494D1AB2}.Release|x64.Build.0 = Release|x64
+		{8E9414DE-F30D-4B16-8E60-4B63494D1AB2}.Release|x86.ActiveCfg = Release|Win32
+		{8E9414DE-F30D-4B16-8E60-4B63494D1AB2}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
