@@ -89,7 +89,7 @@ private:
 
 	std::unordered_map<CollisionPair, std::vector<ContactPoint>> cachedContacts;
 
-	bool tickPhysics = true;
+	bool tickPhysics = false;
 
 public:
 	PhysicsSystem() {};
