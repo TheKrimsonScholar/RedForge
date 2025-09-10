@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ComponentMacros.h"
+#include "ComponentRegistrationMacros.h"
 
 #include "Exports.h"
 

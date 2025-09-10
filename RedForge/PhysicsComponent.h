@@ -4,7 +4,7 @@
 
 #include "TransformComponent.h"
 
-#include "ComponentMacros.h"
+#include "ComponentRegistrationMacros.h"
 
 struct PhysicsComponent
 {

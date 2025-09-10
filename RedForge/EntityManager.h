@@ -4,6 +4,7 @@
 #include <any>
 #include <queue>
 #include <cassert>
+#include <iostream>
 
 #include "ComponentMacros.h"
 
@@ -195,7 +196,7 @@ public:
 	static inline uint32_t GetLastEntity() { return Instance->lastEntity; };
 
 	template<typename T>
-	inline void RegisterComponent();
+	static inline void RegisterComponent();
 	template<typename T>
 	static inline void AddComponent(Entity entity, T component);
 	template<typename T>

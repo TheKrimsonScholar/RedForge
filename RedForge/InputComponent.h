@@ -4,7 +4,7 @@
 #include <functional>
 #include <cstdint>
 
-#include "EntityManager.h"
+#include "ComponentRegistrationMacros.h"
 
 struct InputComponent
 {
@@ -12,3 +12,8 @@ struct InputComponent
 
 	std::unordered_map<uint32_t, std::function<void(Entity)>> keyDownCallbacks;
 };
+
+REGISTER_COMPONENT_BEGIN(InputComponent)
+COMPONENT_VARS_BEGIN
+COMPONENT_VARS_END
+REGISTER_COMPONENT_END(InputComponent)

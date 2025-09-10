@@ -2,6 +2,8 @@
 
 #include <glm/glm.hpp>
 
+#include "ComponentRegistrationMacros.h"
+
 enum class ECameraProjectionType
 {
 	Perspective,
@@ -30,3 +32,8 @@ struct CameraComponent
 public:
 	glm::mat4 GetProjectionMatrix() const;
 };
+
+REGISTER_COMPONENT_BEGIN(CameraComponent)
+COMPONENT_VARS_BEGIN
+COMPONENT_VARS_END
+REGISTER_COMPONENT_END(CameraComponent)

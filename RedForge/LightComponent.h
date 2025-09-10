@@ -4,7 +4,7 @@
 
 #include <glm/glm.hpp>
 
-#include "ComponentMacros.h"
+#include "ComponentRegistrationMacros.h"
 
 enum class ELightType : uint32_t
 {

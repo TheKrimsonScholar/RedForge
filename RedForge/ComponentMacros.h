@@ -4,6 +4,8 @@
 #include <typeindex>
 #include <functional>
 #include <string>
+#include <ostream>
+#include <istream>
 
 #include "Exports.h"
 
@@ -23,6 +25,8 @@ struct ComponentInfo
 	ComponentInfo() = default;
 	ComponentInfo(uint32_t componentID, std::string componentName, std::vector<std::type_index> dependencies, std::function<std::vector<std::pair<void*, ComponentVariableInfo>>(void*)> getVariables) :
 		componentID(componentID), componentName(componentName), dependencies(dependencies), getVariables(getVariables) {};
+
+	std::function<void()> registerComponent;
 
 	uint32_t componentID;
 	std::string componentName;
@@ -60,59 +64,3 @@ inline std::istream& operator>>(std::istream& is, glm::quat& q)
 	char filler;
 	return is >> filler >> q.x >> filler >> q.y >> filler >> q.z >> filler >> q.w >> filler;
 }
-
-#define REGISTER_COMPONENT_BEGIN(Type)																													\
-struct RegisterComponent_##Type																															\
-{																																						\
-	RegisterComponent_##Type()																															\
-	{																																					\
-		std::type_index typeID = typeid(Type);																											\
-																																						\
-		if(std::find(GetRegisteredComponentsList().begin(), GetRegisteredComponentsList().end(), typeID) != GetRegisteredComponentsList().end())		\
-			return;																																		\
-		if(GetRegisteredComponentInfoMap().find(typeID) != GetRegisteredComponentInfoMap().end())														\
-			return;																																		\
-																																						\
-		auto castComponentPtr = [](void* rawComponent) -> Type*																							\
-			{																																			\
-				return static_cast<Type*>(rawComponent);																								\
-			};																																			\
-																																						\
-		GetRegisteredComponentsList().push_back(typeID);																								\
-																																						\
-		ComponentInfo& componentInfo = GetRegisteredComponentInfoMap()[typeID];																			\
-		componentInfo.componentID = GetRegisteredComponentInfoMap().size();																				\
-		componentInfo.componentName = #Type;
-#define COMPONENT_REQUIRES(componentType)																												\
-		componentInfo.dependencies.push_back(typeid(componentType));																					\
-		GetRegisteredComponentInfoMap()[typeid(componentType)].dependents.push_back(typeID);
-#define COMPONENT_VARS_BEGIN																															\
-		componentInfo.getVariables = [castComponentPtr](void* rawComponent) -> std::vector<std::pair<void*, ComponentVariableInfo>>						\
-			{																																			\
-				auto component = castComponentPtr(rawComponent);																						\
-																																						\
-				return																																	\
-				{
-#define COMPONENT_VAR(variableType, variableName)																										\
-					{																																	\
-						&component->variableName,																										\
-						{																																\
-							typeid(variableType), #variableName,																						\
-																																						\
-							[](std::istream& is, void* variablePtr) -> std::istream&																	\
-								{																														\
-									return is >> *static_cast<variableType*>(variablePtr);																\
-								},																														\
-							[](std::ostream& os, void* variablePtr) -> std::ostream&																	\
-								{																														\
-									return os << *static_cast<variableType*>(variablePtr) << " ";														\
-								}																														\
-						}																																\
-					},
-#define COMPONENT_VARS_END																																\
-				};																																		\
-			};
-#define REGISTER_COMPONENT_END(Type)																													\
-	}																																					\
-};																																						\
-static RegisterComponent_##Type registerComponent_##Type;

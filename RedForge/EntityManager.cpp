@@ -8,6 +8,8 @@
 #include "PhysicsComponent.h"
 #include "LightComponent.h"
 
+#include <iostream>
+
 #define DEBUG_NEW new(_NORMAL_BLOCK, __FILE__, __LINE__)
 #define new DEBUG_NEW
 
@@ -15,13 +17,20 @@ void EntityManager::Startup()
 {
 	Instance = this;
 
-	RegisterComponent<TransformComponent>();
+	/*RegisterComponent<TransformComponent>();
 	RegisterComponent<MeshRendererComponent>();
 	RegisterComponent<CameraComponent>();
 	RegisterComponent<InputComponent>();
 	RegisterComponent<ColliderComponent>();
 	RegisterComponent<PhysicsComponent>();
-	RegisterComponent<LightComponent>();
+	RegisterComponent<LightComponent>();*/
+
+	for(auto& componentInfo : GetRegisteredComponentInfoMap())
+	{
+		std::cout << "Name: " << componentInfo.first.name() << std::endl;
+		assert(componentInfo.second.registerComponent != nullptr);
+		componentInfo.second.registerComponent();
+	}
 }
 void EntityManager::Shutdown()
 {
