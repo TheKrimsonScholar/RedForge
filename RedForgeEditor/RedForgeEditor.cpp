@@ -31,7 +31,6 @@ int main(int argc, char* argv[])
     gameDLLPath += ".dll";
     #endif
 
-    // TO-DO: Use argv[1] w/ client/server paths
     // Load the DLL using the provided path
     HMODULE handle = LoadLibraryA(gameDLLPath.c_str());
     if(handle == NULL)
@@ -61,34 +60,6 @@ int main(int argc, char* argv[])
         return 1;
     }
 
-    std::cout << "kjhjk" << std::endl;
     int result = app->make_window_and_run<MainEditorWindow>(1, argv); // Because we take the path to the game DLL as a commandline argument, only pass the first argument (EXE path) to GTK
     return result;
-}
-
-int main1()
-{
-    /*_CrtMemState initialMemoryState;
-    _CrtMemCheckpoint(&initialMemoryState);*/
-
-    {
-        std::cout << "Hello World!\n";
-
-        std::cout << Get() << std::endl;
-
-        Engine* engine = new Engine();
-
-        engine->Run();
-
-        delete engine;
-    }
-    
-    // Check difference in memory state to find leaks
-    /*_CrtMemState finalMemoryState;
-    _CrtMemCheckpoint(&finalMemoryState);
-    _CrtMemState memoryDiff;
-    if(_CrtMemDifference(&memoryDiff, &initialMemoryState, &finalMemoryState))
-        _CrtMemDumpStatistics(&memoryDiff);*/
-    
-    return 0;
 }

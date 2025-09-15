@@ -472,6 +472,11 @@
     </ClCompile>
     <ClCompile Include="TestComponent.cpp" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\RedForge\RedForge.vcxproj">
+      <Project>{1c302570-fe8f-453f-90e3-c4e2811ec474}</Project>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

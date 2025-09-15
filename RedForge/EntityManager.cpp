@@ -17,14 +17,7 @@ void EntityManager::Startup()
 {
 	Instance = this;
 
-	/*RegisterComponent<TransformComponent>();
-	RegisterComponent<MeshRendererComponent>();
-	RegisterComponent<CameraComponent>();
-	RegisterComponent<InputComponent>();
-	RegisterComponent<ColliderComponent>();
-	RegisterComponent<PhysicsComponent>();
-	RegisterComponent<LightComponent>();*/
-
+	// Register all components defined in the global list
 	for(auto& componentInfo : GetRegisteredComponentInfoMap())
 	{
 		std::cout << "Name: " << componentInfo.first.name() << std::endl;
