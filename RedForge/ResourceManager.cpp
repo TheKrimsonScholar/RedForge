@@ -1,6 +1,5 @@
 #include "ResourceManager.h"
 
-#include <filesystem>
 #include <unordered_map>
 #include <iostream>
 
@@ -11,6 +10,23 @@
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image/stb_image.h"
+
+std::filesystem::path GetEngineTexturesPath()
+{
+    return GetEngineAssetsPath().append(L"textures/");
+}
+std::filesystem::path GetEngineTextureCubesPath()
+{
+    return GetEngineAssetsPath().append(L"textures/textureCubes/");
+}
+std::filesystem::path GetEngineMaterialsPath()
+{
+    return GetEngineAssetsPath().append(L"materials/");
+}
+std::filesystem::path GetEngineMeshesPath()
+{
+    return GetEngineAssetsPath().append(L"meshes/");
+}
 
 void ResourceManager::Startup()
 {
@@ -35,33 +51,33 @@ void ResourceManager::Shutdown()
 void ResourceManager::LoadAllTextures()
 {
     const std::vector<std::wstring> VALID_TYPES = { L".png" };
-    std::unordered_map<std::wstring, std::wstring> texturePaths = GetAllFilesInDirectory(TEXTURES_PATH, VALID_TYPES);
+    std::unordered_map<std::wstring, std::wstring> texturePaths = FileManager::GetAllFilesInDirectory(GetEngineTexturesPath(), VALID_TYPES);
     
     // Load all textures from their paths and associate them with identifiers in an unordered map
 	for(auto& texturePath : texturePaths)
-        LoadTexture(TEXTURES_PATH + texturePath.first);
+        LoadTexture(GetEngineTexturesPath().append(texturePath.first));
 }
 void ResourceManager::LoadAllMaterials()
 {
 	const std::vector<std::wstring> VALID_TYPES = { L".mtl" };
-	std::unordered_map<std::wstring, std::wstring> materialPaths = GetAllFilesInDirectory(MATERIALS_PATH, VALID_TYPES);
+	std::unordered_map<std::wstring, std::wstring> materialPaths = FileManager::GetAllFilesInDirectory(GetEngineMaterialsPath(), VALID_TYPES);
 
 	// Load all materials from their paths and associate them with identifiers in an unordered map
 	for(auto& materialPath : materialPaths)
-		LoadTexture(MATERIALS_PATH + materialPath.first);
+		LoadTexture(GetEngineMaterialsPath().append(materialPath.first));
 }
 void ResourceManager::LoadAllMeshes()
 {
     const std::vector<std::wstring> VALID_TYPES = { L".obj" };
-    std::unordered_map<std::wstring, std::wstring> meshPaths = GetAllFilesInDirectory(MESHES_PATH, VALID_TYPES);
+    std::unordered_map<std::wstring, std::wstring> meshPaths = FileManager::GetAllFilesInDirectory(GetEngineMeshesPath(), VALID_TYPES);
 
     for(auto& meshPath : meshPaths)
-        LoadModel(MESHES_PATH + meshPath.first);
+        LoadModel(GetEngineMeshesPath().append(meshPath.first));
 }
 
-Texture* ResourceManager::LoadTexture(const std::wstring& filePath)
+Texture* ResourceManager::LoadTexture(const std::filesystem::path& filePath)
 {
-	std::wstring identifier = filePath.substr((TEXTURES_PATH).length());
+	std::wstring identifier = filePath.wstring().substr(GetEngineTexturesPath().wstring().length());
 
 	// Check if the texture is already loaded
 	if(Instance->textureMap.find(identifier) != Instance->textureMap.end())
@@ -81,9 +97,9 @@ Texture* ResourceManager::LoadTexture(const std::wstring& filePath)
 
 	return texture;
 }
-TextureCube* ResourceManager::LoadTextureCube(const std::wstring& filePath)
+TextureCube* ResourceManager::LoadTextureCube(const std::filesystem::path& filePath)
 {
-    std::wstring identifier = filePath.substr((TEXTURE_CUBES_PATH).length());
+    std::wstring identifier = filePath.wstring().substr(GetEngineTextureCubesPath().wstring().length());
 
     // Check if the texture is already loaded
 	if(Instance->textureCubeMap.find(identifier) != Instance->textureCubeMap.end())
@@ -91,8 +107,8 @@ TextureCube* ResourceManager::LoadTextureCube(const std::wstring& filePath)
 
 	TextureCube* textureCube = new TextureCube();
 
-	std::wstring extension = filePath.substr(filePath.find_last_of(L"."));
-	std::wstring filePathWithoutExtension = filePath.substr(0, filePath.find_last_of(L"."));
+	std::wstring extension = filePath.wstring().substr(filePath.wstring().find_last_of(L"."));
+	std::wstring filePathWithoutExtension = filePath.wstring().substr(0, filePath.wstring().find_last_of(L"."));
 	CreateTextureCubeImage(textureCube, 
         {
             filePathWithoutExtension + L"_right" + extension,
@@ -115,9 +131,9 @@ TextureCube* ResourceManager::LoadTextureCube(const std::wstring& filePath)
 
 	return textureCube;
 }
-Material* ResourceManager::LoadMaterial(const std::wstring& filePath)
+Material* ResourceManager::LoadMaterial(const std::filesystem::path& filePath)
 {
-    std::wstring identifier = filePath.substr((MATERIALS_PATH).length());
+    std::wstring identifier = filePath.wstring().substr(GetEngineMaterialsPath().wstring().length());
 
     // Check if the material is already loaded
 	if(Instance->materialMap.find(identifier) != Instance->materialMap.end())
@@ -133,9 +149,9 @@ Material* ResourceManager::LoadMaterial(const std::wstring& filePath)
 
     return material;
 }
-Mesh* ResourceManager::LoadModel(const std::wstring& filePath)
+Mesh* ResourceManager::LoadModel(const std::filesystem::path& filePath)
 {
-    std::wstring identifier = filePath.substr((MESHES_PATH).length());
+    std::wstring identifier = filePath.wstring().substr(GetEngineMeshesPath().wstring().length());
 
     // Check if the mesh is already loaded
 	if(Instance->meshMap.find(identifier) != Instance->meshMap.end())
@@ -253,7 +269,7 @@ Mesh* ResourceManager::LoadModel(const std::wstring& filePath)
 
 		Material* material = new Material();
 
-		material->albedoTexture = LoadTexture(TEXTURES_PATH + NarrowToWide(mat.diffuse_texname));
+		material->albedoTexture = LoadTexture(GetEngineTexturesPath().append(mat.diffuse_texname));
 
         material->identifier = NarrowToWide(mat.name);
         material->index = Instance->materials.size();
@@ -276,30 +292,10 @@ Mesh* ResourceManager::LoadModel(const std::wstring& filePath)
     return mesh;
 }
 
-std::vector<char> ResourceManager::ReadFile(const std::string& filename)
-{
-    std::ifstream file(filename, std::ios::ate | std::ios::binary);
-
-    if(!file.is_open())
-        throw std::runtime_error("Failed to open file! \"" + filename + "\"");
-
-    // Determine size of the file to allocate a buffer
-    size_t fileSize = (size_t)file.tellg();
-    std::vector<char> buffer(fileSize);
-
-    // Seek back to the beginning and read all
-    file.seekg(0);
-    file.read(buffer.data(), fileSize);
-
-    file.close();
-
-    return buffer;
-}
-
-void ResourceManager::CreateTextureImage(Texture* texture, const std::wstring& filePath)
+void ResourceManager::CreateTextureImage(Texture* texture, const std::filesystem::path& filePath)
 {
 	int textureWidth, textureHeight, textureChannels;
-    stbi_uc* pixels = stbi_load(std::filesystem::path(filePath).string().c_str(), &textureWidth, &textureHeight, &textureChannels, STBI_rgb_alpha);
+    stbi_uc* pixels = stbi_load(filePath.string().c_str(), &textureWidth, &textureHeight, &textureChannels, STBI_rgb_alpha);
     VkDeviceSize imageSize = textureWidth * textureHeight * 4;
     texture->mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(textureWidth, textureHeight)))) + 1;
 
@@ -340,7 +336,7 @@ void ResourceManager::CreateTextureImage(Texture* texture, const std::wstring& f
 
     GenerateMipmaps(texture->textureImage, VK_FORMAT_R8G8B8A8_SRGB, textureWidth, textureHeight, texture->mipLevels);
 }
-void ResourceManager::CreateTextureCubeImage(TextureCube* textureCube, const std::array<std::wstring, 6>& filePaths)
+void ResourceManager::CreateTextureCubeImage(TextureCube* textureCube, const std::array<std::filesystem::path, 6>& filePaths)
 {
     int textureWidth, textureHeight, textureChannels;
     VkDeviceSize imageSize = 0;
@@ -348,7 +344,7 @@ void ResourceManager::CreateTextureCubeImage(TextureCube* textureCube, const std
 
     for(int i = 0; i < 6; i++)
     {
-        pixels[i] = stbi_load(std::filesystem::path(filePaths[i]).string().c_str(), &textureWidth, &textureHeight, &textureChannels, STBI_rgb_alpha);
+        pixels[i] = stbi_load(filePaths[i].string().c_str(), &textureWidth, &textureHeight, &textureChannels, STBI_rgb_alpha);
         if(!pixels[i])
             throw std::runtime_error("Failed to load texture image for cube face " + std::to_string(i) + "!");
         
@@ -539,32 +535,4 @@ VkImageView ResourceManager::CreateImageView(VkImage image, VkFormat format, VkI
         throw std::runtime_error("Failed to create texture image view!");
 
     return imageView;
-}
-
-std::unordered_map<std::wstring, std::wstring> ResourceManager::GetAllFilesInDirectory(std::wstring directory, std::vector<std::wstring> extensions)
-{
-    std::unordered_map<std::wstring, std::wstring> identifiers;
-
-    for(const std::filesystem::directory_entry& entry : std::filesystem::recursive_directory_iterator(directory))
-    {
-        if(std::filesystem::is_regular_file(entry))
-        {
-            std::wstring filePath = entry.path().wstring();
-            size_t directoryEnd = filePath.find(directory) + directory.length();
-            size_t extensionStart = filePath.find_last_of('.');
-
-            std::wstring localPath = filePath.substr(directoryEnd);
-            std::wstring identifier = filePath.substr(directoryEnd, extensionStart - directoryEnd);
-            std::wstring extension = filePath.substr(extensionStart);
-
-            if(std::find(extensions.begin(), extensions.end(), extension) != extensions.end())
-                identifiers.emplace(localPath, identifier);
-
-            /*for(char c : identifier)
-                std::cout << c;
-            std::cout << std::endl;*/
-        }
-    }
-
-    return identifiers;
 }

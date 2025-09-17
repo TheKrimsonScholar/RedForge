@@ -579,7 +579,7 @@ void GraphicsSystem::InitVulkan()
 
     //ResourceManager::LoadTextureCube(L"textures/textureCubes/Cold Sunset/.png");
     //ResourceManager::LoadTextureCube(L"textures/textureCubes/Planet/.png");
-    ResourceManager::LoadTextureCube(L"textures/textureCubes/Clouds Blue/.png");
+    ResourceManager::LoadTextureCube(GetEngineTextureCubesPath().append(L"Clouds Blue/.png"));
     SetSkyboxTextureCube(ResourceManager::GetTextureCube(L"Clouds Blue/.png"));
 
     //ResourceManager::LoadAllMaterials();
@@ -1270,8 +1270,8 @@ void GraphicsSystem::CreateDescriptorSetLayout()
 }
 void GraphicsSystem::CreateGraphicsPipeline()
 {
-    auto vertShaderCode = ResourceManager::ReadFile("shaders/vert.spv");
-    auto fragShaderCode = ResourceManager::ReadFile("shaders/frag.spv");
+    auto vertShaderCode = FileManager::ReadFile(GetEngineAssetsPath().append(L"shaders/vert.spv"));
+    auto fragShaderCode = FileManager::ReadFile(GetEngineAssetsPath().append(L"shaders/frag.spv"));
 
     VkShaderModule vertShaderModule = CreateShaderModule(vertShaderCode);
     VkShaderModule fragShaderModule = CreateShaderModule(fragShaderCode);
@@ -1434,8 +1434,8 @@ void GraphicsSystem::CreateGraphicsPipeline()
 }
 void GraphicsSystem::CreateSkyboxGraphicsPipeline()
 {
-    auto vertShaderCode = ResourceManager::ReadFile("shaders/VSSkybox.spv");
-    auto fragShaderCode = ResourceManager::ReadFile("shaders/FSSkybox.spv");
+    auto vertShaderCode = FileManager::ReadFile(GetEngineAssetsPath().append(L"shaders/VSSkybox.spv"));
+    auto fragShaderCode = FileManager::ReadFile(GetEngineAssetsPath().append(L"shaders/FSSkybox.spv"));
 
     VkShaderModule vertShaderModule = CreateShaderModule(vertShaderCode);
     VkShaderModule fragShaderModule = CreateShaderModule(fragShaderCode);
@@ -1589,8 +1589,8 @@ void GraphicsSystem::CreateSkyboxGraphicsPipeline()
 }
 void GraphicsSystem::CreateDebugGraphicsPipeline()
 {
-    auto vertShaderCode = ResourceManager::ReadFile("shaders/vert.spv");
-    auto fragShaderCode = ResourceManager::ReadFile("shaders/frag.spv");
+    auto vertShaderCode = FileManager::ReadFile(GetEngineAssetsPath().append(L"shaders/vert.spv"));
+    auto fragShaderCode = FileManager::ReadFile(GetEngineAssetsPath().append(L"shaders/frag.spv"));
 
     VkShaderModule vertShaderModule = CreateShaderModule(vertShaderCode);
     VkShaderModule fragShaderModule = CreateShaderModule(fragShaderCode);

@@ -3,6 +3,36 @@
 #include <fstream>
 #include <stack>
 
+static std::filesystem::path activeGamePath;
+
+std::filesystem::path GetEnginePath()
+{
+    static std::filesystem::path enginePath(ENGINE_PATH);
+
+    return enginePath;
+}
+std::filesystem::path GetEngineAssetsPath()
+{
+    return GetEnginePath().append(L"Assets/Engine/");
+}
+std::filesystem::path GetEditorAssetsPath()
+{
+    return GetEnginePath().append(L"Assets/Editor/");
+}
+std::filesystem::path GetGamePath()
+{
+    return activeGamePath;
+}
+std::filesystem::path GetGameAssetsPath()
+{
+    return GetGamePath().append(L"Assets/");
+}
+
+void SetGamePath(const std::filesystem::path& gamePath)
+{
+    activeGamePath = gamePath;
+}
+
 void FileManager::Startup()
 {
 	Instance = this;
@@ -94,4 +124,48 @@ SerializedObject FileManager::LoadObject(std::istream& is)
     // Otherwise, return the entire hierarchy
     // This is done because objects are intended to be wrapped entirely in a single root, but empty files and files with multiple roots are still supported.
     return root.children.size() == 1 ? root.children[0] : root;
+}
+
+std::vector<char> FileManager::ReadFile(const std::filesystem::path& filePath)
+{
+    std::ifstream file(filePath, std::ios::ate | std::ios::binary);
+
+    if(!file.is_open())
+        throw std::runtime_error("Failed to open file! \"" + filePath.string() + "\"");
+
+    // Determine size of the file to allocate a buffer
+    size_t fileSize = (size_t)file.tellg();
+    std::vector<char> buffer(fileSize);
+
+    // Seek back to the beginning and read all
+    file.seekg(0);
+    file.read(buffer.data(), fileSize);
+
+    file.close();
+
+    return buffer;
+}
+
+std::unordered_map<std::wstring, std::wstring> FileManager::GetAllFilesInDirectory(const std::filesystem::path& directory, std::vector<std::wstring> extensions)
+{
+    std::unordered_map<std::wstring, std::wstring> identifiers;
+
+    for(const std::filesystem::directory_entry& entry : std::filesystem::recursive_directory_iterator(directory))
+    {
+        if(std::filesystem::is_regular_file(entry))
+        {
+            std::wstring filePath = entry.path().wstring();
+            size_t directoryEnd = filePath.find(directory.wstring()) + directory.wstring().length();
+            size_t extensionStart = filePath.find_last_of('.');
+
+            std::wstring localPath = filePath.substr(directoryEnd);
+            std::wstring identifier = filePath.substr(directoryEnd, extensionStart - directoryEnd);
+            std::wstring extension = filePath.substr(extensionStart);
+
+            if(std::find(extensions.begin(), extensions.end(), extension) != extensions.end())
+                identifiers.emplace(localPath, identifier);
+        }
+    }
+
+    return identifiers;
 }

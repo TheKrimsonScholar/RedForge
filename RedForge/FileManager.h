@@ -3,8 +3,17 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
+#include <filesystem>
 
 #include "Exports.h"
+
+REDFORGE_API std::filesystem::path GetEnginePath();
+REDFORGE_API std::filesystem::path GetEngineAssetsPath();
+REDFORGE_API std::filesystem::path GetEditorAssetsPath();
+REDFORGE_API std::filesystem::path GetGamePath();
+REDFORGE_API std::filesystem::path GetGameAssetsPath();
+
+void SetGamePath(const std::filesystem::path& gamePath);
 
 struct SerializedObject
 {
@@ -27,4 +36,8 @@ public:
 
 	static void SaveObject(std::ostream& os, const SerializedObject& object, uint32_t tabDepth = 0);
 	static SerializedObject LoadObject(std::istream& is);
+
+	static std::vector<char> ReadFile(const std::filesystem::path& filePath);
+
+	static std::unordered_map<std::wstring, std::wstring> GetAllFilesInDirectory(const std::filesystem::path& directory, std::vector<std::wstring> extensions);
 };

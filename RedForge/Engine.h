@@ -42,10 +42,5 @@ public:
 
 	REDFORGE_API void Update();
 
-	/*REDFORGE_API TimeManager& GetTimeManager() { return timeManager; };
-	REDFORGE_API InputSystem& GetInputSystem() { return inputSystem; };
-	REDFORGE_API GraphicsSystem& GetGraphicsSystem() { return graphics; };
-	REDFORGE_API PhysicsSystem& GetPhysicsSystem() { return physicsSystem; };*/
-
 	REDFORGE_API bool IsRunning() { return isRunning; };
 };

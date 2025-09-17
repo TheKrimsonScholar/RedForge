@@ -6,6 +6,7 @@
 //#endif
 
 #include <chrono>
+#include <filesystem>
 
 #ifdef _WIN32
 	#ifdef REDFORGE_EXPORTS
@@ -17,6 +18,5 @@
 	#define REDFORGE_API
 #endif
 
-REDFORGE_API int Get();
-
+REDFORGE_API bool LoadGameLibrary(const std::filesystem::path& gamePath);
 REDFORGE_API void Run();

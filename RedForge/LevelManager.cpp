@@ -341,7 +341,7 @@ void LevelManager::LoadLevel()
 {
 	/* Load the object from file */
 
-	std::ifstream fileIn("level.txt");
+	std::ifstream fileIn(GetGameAssetsPath().append(L"levels/level.txt"));
 	SerializedObject levelObject = FileManager::LoadObject(fileIn);
 	fileIn.close();
 

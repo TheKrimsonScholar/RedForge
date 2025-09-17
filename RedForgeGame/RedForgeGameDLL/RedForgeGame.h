@@ -15,19 +15,3 @@
 #include "GameModule.h"
 
 REDFORGEGAME_API const std::string GAME_NAME = "RedForgeGame";
-
-//class MyGameModule : public IGameModule
-//{
-//public:
-//    MyGameModule() {}
-//    ~MyGameModule() {}
-//    virtual void RegisterComponents() override {}
-//    virtual void Initialize() override {}
-//    virtual void Shutdown() override {}
-//};
-//
-//REDFORGEGAME_API IGameModule* CreateGameModule();
-//IGameModule* CreateGameModule()
-//{
-//    return new MyGameModule();
-//}

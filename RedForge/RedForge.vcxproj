@@ -238,7 +238,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>REDFORGE_EXPORTS;</PreprocessorDefinitions>
+      <PreprocessorDefinitions>REDFORGE_EXPORTS;ENGINE_PATH=L"$(ProjectDir.Replace('\', '/'))../";_DEBUG;</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalIncludeDirectories>C:\vcpkg\installed\x64-windows\include;$(ProjectDir)include;$(VULKAN_SDK)\Include</AdditionalIncludeDirectories>
@@ -254,7 +254,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>REDFORGE_EXPORTS; NETMODE_CLIENT;</PreprocessorDefinitions>
+      <PreprocessorDefinitions>REDFORGE_EXPORTS;ENGINE_PATH=L"$(ProjectDir.Replace('\', '/'))../";_DEBUG;NETMODE_CLIENT;</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalIncludeDirectories>C:\vcpkg\installed\x64-windows\include;$(ProjectDir)include;$(VULKAN_SDK)\Include</AdditionalIncludeDirectories>
@@ -270,7 +270,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>REDFORGE_EXPORTS; NETMODE_SERVER;</PreprocessorDefinitions>
+      <PreprocessorDefinitions>REDFORGE_EXPORTS;ENGINE_PATH=L"$(ProjectDir.Replace('\', '/'))../";_DEBUG;NETMODE_SERVER;</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalIncludeDirectories>C:\vcpkg\installed\x64-windows\include;$(ProjectDir)include;$(VULKAN_SDK)\Include</AdditionalIncludeDirectories>
@@ -288,7 +288,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>REDFORGE_EXPORTS;</PreprocessorDefinitions>
+      <PreprocessorDefinitions>REDFORGE_EXPORTS;ENGINE_PATH=L"$(ProjectDir.Replace('\', '/'))../";</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalIncludeDirectories>C:\vcpkg\installed\x64-windows\include;$(ProjectDir)include;$(VULKAN_SDK)\Include</AdditionalIncludeDirectories>
@@ -308,7 +308,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>REDFORGE_EXPORTS; NETMODE_CLIENT;</PreprocessorDefinitions>
+      <PreprocessorDefinitions>REDFORGE_EXPORTS;ENGINE_PATH=L"$(ProjectDir.Replace('\', '/'))../";NETMODE_CLIENT;</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalIncludeDirectories>C:\vcpkg\installed\x64-windows\include;$(ProjectDir)include;$(VULKAN_SDK)\Include</AdditionalIncludeDirectories>
@@ -328,7 +328,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>REDFORGE_EXPORTS; NETMODE_SERVER;</PreprocessorDefinitions>
+      <PreprocessorDefinitions>REDFORGE_EXPORTS;ENGINE_PATH=L"$(ProjectDir.Replace('\', '/'))../";NETMODE_SERVER;</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalIncludeDirectories>C:\vcpkg\installed\x64-windows\include;$(ProjectDir)include;$(VULKAN_SDK)\Include</AdditionalIncludeDirectories>
@@ -346,7 +346,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>REDFORGE_EXPORTS;</PreprocessorDefinitions>
+      <PreprocessorDefinitions>REDFORGE_EXPORTS;ENGINE_PATH=L"$(ProjectDir.Replace('\', '/'))../";_DEBUG;</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalIncludeDirectories>C:\vcpkg\installed\x64-windows\include;$(ProjectDir)include;$(VULKAN_SDK)\Include</AdditionalIncludeDirectories>
@@ -362,7 +362,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>REDFORGE_EXPORTS; NETMODE_CLIENT;</PreprocessorDefinitions>
+      <PreprocessorDefinitions>REDFORGE_EXPORTS;ENGINE_PATH=L"$(ProjectDir.Replace('\', '/'))../";_DEBUG;NETMODE_CLIENT;</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalIncludeDirectories>C:\vcpkg\installed\x64-windows\include;$(ProjectDir)include;$(VULKAN_SDK)\Include</AdditionalIncludeDirectories>
@@ -378,7 +378,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>REDFORGE_EXPORTS; NETMODE_SERVER;</PreprocessorDefinitions>
+      <PreprocessorDefinitions>REDFORGE_EXPORTS;ENGINE_PATH=L"$(ProjectDir.Replace('\', '/'))../";_DEBUG;NETMODE_SERVER;</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalIncludeDirectories>C:\vcpkg\installed\x64-windows\include;$(ProjectDir)include;$(VULKAN_SDK)\Include</AdditionalIncludeDirectories>
@@ -396,7 +396,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>REDFORGE_EXPORTS;</PreprocessorDefinitions>
+      <PreprocessorDefinitions>REDFORGE_EXPORTS;ENGINE_PATH=L"$(ProjectDir.Replace('\', '/'))../";</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalIncludeDirectories>C:\vcpkg\installed\x64-windows\include;$(ProjectDir)include;$(VULKAN_SDK)\Include</AdditionalIncludeDirectories>
@@ -417,7 +417,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>REDFORGE_EXPORTS; NETMODE_CLIENT;</PreprocessorDefinitions>
+      <PreprocessorDefinitions>REDFORGE_EXPORTS;ENGINE_PATH=L"$(ProjectDir.Replace('\', '/'))../";NETMODE_CLIENT;</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalIncludeDirectories>C:\vcpkg\installed\x64-windows\include;$(ProjectDir)include;$(VULKAN_SDK)\Include</AdditionalIncludeDirectories>
@@ -437,7 +437,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>REDFORGE_EXPORTS; NETMODE_SERVER;</PreprocessorDefinitions>
+      <PreprocessorDefinitions>REDFORGE_EXPORTS;ENGINE_PATH=L"$(ProjectDir.Replace('\', '/'))../";NETMODE_SERVER;</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalIncludeDirectories>C:\vcpkg\installed\x64-windows\include;$(ProjectDir)include;$(VULKAN_SDK)\Include</AdditionalIncludeDirectories>

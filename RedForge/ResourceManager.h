@@ -3,6 +3,8 @@
 #include <string>
 #include <unordered_map>
 
+#include "FileManager.h"
+
 #include "Texture.h"
 #include "TextureCube.h"
 #include "Material.h"
@@ -10,10 +12,10 @@
 
 #include "Exports.h"
 
-#define TEXTURES_PATH (std::wstring) L"textures/"
-#define TEXTURE_CUBES_PATH (std::wstring) L"textures/textureCubes/"
-#define MATERIALS_PATH (std::wstring) L"materials/"
-#define MESHES_PATH (std::wstring) L"meshes/"
+REDFORGE_API std::filesystem::path GetEngineTexturesPath();
+REDFORGE_API std::filesystem::path GetEngineTextureCubesPath();
+REDFORGE_API std::filesystem::path GetEngineMaterialsPath();
+REDFORGE_API std::filesystem::path GetEngineMeshesPath();
 
 REDFORGE_API class ResourceManager
 {
@@ -41,23 +43,19 @@ public:
 	static void LoadAllMaterials();
 	static void LoadAllMeshes();
 
-	static Texture* LoadTexture(const std::wstring& filePath);
-	static TextureCube* LoadTextureCube(const std::wstring& filePath);
-	static Material* LoadMaterial(const std::wstring& filePath);
-	static Mesh* LoadModel(const std::wstring& filePath);
-
-	static std::vector<char> ReadFile(const std::string& filename);
+	static Texture* LoadTexture(const std::filesystem::path& filePath);
+	static TextureCube* LoadTextureCube(const std::filesystem::path& filePath);
+	static Material* LoadMaterial(const std::filesystem::path& filePath);
+	static Mesh* LoadModel(const std::filesystem::path& filePath);
 
 private:
-	static void CreateTextureImage(Texture* texture, const std::wstring& filePath);
-	static void CreateTextureCubeImage(TextureCube* textureCube, const std::array<std::wstring, 6>& filePaths);
+	static void CreateTextureImage(Texture* texture, const std::filesystem::path& filePath);
+	static void CreateTextureCubeImage(TextureCube* textureCube, const std::array<std::filesystem::path, 6>& filePaths);
 	static void GenerateMipmaps(VkImage image, VkFormat imageFormat, int32_t textureWidth, int32_t textureHeight, uint32_t mipLevels);
 	static void CreateTextureSampler(Texture* texture);
 	static void CreateTextureCubeSampler(TextureCube* textureCube);
 	static VkImageView CreateImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, uint32_t mipLevels, 
 		VkImageViewType viewType = VK_IMAGE_VIEW_TYPE_2D, uint32_t layerCount = 1);
-
-	static std::unordered_map<std::wstring, std::wstring> GetAllFilesInDirectory(std::wstring directory, std::vector<std::wstring> extensions);
 
 public:
 	static Texture* GetTexture(const std::wstring& identifier) { return Instance->textureMap[identifier]; };
