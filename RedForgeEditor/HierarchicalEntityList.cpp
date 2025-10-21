@@ -16,11 +16,12 @@
 #include <giomm.h>
 
 HierarchicalEntityList::HierarchicalEntityList()
+    : m_ListView()
 {
-    // Add the ColumnView, inside a ScrolledWindow, with the button underneath:
+    // Add the ColumnView, inside a ScrolledWindow, with the button underneath
     set_child(m_ListView);
 
-    // Only show the scrollbars when they are necessary:
+    // Only show the scrollbars when they are necessary
     set_policy(Gtk::PolicyType::AUTOMATIC, Gtk::PolicyType::AUTOMATIC);
     set_expand();
 }
@@ -33,7 +34,7 @@ HierarchicalEntityList::~HierarchicalEntityList()
 
 void HierarchicalEntityList::Initialize()
 {
-    // Create the root model:
+    // Create the root model
     auto root = create_model();
 
     // Set list model and selection model.
@@ -67,7 +68,7 @@ void HierarchicalEntityList::Initialize()
             onSelectionChanged(selectedEntities);
         });
     m_ListView.set_model(selection_model);
-    m_ListView.add_css_class("data-table"); // high density table
+    m_ListView.add_css_class("data-table");
 
     auto factory = Gtk::SignalListItemFactory::create();
     factory->signal_setup().connect(
@@ -200,9 +201,7 @@ void HierarchicalEntityList::on_bind_list_item(const Glib::RefPtr<Gtk::ListItem>
     nameLabel->add_controller(drag_source);
 
     // ---- Drop target ----
-    auto drop_target = Gtk::DropTarget::create(
-        Glib::Value<Glib::ustring>::value_type(), // accept text drops
-        Gdk::DragAction::MOVE);
+    auto drop_target = Gtk::DropTarget::create(Glib::Value<Glib::ustring>::value_type(), Gdk::DragAction::MOVE);
     drop_target->signal_drop().connect(
         [this, row, col, list_item](const Glib::ValueBase& value, double x, double y) -> bool
         {

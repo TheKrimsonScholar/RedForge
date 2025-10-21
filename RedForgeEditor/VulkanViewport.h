@@ -57,6 +57,8 @@ protected:
 
     void on_resize(int width, int height) override;
 
+    bool on_drop(const Glib::ValueBase& value, double x, double y);
+
     void CreateSharedResources();
     void SetupOpenGLInterop();
     void ImportVulkanMemory();

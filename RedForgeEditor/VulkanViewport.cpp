@@ -19,6 +19,11 @@ VulkanViewport::VulkanViewport() :
             queue_render();
             return true;
         });
+
+    // Accept string data drops for assets from file browser
+    auto drop_target = Gtk::DropTarget::create(Glib::Value<Glib::ustring>::value_type(), Gdk::DragAction::COPY);
+    drop_target->signal_drop().connect(sigc::mem_fun(*this, &VulkanViewport::on_drop), false);
+    add_controller(drop_target);
 }
 VulkanViewport::~VulkanViewport()
 {
@@ -60,6 +65,26 @@ void VulkanViewport::on_resize(int width, int height)
     }
 
     Gtk::GLArea::on_resize(width, height);
+}
+
+bool VulkanViewport::on_drop(const Glib::ValueBase& value, double x, double y)
+{
+    Glib::ustring text;
+
+    Glib::Value<Glib::ustring> asset;
+    asset.init(value.gobj());
+    
+    text = asset.get();
+
+    std::cout << "DROP ON VIEWPORT" << std::endl;
+    
+    if (!text.empty())
+    {
+        // Custom drop logic
+        g_print("Dropped item onto viewport: %s\n", text.c_str());
+    }
+
+    return true; // drop handled
 }
 
 void VulkanViewport::CreateSharedResources()

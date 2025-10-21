@@ -78,6 +78,9 @@
     <ClCompile Include="HierarchicalEntityList.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="FileBrowserPanel.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ViewportCamera.h">
@@ -141,6 +144,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="HierarchicalEntityList.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="FileBrowserPanel.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -4,14 +4,18 @@ $Level
 		Name=Entity 1
 		$Component
 			TypeName=TransformComponent
-			location=(3.1, 0, 0) 
-			rotation=(0.709575, -0.405816, -0.572663, -0.0622369) 
+			location=(9.8, 0, 0) 
+			rotation=(0.709575, -0.405816, -0.572663, -0.0622365) 
 			scale=(1, 1, 1) 
 		$$
 		$Component
 			TypeName=MeshRendererComponent
 			mesh="default.obj" 
 			material="default" 
+		$$
+		$Component
+			TypeName=TestComponent
+			k=3.2 
 		$$
 		$Entity
 			Name=Entity 3
@@ -22,8 +26,8 @@ $Level
 		$Entity
 			Name=Entity 4
 			$Component
-				TypeName=TransformComponent
 				location=(0, 0, 0) 
+				TypeName=TransformComponent
 				rotation=(7.54816e-08, -0.999784, -0.0207949, 1.56997e-09) 
 				scale=(1, 1, 1) 
 			$$

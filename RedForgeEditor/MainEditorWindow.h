@@ -17,6 +17,8 @@
 
 #include "EditorToolbar.h"
 #include "HierarchyPanel.h"
+#include "ConsolePanel.h"
+#include "FileBrowserPanel.h"
 
 #include "ViewportCamera.h"
 
@@ -34,6 +36,8 @@ protected:
 
     InspectorPanel* inspectorWindow;
     HierarchyPanel* hierarchyPanel;
+    ConsolePanel* consolePanel;
+    FileBrowserPanel* fileBrowserPanel;
 
     VulkanViewport viewport;
 

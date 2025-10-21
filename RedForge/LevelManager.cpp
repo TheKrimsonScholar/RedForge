@@ -333,7 +333,7 @@ void LevelManager::SaveLevel()
 
 	/* Save the object to file */
 
-	std::ofstream fileOut("level.txt");
+	std::ofstream fileOut(GetGameAssetsPath().append(L"levels/level.txt"));
 	FileManager::SaveObject(fileOut, levelObject);
 	fileOut.close();
 }

@@ -24,15 +24,16 @@ public:
 
     static Glib::RefPtr<ModelColumns> create(bool col_isExpanded, int col_id, const Glib::ustring& col_name, uint32_t col_level, Entity col_entity)
     {
-        return Glib::make_refptr_for_instance<ModelColumns>(
-            new ModelColumns(col_isExpanded, col_id, col_name, col_level, col_entity));
+        return Glib::make_refptr_for_instance<ModelColumns>(new ModelColumns(col_isExpanded, col_id, col_name, col_level, col_entity));
     }
 
 protected:
     ModelColumns(bool col_isExpanded, int col_id, const Glib::ustring& col_name, uint32_t col_level, Entity col_entity)
-        : m_col_isExpanded(col_isExpanded), m_col_id(col_id), m_col_name(col_name), m_col_level(col_level), m_col_entity(col_entity) {
+        : m_col_isExpanded(col_isExpanded), m_col_id(col_id), m_col_name(col_name), m_col_level(col_level), m_col_entity(col_entity)
+    {
+
     }
-}; // ModelColumns
+};
 
 class HierarchicalEntityList : public Gtk::ScrolledWindow
 {

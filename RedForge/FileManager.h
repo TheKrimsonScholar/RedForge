@@ -7,6 +7,8 @@
 
 #include "Exports.h"
 
+#define ENGINE_ASSET_EXTENSION L".rfasset"
+
 REDFORGE_API std::filesystem::path GetEnginePath();
 REDFORGE_API std::filesystem::path GetEngineAssetsPath();
 REDFORGE_API std::filesystem::path GetEditorAssetsPath();

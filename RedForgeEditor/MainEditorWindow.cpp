@@ -61,8 +61,10 @@ MainEditorWindow::MainEditorWindow() : Gtk::Window(),
         // Right side - viewport and bottom dock
         rightPanel = Gtk::manage(new Gtk::Paned(Gtk::Orientation::VERTICAL));
         rightPanel->set_start_child(viewport);
-        auto bottomDock = Gtk::manage(new ConsolePanel());
-        rightPanel->set_end_child(*bottomDock);
+        consolePanel = Gtk::manage(new ConsolePanel());
+        fileBrowserPanel = Gtk::manage(new FileBrowserPanel());
+        rightPanel->set_end_child(*fileBrowserPanel);
+        //rightPanel->set_end_child(*consolePanel);
 
         // Combine
         windowPanel->set_start_child(*toolbar);
