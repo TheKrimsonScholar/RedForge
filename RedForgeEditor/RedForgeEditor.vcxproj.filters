@@ -54,9 +54,6 @@
     <ClCompile Include="FileBrowserPanel.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="FloatField.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="HierarchicalItemModel.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -73,9 +70,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="QtUtils.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="StandardFileItemModel.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="ViewportCamera.cpp">
@@ -102,9 +96,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="HierarchicalItemModel.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="StandardFileItemModel.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="QtInputLayer.h">
@@ -140,9 +131,6 @@
       <Filter>Header Files</Filter>
     </QtMoc>
     <QtMoc Include="ComponentVariableEntry_Vector3.h">
-      <Filter>Header Files</Filter>
-    </QtMoc>
-    <QtMoc Include="FloatField.h">
       <Filter>Header Files</Filter>
     </QtMoc>
     <QtMoc Include="ComponentEntry.h">

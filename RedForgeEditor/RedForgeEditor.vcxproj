@@ -516,7 +516,6 @@
     <ClCompile Include="EntityHierarchyItemModel.cpp" />
     <ClCompile Include="EntityHierarchyTreeView.cpp" />
     <ClCompile Include="FileBrowserPanel.cpp" />
-    <ClCompile Include="FloatField.cpp" />
     <ClCompile Include="HierarchicalItemModel.cpp" />
     <ClCompile Include="HierarchyPanel.cpp" />
     <ClCompile Include="InspectorPanel.cpp" />
@@ -525,7 +524,6 @@
     <ClCompile Include="QtUtils.cpp" />
     <ClCompile Include="RedForgeEditor.cpp" />
     <ClCompile Include="SearchField.cpp" />
-    <ClCompile Include="StandardFileItemModel.cpp" />
     <ClCompile Include="ViewportCamera.cpp" />
     <ClCompile Include="VulkanViewport.cpp" />
   </ItemGroup>
@@ -541,7 +539,6 @@
     <QtMoc Include="ComponentVariableEntry_QuaternionEuler.h" />
     <QtMoc Include="ComponentVariableEntry_Vector2.h" />
     <QtMoc Include="ComponentVariableEntry_Vector3.h" />
-    <QtMoc Include="FloatField.h" />
     <QtMoc Include="ConsolePanel.h" />
     <ClInclude Include="EditorPaths.h" />
     <QtMoc Include="EntityHierarchyTreeView.h" />
@@ -554,7 +551,6 @@
     <QtMoc Include="EntityHierarchyItemModel.h" />
     <ClInclude Include="HierarchicalItemModel.h" />
     <QtMoc Include="SearchField.h" />
-    <ClInclude Include="StandardFileItemModel.h" />
     <QtMoc Include="HierarchyPanel.h" />
     <QtMoc Include="EditorPanel.h" />
     <ClInclude Include="QtInputLayer.h" />
