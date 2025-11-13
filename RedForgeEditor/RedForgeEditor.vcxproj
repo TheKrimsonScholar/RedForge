@@ -516,6 +516,7 @@
     <ClCompile Include="EntityHierarchyItemModel.cpp" />
     <ClCompile Include="EntityHierarchyTreeView.cpp" />
     <ClCompile Include="FileBrowserPanel.cpp" />
+    <ClCompile Include="FileItemModel.cpp" />
     <ClCompile Include="HierarchicalItemModel.cpp" />
     <ClCompile Include="HierarchyPanel.cpp" />
     <ClCompile Include="InspectorPanel.cpp" />
@@ -543,6 +544,7 @@
     <ClInclude Include="EditorPaths.h" />
     <QtMoc Include="EntityHierarchyTreeView.h" />
     <QtMoc Include="EditorToolbar.h" />
+    <QtMoc Include="FileItemModel.h" />
     <ClInclude Include="MemoryMacros.h" />
     <ClInclude Include="QtUtils.h" />
     <QtMoc Include="ComponentEntry.h" />

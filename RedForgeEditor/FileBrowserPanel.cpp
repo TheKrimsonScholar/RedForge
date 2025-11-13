@@ -2,6 +2,8 @@
 
 #include "FileManager.h"
 
+#include "DebugMacros.h"
+
 #include <QHBoxLayout>
 #include <QVBoxLayout>
 
@@ -11,14 +13,15 @@ FileBrowserPanel::FileBrowserPanel(QWidget* parent) : EditorPanel("File Browser"
     static const QIcon REFRESH_ICON = QIcon(GetEditorAssetsPath().append("Icons/Basic/Refresh.png").string().c_str());
 
     listView = new QListView(this);
+    listView->setDragEnabled(true);
 
-    model = new QStandardItemModel(this);
+    model = new FileItemModel(this);
     listView->setModel(model);
 
     listView->setModel(model);
     listView->setSelectionMode(QAbstractItemView::ExtendedSelection);
     listView->setDragDropMode(QAbstractItemView::DragDrop);
-    listView->setDefaultDropAction(Qt::MoveAction);
+    listView->setDefaultDropAction(Qt::CopyAction);
 
     QObject::connect(listView, &QListView::doubleClicked, 
         [this](const QModelIndex& index)
@@ -96,19 +99,7 @@ void FileBrowserPanel::SetCurrentBrowserDirectory(const std::filesystem::path& c
 {
     this->currentDirectory = currentDirectory;
 
-    model->clear();
-
-    for(const std::filesystem::path& file : FileManager::GetAllTopLevelItemsInDirectory(currentDirectory))
-    {
-        std::filesystem::path absolutePath = currentDirectory;
-        absolutePath.append(file.string());
-
-        QStandardItem* item = new QStandardItem(GetFileTypeIcon(absolutePath), file.string().c_str());
-        item->setFlags(Qt::ItemIsSelectable | Qt::ItemIsDragEnabled | Qt::ItemIsDropEnabled | Qt::ItemIsEnabled);
-        item->setData(QVariant::fromValue(QString(file.string().c_str())), Qt::UserRole);
-
-        model->appendRow(item);
-    }
+    model->SetCurrentDirectory(currentDirectory);
 }
 
 void FileBrowserPanel::Initialize()
@@ -119,29 +110,4 @@ void FileBrowserPanel::Initialize()
 void FileBrowserPanel::Update()
 {
 
-}
-
-QIcon FileBrowserPanel::GetFileTypeIcon(const std::filesystem::path& path) const
-{
-    static const QIcon INVALID_ICON = QIcon(GetEditorAssetsPath().append("Icons/File Browser/Invalid.png").string().c_str());
-    static const QIcon FOLDER_ICON = QIcon(GetEditorAssetsPath().append("Icons/File Browser/Folder.png").string().c_str());
-    static const QIcon TEXT_ICON = QIcon(GetEditorAssetsPath().append("Icons/File Browser/Text.png").string().c_str());
-    static const QIcon UNKNOWN_ICON = QIcon(GetEditorAssetsPath().append("Icons/File Browser/Unknown.png").string().c_str());
-
-    if(!std::filesystem::exists(path))
-        return INVALID_ICON;
-
-    // Folder
-    if(std::filesystem::is_directory(path))
-        return FOLDER_ICON;
-
-    // Text
-    if(path.extension().string() == ".txt")
-        return TEXT_ICON;
-    // Image - use the image itself
-    if(path.extension().string() == ".png" || path.extension().string() == ".ico")
-        return QIcon(path.string().c_str());
-    
-    // Default (unknown file type)
-    return UNKNOWN_ICON;
 }

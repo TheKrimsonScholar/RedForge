@@ -80,7 +80,7 @@ public:
 	void Startup();
 	void Shutdown();
 
-	static void PrintLogMessage(LogType logType, const std::string& text);
+	REDFORGE_API static void PrintLogMessage(LogType logType, const std::string& text);
 	
 	static void DrawDebugBox(glm::vec3 location, glm::quat rotation, glm::vec3 scale, glm::vec4 color, float duration = 0.0f);
 	static void DrawDebugSphere(glm::vec3 location, glm::quat rotation, glm::vec3 scale, glm::vec4 color, float duration = 0.0f);

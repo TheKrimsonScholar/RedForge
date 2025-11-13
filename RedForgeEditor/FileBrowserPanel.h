@@ -5,9 +5,10 @@
 #include <filesystem>
 
 #include <QListView>
-#include <QStandardItemModel>
 #include <QPushButton>
 #include <QRadioButton>
+
+#include "FileItemModel.h"
 
 class FileBrowserPanel : public EditorPanel
 {
@@ -15,7 +16,7 @@ class FileBrowserPanel : public EditorPanel
 
 private:
     QListView* listView;
-    QStandardItemModel* model;
+    FileItemModel* model;
     QRadioButton* gameDirectoryButton;
     QRadioButton* engineDirectoryButton;
     QRadioButton* editorDirectoryButton;
@@ -35,7 +36,4 @@ protected:
     void Update() override;
 
     friend class MainEditorWindow;
-
-private:
-    QIcon GetFileTypeIcon(const std::filesystem::path& path) const;
 };

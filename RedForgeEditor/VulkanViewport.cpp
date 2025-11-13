@@ -47,6 +47,49 @@ bool VulkanViewport::event(QEvent* event)
 				OnSurfaceDestroyed();
 		}
 		break;
+		case QEvent::Drop:
+		{
+			QDropEvent* dropEvent = static_cast<QDropEvent*>(event);
+			const QMimeData* mimeData = dropEvent->mimeData();
+			
+			// Only accept file drops (for instantiating assets in level)
+			if(mimeData->hasFormat("application/x-filelistitem"))
+			{
+			    QByteArray encodedData = mimeData->data("application/x-filelistitem");
+			    QDataStream stream(&encodedData, QIODevice::ReadOnly);
+			    QString itemData;
+			
+			    while(!stream.atEnd())
+			    {
+			        stream >> itemData;
+
+			        qDebug() << "Dropped Item Data:" << itemData;
+			    }
+
+				dropEvent->acceptProposedAction();
+			}
+			else
+				dropEvent->ignore();
+		}
+		break;
+		case QEvent::DragEnter:
+		{
+			QDragEnterEvent* dragEnterEvent = static_cast<QDragEnterEvent*>(event);
+			if(dragEnterEvent->mimeData()->hasFormat("application/x-filelistitem"))
+				dragEnterEvent->acceptProposedAction();
+			else
+				dragEnterEvent->ignore();
+		}
+		break;
+		case QEvent::DragMove:
+		{
+			QDragMoveEvent* dragMoveEvent = static_cast<QDragMoveEvent*>(event);
+			if(dragMoveEvent->mimeData()->hasFormat("application/x-filelistitem"))
+				dragMoveEvent->acceptProposedAction();
+			else
+				dragMoveEvent->ignore();
+		}
+		break;
 		default: break;
 	}
 

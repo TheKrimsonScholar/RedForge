@@ -2,6 +2,9 @@
 
 #include "QtGui\QVulkanWindow.h"
 #include <QMouseEvent>
+#include <QDragEnterEvent>
+#include <QDropEvent>
+#include <QMimeData>
 
 #include "QtInputLayer.h"
 #include "ViewportCamera.h"

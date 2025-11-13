@@ -2,6 +2,8 @@
 
 #include <iostream>
 
+#include "DebugMacros.h"
+
 #include <QLayout>
 #include <QTimer>
 
