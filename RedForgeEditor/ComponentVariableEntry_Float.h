@@ -2,17 +2,19 @@
 
 #include "ComponentVariableEntry.h"
 
-#include "NumberField.h"
+#include "DragFloat.h"
 
 class ComponentVariableEntry_Float : public ComponentVariableEntry
 {
+	Q_OBJECT
+
 private:
 	float* variablePtr;
 
-	DragFloat field;
+	DragFloat* field;
 
 public:
-	ComponentVariableEntry_Float(const std::string& label, void* variablePtr);
+	ComponentVariableEntry_Float(const std::string& label, void* variablePtr, QWidget* parent = nullptr);
 	~ComponentVariableEntry_Float();
 
 private:

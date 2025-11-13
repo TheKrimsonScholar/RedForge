@@ -1,34 +1,39 @@
 #pragma once
 
-#include <typeindex>
-
-#include "ComponentMacros.h"
 #include "EntityManager.h"
 
-#include "gtkmm/expander.h"
-#include "gtkmm/label.h"
-#include "gtkmm/box.h"
+#include <QGroupBox>
+#include <QToolButton>
+#include <QLabel>
+#include <QPushButton>
+#include <QFrame>
 
 #include "ComponentVariableEntry.h"
 
-class ComponentEntry : public Gtk::Expander
+class ComponentEntry : public QWidget
 {
+    Q_OBJECT
+
 private:
-	Entity entity;
-	std::type_index componentTypeID;
+    QToolButton* expandableArrow;
+    QLabel* label;
+    QPushButton* removeButton;
+    //QFrame* frame;
+    QFrame* content;
 
-	Gtk::Box variablesBox;
+    std::vector<ComponentVariableEntry*> variableEntries;
 
-	std::vector<ComponentVariableEntry*> variableEntries;
+    Entity entity;
+    std::type_index componentTypeID;
 
-	sigc::connection timeoutConnection;
+    bool isExpanded = false;
 
 public:
-	ComponentEntry(Entity entity, std::type_index componentTypeID, void* componentPtr);
-	~ComponentEntry();
+    ComponentEntry(const Entity& entity, std::type_index componentTypeID, void* componentPtr, QWidget* parent = nullptr);
+    ~ComponentEntry();
 
-	//void PopulateComponentData(std::type_index componentTypeID, void* componentPtr);
-	void AppendVariableWidget(ComponentVariableInfo variableInfo, void* variablePtr);
+protected:
+    void AppendVariableWidget(const ComponentVariableInfo& variableInfo, void* variablePtr);
 
-	void UpdateDisplayedVariables();
+    void UpdateDisplayedVariables();
 };

@@ -2,33 +2,38 @@
 
 #include <iostream>
 
-ConsolePanel::ConsolePanel() : EditorPanel("Console"), 
-	consoleStream(), text()
+#include <QLayout>
+#include <QTimer>
+
+ConsolePanel::ConsolePanel(QWidget* parent) : EditorPanel("Console", parent), 
+	consoleStream()
 {
-	text.add_css_class("console-text");
+	text = new QTextBrowser(this);
 
-	contentArea.append(text);
+	QVBoxLayout* vBox = new QVBoxLayout();
+	vBox->setAlignment(Qt::AlignTop);
+	vBox->addWidget(text);
 
-	//coutBuffer = std::cout.rdbuf();
-
-	//// Redirect cout to the custom stream
-	//std::cout.rdbuf(consoleStream.rdbuf());
-
-	//// Keep the console text up-to-date with the output stream
-	//add_tick_callback([this](const Glib::RefPtr<Gdk::FrameClock>& frame_clock) -> bool
-	//	{
-	//		Glib::ustring updatedText = consoleStream.str();
-	//		Glib::RefPtr<Gtk::TextBuffer> textBuffer = text.get_buffer();
-	//		if(updatedText == textBuffer->get_text())
-	//			return true;
-
-	//		textBuffer->set_text(updatedText);
-
-	//		return true;
-	//	});
+	contentArea->setLayout(vBox);
 }
 ConsolePanel::~ConsolePanel()
 {
-	// Restore original cout buffer
-	std::cout.rdbuf(coutBuffer);
+	
+}
+
+void ConsolePanel::Initialize()
+{
+	for(const LogMessage& message : DebugManager::GetDebugLog())
+		text->append(message.ToString().c_str());
+
+	DebugManager::GetOnLogMessagePrinted()->AddUnique(EventCallback(this, &ConsolePanel::OnLogMessagePrinted));
+}
+void ConsolePanel::Update()
+{
+
+}
+
+void ConsolePanel::OnLogMessagePrinted(const LogMessage& message)
+{
+	text->append(message.ToString().c_str());
 }

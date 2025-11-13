@@ -3,9 +3,28 @@
 #include <unordered_map>
 
 #include "Mesh.h"
+#include "Event.h"
 
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
+
+#include "Exports.h"
+
+enum class LogType
+{
+	Cout,
+	Engine,
+	Editor,
+	Game
+};
+struct LogMessage
+{
+	double timestamp;
+	LogType logType;
+	std::string text;
+
+	REDFORGE_API std::string ToString() const;
+};
 
 struct DebugEntity
 {
@@ -39,11 +58,19 @@ class DebugManager
 private:
 	static inline DebugManager* Instance;
 
+	Event<const LogMessage&> onLogMessagePrinted;
+
+	std::streambuf* coutBuffer = nullptr;
+	std::stringstream coutStream;
+	// The ending stream position of the last complete line read from cout.
+	size_t lastCoutReadPosition = 0;
+
 	Material* debugMaterial;
 
 	Mesh* debugBoxMesh;
 	Mesh* debugSphereMesh;
 
+	std::vector<LogMessage> debugLog;
 	std::unordered_map<DebugEntity, float> debugEntities;
 
 public:
@@ -52,19 +79,32 @@ public:
 
 	void Startup();
 	void Shutdown();
+
+	static void PrintLogMessage(LogType logType, const std::string& text);
 	
 	static void DrawDebugBox(glm::vec3 location, glm::quat rotation, glm::vec3 scale, glm::vec4 color, float duration = 0.0f);
 	static void DrawDebugSphere(glm::vec3 location, glm::quat rotation, glm::vec3 scale, glm::vec4 color, float duration = 0.0f);
 
+private:
+	void Update();
+
 	static void UpdateAllWireframes();
 
-	static std::unordered_map<DebugEntity, float> GetAllDebugEntities() { return Instance->debugEntities; };
-
-	static Material* GetDebugMaterial() { return Instance->debugMaterial; };
+	friend class GraphicsSystem;
+	friend class Engine;
 
 private:
 	static void SetDebugMaterial(Material* material) { Instance->debugMaterial = material; };
 
 	static void SetDebugBoxMesh(Mesh* mesh) { Instance->debugBoxMesh = mesh; };
 	static void SetDebugSphereMesh(Mesh* mesh) { Instance->debugSphereMesh = mesh; };
+
+public:
+	REDFORGE_API static std::vector<LogMessage> GetDebugLog() { return Instance->debugLog; }
+
+	static std::unordered_map<DebugEntity, float> GetAllDebugEntities() { return Instance->debugEntities; };
+
+	static Material* GetDebugMaterial() { return Instance->debugMaterial; };
+
+	REDFORGE_API static Event<const LogMessage&>* GetOnLogMessagePrinted() { return Instance ? &Instance->onLogMessagePrinted : nullptr; }
 };

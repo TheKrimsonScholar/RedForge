@@ -17,7 +17,7 @@ static const uint32_t MAX_ENTITIES = 256;
 
 struct Entity
 {
-private:
+public:
 	uint32_t index = INVALID_ENTITY;
 	uint32_t generation = INVALID_ENTITY;
 

@@ -41,5 +41,8 @@ public:
 
 	static std::vector<char> ReadFile(const std::filesystem::path& filePath);
 
-	static std::unordered_map<std::wstring, std::wstring> GetAllFilesInDirectory(const std::filesystem::path& directory, std::vector<std::wstring> extensions);
+	// Returns all relative file paths at all levels below the specified directory, optionally limited to specific extensions.
+	REDFORGE_API static std::vector<std::filesystem::path> GetAllFilesInDirectory(const std::filesystem::path& directory, const std::vector<std::wstring>& extensions = {});
+	// Returns the names of all top-level items (files and folders) directly under the specified directory.
+	REDFORGE_API static std::vector<std::filesystem::path> GetAllTopLevelItemsInDirectory(const std::filesystem::path& directory);
 };

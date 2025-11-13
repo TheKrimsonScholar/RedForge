@@ -18,43 +18,13 @@
     <ClCompile Include="RedForgeEditor.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ViewportCamera.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="VulkanViewport.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="MainEditorWindow.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="GTKInputLayer.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="HierarchyPanel.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="InspectorPanel.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="ComponentEntry.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="ComponentVariableEntry.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ComponentVariableEntry_Vector3.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="NumberField.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="ComponentVariableEntry_QuaternionEuler.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="ComponentVariableEntry_Float.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="ComponentVariableEntry_Vector2.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="ComponentVariableEntry_Material.cpp">
@@ -63,101 +33,161 @@
     <ClCompile Include="ComponentVariableEntry_Mesh.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="SearchFieldPopup.cpp">
+    <ClCompile Include="ComponentVariableEntry_QuaternionEuler.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ComponentVariableEntry_Vector2.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ComponentVariableEntry_Vector3.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DragFloat.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="EditorPanel.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="EditorToolbar.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="ConsolePanel.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="HierarchicalEntityList.cpp">
+    <ClCompile Include="EntityHierarchyItemModel.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="FileBrowserPanel.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="FloatField.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="HierarchicalItemModel.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="HierarchyPanel.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="InspectorPanel.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="MainEditorWindow.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="QtInputLayer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="QtUtils.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="StandardFileItemModel.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ViewportCamera.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="VulkanViewport.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SearchField.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="EntityHierarchyTreeView.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ConsolePanel.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="EditorToolbar.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="QtUtils.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="HierarchicalItemModel.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="StandardFileItemModel.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="QtInputLayer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="ViewportCamera.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="VulkanViewport.h">
+    <ClInclude Include="EditorPaths.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="MainEditorWindow.h">
+    <ClInclude Include="MemoryMacros.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="GTKInputLayer.h">
+  </ItemGroup>
+  <ItemGroup>
+    <QtMoc Include="MainEditorWindow.h">
       <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="resource.h">
+    </QtMoc>
+    <QtMoc Include="DragFloat.h">
       <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="HierarchyPanel.h">
+    </QtMoc>
+    <QtMoc Include="ComponentVariableEntry.h">
       <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="InspectorPanel.h">
+    </QtMoc>
+    <QtMoc Include="ComponentVariableEntry_Float.h">
       <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ComponentEntry.h">
+    </QtMoc>
+    <QtMoc Include="ComponentVariableEntry_QuaternionEuler.h">
       <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ComponentVariableEntry.h">
+    </QtMoc>
+    <QtMoc Include="ComponentVariableEntry_Vector2.h">
       <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ComponentVariableEntry_Vector3.h">
+    </QtMoc>
+    <QtMoc Include="ComponentVariableEntry_Vector3.h">
       <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="NumberField.h">
+    </QtMoc>
+    <QtMoc Include="FloatField.h">
       <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ComponentVariableEntry_QuaternionEuler.h">
+    </QtMoc>
+    <QtMoc Include="ComponentEntry.h">
       <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ComponentVariableEntry_Float.h">
+    </QtMoc>
+    <QtMoc Include="InspectorPanel.h">
       <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ComponentVariableEntry_Vector2.h">
+    </QtMoc>
+    <QtMoc Include="FileBrowserPanel.h">
       <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ComponentVariableEntry_Material.h">
+    </QtMoc>
+    <QtMoc Include="EntityHierarchyItemModel.h">
       <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ComponentVariableEntry_Mesh.h">
+    </QtMoc>
+    <QtMoc Include="HierarchyPanel.h">
       <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="SearchFieldPopup.h">
+    </QtMoc>
+    <QtMoc Include="EditorPanel.h">
       <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="EditorPanel.h">
+    </QtMoc>
+    <QtMoc Include="VulkanViewport.h">
       <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="EditorToolbar.h">
+    </QtMoc>
+    <QtMoc Include="SearchField.h">
       <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ConsolePanel.h">
+    </QtMoc>
+    <QtMoc Include="ComponentVariableEntry_Mesh.h">
       <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="HierarchicalEntityList.h">
+    </QtMoc>
+    <QtMoc Include="EntityHierarchyTreeView.h">
       <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="FileBrowserPanel.h">
+    </QtMoc>
+    <QtMoc Include="ConsolePanel.h">
       <Filter>Header Files</Filter>
-    </ClInclude>
+    </QtMoc>
+    <QtMoc Include="EditorToolbar.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
+    <QtMoc Include="ComponentVariableEntry_Material.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="RedForgeEditor.rc">
       <Filter>Resource Files</Filter>
     </ResourceCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <Image Include="icon.ico">
-      <Filter>Resource Files</Filter>
-    </Image>
   </ItemGroup>
 </Project>

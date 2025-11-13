@@ -28,7 +28,7 @@ void ViewportCamera::Update()
 	{
 		glm::dvec2 mouseDelta = InputSystem::GetMouseDelta();
 		pitchYaw.x -= mouseDelta.y * TimeManager::GetDeltaTime() * LOOK_SPEED;
-		pitchYaw.y += mouseDelta.x * TimeManager::GetDeltaTime() * LOOK_SPEED;
+		pitchYaw.y -= mouseDelta.x * TimeManager::GetDeltaTime() * LOOK_SPEED;
 	}
 
 	if(InputSystem::IsKeyDown(RFKeyCode::A))
@@ -44,13 +44,13 @@ void ViewportCamera::Update()
 	if(InputSystem::IsKeyDown(RFKeyCode::SPACE))
 		location += glm::vec3(0, 1, 0) * TimeManager::GetDeltaTime() * MOVE_SPEED;
 
-	viewMatrix = glm::lookAt(location, location + GetForward(), -GetUp()); // Invert up vector to counteract Vulkan-OpenGL differences
+	viewMatrix = glm::lookAt(location, location + GetForward(), GetUp());
 	projectionMatrix = glm::perspective(glm::radians(fov), GraphicsSystem::GetAspectRatio(), nearClipPlaneDistance, farClipPlaneDistance);
 }
 
 glm::vec3 ViewportCamera::GetRight()
 {
-	return glm::quat(glm::vec3(pitchYaw, 0)) * glm::vec3(-1, 0, 0);
+	return glm::quat(glm::vec3(pitchYaw, 0)) * glm::vec3(1, 0, 0);
 }
 glm::vec3 ViewportCamera::GetUp()
 {

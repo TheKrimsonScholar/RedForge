@@ -146,26 +146,28 @@ std::vector<char> FileManager::ReadFile(const std::filesystem::path& filePath)
     return buffer;
 }
 
-std::unordered_map<std::wstring, std::wstring> FileManager::GetAllFilesInDirectory(const std::filesystem::path& directory, std::vector<std::wstring> extensions)
+std::vector<std::filesystem::path> FileManager::GetAllFilesInDirectory(const std::filesystem::path& directory, const std::vector<std::wstring>& extensions)
 {
-    std::unordered_map<std::wstring, std::wstring> identifiers;
-
+    std::vector<std::filesystem::path> files;
     for(const std::filesystem::directory_entry& entry : std::filesystem::recursive_directory_iterator(directory))
     {
+        // Don't include folders
         if(std::filesystem::is_regular_file(entry))
         {
-            std::wstring filePath = entry.path().wstring();
-            size_t directoryEnd = filePath.find(directory.wstring()) + directory.wstring().length();
-            size_t extensionStart = filePath.find_last_of('.');
-
-            std::wstring localPath = filePath.substr(directoryEnd);
-            std::wstring identifier = filePath.substr(directoryEnd, extensionStart - directoryEnd);
-            std::wstring extension = filePath.substr(extensionStart);
-
-            if(std::find(extensions.begin(), extensions.end(), extension) != extensions.end())
-                identifiers.emplace(localPath, identifier);
+            // If no extensions are specified, accept all file types
+            // Otherwise just give the paths of the specified file types
+            if(extensions.empty() || std::find(extensions.begin(), extensions.end(), entry.path().extension()) != extensions.end())
+                files.push_back(std::filesystem::relative(entry.path(), directory));
         }
     }
 
-    return identifiers;
+    return files;
+}
+std::vector<std::filesystem::path> FileManager::GetAllTopLevelItemsInDirectory(const std::filesystem::path& directory)
+{
+    std::vector<std::filesystem::path> items;
+    for(const std::filesystem::directory_entry& entry : std::filesystem::directory_iterator(directory))
+        items.push_back(entry.path().filename());
+
+    return items;
 }

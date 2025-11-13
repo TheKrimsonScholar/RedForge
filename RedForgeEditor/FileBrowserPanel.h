@@ -4,46 +4,38 @@
 
 #include <filesystem>
 
-#include <gtkmm/listview.h>
-#include <gtkmm/stringlist.h>
-#include <glibmm/object.h>
-#include <glibmm/property.h>
-#include <glibmm/value.h>
-
-#include <giomm/liststore.h>
-
-class FileEntry : public Glib::Object
-{
-public:
-    Glib::ustring m_label;
-    Glib::RefPtr<Gdk::Paintable> m_icon;
-    bool isFolder;
-
-    static Glib::RefPtr<FileEntry> create(const Glib::ustring& label, const Glib::RefPtr<Gdk::Paintable>& icon, bool isFolder)
-    {
-        return Glib::make_refptr_for_instance<FileEntry>(new FileEntry(label, icon, isFolder));
-    }
-
-protected:
-    FileEntry(const Glib::ustring& label, const Glib::RefPtr<Gdk::Paintable>& icon, bool isFolder) : Glib::Object(), 
-        m_label(label), m_icon(icon), isFolder(isFolder)
-    {
-
-    }
-};
+#include <QListView>
+#include <QStandardItemModel>
+#include <QPushButton>
+#include <QRadioButton>
 
 class FileBrowserPanel : public EditorPanel
 {
+    Q_OBJECT
+
 private:
+    QListView* listView;
+    QStandardItemModel* model;
+    QRadioButton* gameDirectoryButton;
+    QRadioButton* engineDirectoryButton;
+    QRadioButton* editorDirectoryButton;
+    QPushButton* directoryUpButton;
+    QPushButton* directoryRefreshButton;
+
     std::filesystem::path currentDirectory;
 
-    Glib::RefPtr<Gio::ListStore<FileEntry>> listStore;
-
-    Gtk::ListView m_ListView;
-
 public:
-	FileBrowserPanel();
-	~FileBrowserPanel();
+    FileBrowserPanel(QWidget* parent = nullptr);
+    ~FileBrowserPanel();
 
-    void SetCurrentBrowserDirectory(std::filesystem::path currentDirectory);
+    void SetCurrentBrowserDirectory(const std::filesystem::path& currentDirectory);
+
+protected:
+    void Initialize() override;
+    void Update() override;
+
+    friend class MainEditorWindow;
+
+private:
+    QIcon GetFileTypeIcon(const std::filesystem::path& path) const;
 };

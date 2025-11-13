@@ -149,6 +149,8 @@ bool EntityManager::IsComponentValid(Entity entity, std::type_index componentTyp
 {
 	if(!Instance)
 		return false;
+	if(!EntityManager::IsEntityValid(entity))
+		return false;
 
 	assert(IsEntityValid(entity) && "Attempting to access invalid entity.");
 

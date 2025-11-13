@@ -2,24 +2,20 @@
 
 #include "LevelManager.h"
 
-#include "DebugMacros.h"
+#include <QHBoxLayout>
 
-#include "gtkmm/image.h"
+#include "EditorPaths.h"
 
-EditorToolbar::EditorToolbar() : Gtk::Box(Gtk::Orientation::HORIZONTAL), 
-	saveButton()
+EditorToolbar::EditorToolbar(QWidget* parent) : QWidget(parent)
 {
-	add_css_class("toolbar");
+	setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
 
-	saveButton.add_css_class("toolbar-button");
-	saveButton.set_tooltip_text("Save the current level");
-	saveButton.signal_clicked().connect(sigc::mem_fun(*this, &EditorToolbar::SaveLevel), false);
-	Gtk::Image* saveIcon = Gtk::make_managed<Gtk::Image>();
-	Glib::RefPtr<Gdk::Texture> texture = Gdk::Texture::create_from_filename(GetEditorAssetsPath().append(L"Icons/Save.png").string());
-	saveIcon->set(texture);
-	saveButton.set_child(*saveIcon);
+	saveLevelButton = new QPushButton(QICON_FROM_PATH("Save"), "", this);
+	QObject::connect(saveLevelButton, &QPushButton::clicked, this, &EditorToolbar::SaveLevel);
 
-	append(saveButton);
+	QHBoxLayout* hBox = new QHBoxLayout();
+	hBox->addWidget(saveLevelButton);
+	setLayout(hBox);
 }
 EditorToolbar::~EditorToolbar()
 {
@@ -29,6 +25,4 @@ EditorToolbar::~EditorToolbar()
 void EditorToolbar::SaveLevel()
 {
 	LevelManager::SaveLevel();
-
-	LOG("[Level Saved]");
 }

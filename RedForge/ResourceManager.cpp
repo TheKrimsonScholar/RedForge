@@ -51,28 +51,28 @@ void ResourceManager::Shutdown()
 void ResourceManager::LoadAllTextures()
 {
     const std::vector<std::wstring> VALID_TYPES = { L".png" };
-    std::unordered_map<std::wstring, std::wstring> texturePaths = FileManager::GetAllFilesInDirectory(GetEngineTexturesPath(), VALID_TYPES);
+    std::vector<std::filesystem::path> texturePaths = FileManager::GetAllFilesInDirectory(GetEngineTexturesPath(), VALID_TYPES);
     
     // Load all textures from their paths and associate them with identifiers in an unordered map
 	for(auto& texturePath : texturePaths)
-        LoadTexture(GetEngineTexturesPath().append(texturePath.first));
+        LoadTexture(GetEngineTexturesPath().append(texturePath.wstring()));
 }
 void ResourceManager::LoadAllMaterials()
 {
 	const std::vector<std::wstring> VALID_TYPES = { L".mtl" };
-	std::unordered_map<std::wstring, std::wstring> materialPaths = FileManager::GetAllFilesInDirectory(GetEngineMaterialsPath(), VALID_TYPES);
+    std::vector<std::filesystem::path> materialPaths = FileManager::GetAllFilesInDirectory(GetEngineMaterialsPath(), VALID_TYPES);
 
 	// Load all materials from their paths and associate them with identifiers in an unordered map
 	for(auto& materialPath : materialPaths)
-		LoadTexture(GetEngineMaterialsPath().append(materialPath.first));
+		LoadTexture(GetEngineMaterialsPath().append(materialPath.wstring()));
 }
 void ResourceManager::LoadAllMeshes()
 {
     const std::vector<std::wstring> VALID_TYPES = { L".obj" };
-    std::unordered_map<std::wstring, std::wstring> meshPaths = FileManager::GetAllFilesInDirectory(GetEngineMeshesPath(), VALID_TYPES);
+    std::vector<std::filesystem::path> meshPaths = FileManager::GetAllFilesInDirectory(GetEngineMeshesPath(), VALID_TYPES);
 
     for(auto& meshPath : meshPaths)
-        LoadModel(GetEngineMeshesPath().append(meshPath.first));
+        LoadModel(GetEngineMeshesPath().append(meshPath.wstring()));
 }
 
 Texture* ResourceManager::LoadTexture(const std::filesystem::path& filePath)

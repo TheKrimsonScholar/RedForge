@@ -2,26 +2,32 @@
 
 #include "EditorPanel.h"
 
-#include "EntityManager.h"
+#include "LevelManager.h"
 
-#include "gtkmm/listbox.h"
-#include "gtkmm/adjustment.h"
-#include "gtkmm/spinbutton.h"
-
-#include "ComponentEntry.h"
+#include <QLabel>
+#include <QVBoxLayout>
 
 class InspectorPanel : public EditorPanel
 {
+    Q_OBJECT
+
 private:
-	Gtk::Label entityLabel;
-	Gtk::ListBox componentsList;
+    QLabel* label;
+    QVBoxLayout* componentEntriesBox;
 
 public:
-	InspectorPanel();
-	~InspectorPanel();
+    InspectorPanel(QWidget* parent = nullptr);
+    ~InspectorPanel();
 
-	void SetTarget(Entity entity);
-	void SetTargets(const std::vector<Entity>& entities);
+protected:
+    void Initialize() override;
+    void Update() override;
 
-	void ResetTarget();
+    friend class MainEditorWindow;
+    friend class HierarchyPanel;
+
+public:
+    void SetTarget(const Entity& entity);
+
+    void ResetTarget();
 };

@@ -46,8 +46,6 @@ const uint32_t MAX_LIGHTS = 256;
 const uint32_t MAX_TEXTURES = 256;
 const uint32_t MAX_MATERIALS = 256;
 
-const VkFormat EXTERNAL_RENDER_IMAGE_FORMAT = VK_FORMAT_R8G8B8A8_UNORM; // Match with OpenGL
-
 const std::vector<const char*> deviceExtensions =
 {
     VK_KHR_SWAPCHAIN_EXTENSION_NAME,
@@ -64,7 +62,8 @@ const std::vector<const char*> deviceExtensions =
 };
 const std::vector<const char*> instanceExtensions =
 {
-    VK_KHR_SURFACE_EXTENSION_NAME
+    VK_KHR_SURFACE_EXTENSION_NAME,
+    VK_KHR_WIN32_SURFACE_EXTENSION_NAME
     //"VK_KHR_external_memory_win32",
     //"GL_EXT_memory_object_win32"
 };
@@ -167,33 +166,8 @@ private:
     VkExtent2D swapChainExtent;
     std::vector<VkImageView> swapChainImageViews;
 
-    // Does the graphics system render to a custom render target instead of directly rendering to the swapchain?
-    bool shouldRenderOffscreen = false;
-    VkExtent2D externalRenderImageExtent;
-    VkImage externalRenderImage;
-    VkDeviceMemory externalRenderMemory;
-    size_t externalRenderMemorySize = 0;
-    VkImageView externalRenderImageView;
-    VkFramebuffer externalRenderFramebuffer;
-    VkSemaphore externalRenderCompleteSemaphore;
-    VkSemaphore externalRenderReleaseSemaphore;
-    #ifdef _WIN32
-        HANDLE externalRenderMemoryHandle = INVALID_HANDLE_VALUE;
-        HANDLE externalRenderCompleteSemaphoreHandle = INVALID_HANDLE_VALUE;
-        HANDLE externalRenderReleaseSemaphoreHandle = INVALID_HANDLE_VALUE;
-
-        // Function pointers for extension functions
-        PFN_vkGetMemoryWin32HandleKHR vkGetMemoryWin32HandleKHR = nullptr;
-        PFN_vkGetSemaphoreWin32HandleKHR vkGetSemaphoreWin32HandleKHR = nullptr;
-    #else
-	    int externalRenderMemoryFd = -1;
-	    int externalRenderCompleteSemaphoreFd = -1;
-	    int externalRenderReleaseSemaphoreFd = -1;
-
-	    // Function pointers for extension functions
-	    PFN_vkGetMemoryFdKHR vkGetMemoryFdKHR = nullptr;
-	    PFN_vkGetSemaphoreFdKHR vkGetSemaphoreFdKHR = nullptr;
-    #endif
+    // Does the graphics system render to a surface managed externally instead of using its own?
+    bool isSurfaceOverridden = false;
 
     VkRenderPass renderPass;
     VkDescriptorSetLayout descriptorSetLayout;
@@ -276,8 +250,11 @@ public:
     GraphicsSystem() {};
     ~GraphicsSystem() {};
 
-    void Startup(bool shouldOverrideFramebuffer = false, unsigned int overrideExtentWidth = 0, unsigned int overrideExtentHeight = 0);
-    void Shutdown();
+    void CreateVulkanInstance_PreStartup();
+    void DestroyVulkanInstance_PostShutdown();
+
+    void Startup(VkSurfaceKHR surfaceOverride);
+    void Shutdown(bool shouldDestroyVulkanInstance);
 
     REDFORGE_API void Update();
     
@@ -319,10 +296,9 @@ private:
     void InitVulkan();
     void InitImGui();
 
-    void CreateInstance();
+    void CreateVulkanInstance();
     bool CheckValidationLayerSupport();
     std::vector<const char*> GetRequiredExtensions();
-    void LoadExtensionFunctions();
 
     void SetupDebugMessenger();
     void PopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
@@ -383,6 +359,8 @@ private:
 
     void CleanupSwapChain();
 
+    void DestroyVulkanInstance();
+
 public:
     REDFORGE_API static void RecreateSwapChain();
     
@@ -394,36 +372,13 @@ private:
 public:
     REDFORGE_API static VkInstance GetVulkanInstance() { return Instance->instance; };
     REDFORGE_API static GLFWwindow* GetWindow() { return Instance->window; };
-    static VkExtent2D GetRenderExtent() { return Instance->shouldRenderOffscreen ? Instance->externalRenderImageExtent : Instance->swapChainExtent; };
+    static VkExtent2D GetRenderExtent() { return Instance->swapChainExtent; };
     static uint32_t GetWindowWidth() { return GetRenderExtent().width; };
     static uint32_t GetWindowHeight() { return GetRenderExtent().height; };
-    static VkFormat GetRenderFormat() { return Instance->shouldRenderOffscreen ? EXTERNAL_RENDER_IMAGE_FORMAT : Instance->swapChainImageFormat; };
+    static VkFormat GetRenderFormat() { return Instance->swapChainImageFormat; };
     REDFORGE_API static float GetAspectRatio() { return (float) GetWindowWidth() / (float) GetWindowHeight(); };
     static VkPhysicalDevice GetPhysicalDevice() { return Instance->physicalDevice; };
     static VkDevice GetDevice() { return Instance->device; };
 
-    static void SetSurface(VkSurfaceKHR surface) { Instance->surface = surface; };
-
 	static void SetSkyboxTextureCube(TextureCube* textureCube) { Instance->skyboxTextureCube = textureCube; };
-
-    void CreateExternalRenderSyncObjects();
-    void CreateExternalRenderResources();
-    void CreateExternalRenderImage();
-    void CreateExternalRenderImageView();
-    void CreateExternalRenderFramebuffer();
-
-    static size_t GetExternalRenderMemorySize() { return Instance->externalRenderMemorySize; };
-    #ifdef _WIN32
-        static void* GetExternalRenderMemoryHandle() { return Instance->externalRenderMemoryHandle; };
-        static void* GetExternalRenderCompleteSemaphoreHandle() { return Instance->externalRenderCompleteSemaphoreHandle; };
-        static void* GetExternalRenderReleaseSemaphoreHandle() { return Instance->externalRenderReleaseSemaphoreHandle; };
-    #else
-	    static int GetExternalRenderMemoryHandle() { return Instance->externalRenderMemoryFd; };
-	    static int GetExternalRenderCompleteSemaphoreHandle() { return Instance->externalRenderCompleteSemaphoreFd; };
-	    static int GetExternalRenderReleaseSemaphoreHandle() { return Instance->externalRenderReleaseSemaphoreFd; };
-    #endif
-
-    void CleanupExternalRenderResources();
-
-    REDFORGE_API static void SetExternalRenderImageExtent(uint32_t width, uint32_t height) { if(Instance) Instance->externalRenderImageExtent = { width, height }; };
 };

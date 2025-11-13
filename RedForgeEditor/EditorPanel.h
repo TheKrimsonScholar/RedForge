@@ -1,22 +1,26 @@
 #pragma once
 
-#include "gtkmm/scrolledwindow.h"
-#include "gtkmm/gestureclick.h"
-#include "gtkmm/box.h"
-#include "gtkmm/label.h"
+#include <QDockWidget>
+#include <QScrollArea>
 
-class EditorPanel : public Gtk::Box
+class EditorPanel : public QDockWidget
 {
-private:
-	Glib::RefPtr<Gtk::GestureClick> clickGesture;
-
-	Gtk::Label windowLabel;
-	Gtk::ScrolledWindow scrollArea;
+    Q_OBJECT
 
 protected:
-	Gtk::Box contentArea;
+    QWidget* titlebar;
+    QScrollArea* scrollArea;
+    QWidget* contentArea;
 
 public:
-	EditorPanel(const std::string& panelLabel);
-	~EditorPanel();
+    EditorPanel(const QString& title, QWidget* parent = nullptr);
+    ~EditorPanel();
+
+protected:
+    // Called after initializing the engine.
+    virtual void Initialize() = 0;
+    // Called after each engine update.
+    virtual void Update() = 0;
+
+    friend class MainEditorWindow;
 };

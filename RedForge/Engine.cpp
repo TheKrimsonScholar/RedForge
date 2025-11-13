@@ -8,6 +8,8 @@
 #include "InputComponent.h"
 #include "GLFWInputLayer.h"
 
+#include "DebugMacros.h"
+
 #define DEBUG_NEW new(_NORMAL_BLOCK, __FILE__, __LINE__)
 #define new DEBUG_NEW
 
@@ -120,28 +122,40 @@ void Engine::Run()
     Shutdown();
 }
 
-void Engine::Startup(bool shouldOverrideFramebuffer, unsigned int overrideExtentWidth, unsigned int overrideExtentHeight)
+void Engine::CreateVulkanInstance()
+{
+    graphics.CreateVulkanInstance_PreStartup();
+}
+void Engine::DestroyVulkanInstance()
+{
+    graphics.DestroyVulkanInstance_PostShutdown();
+}
+
+void Engine::Startup(VkSurfaceKHR surfaceOverride)
 {
     if(isRunning)
 		return;
 	isRunning = true;
 
-    std::cout << "---- RedForge Version 0.1 ----" << std::endl;
-
     timeManager.Startup();
     resourceManager.Startup();
     inputSystem.Startup();
     entityManager.Startup();
-    graphics.Startup(shouldOverrideFramebuffer, overrideExtentWidth, overrideExtentHeight);
+    graphics.Startup(surfaceOverride);
     cameraManager.Startup();
     debugManager.Startup();
     physicsSystem.Startup();
 	fileManager.Startup();
 	levelManager.Startup();
 	networkSystem.Startup();
+
+    LOG("---- RedForge Version 0.1 ----");
 }
-void Engine::Shutdown()
+void Engine::Shutdown(bool shouldDestroyVulkanInstance)
 {
+    if(!isRunning)
+        return;
+
     // Wait for device to finish operations before exiting
     vkDeviceWaitIdle(GraphicsSystem::GetDevice());
 
@@ -154,7 +168,7 @@ void Engine::Shutdown()
     entityManager.Shutdown();
     inputSystem.Shutdown();
     resourceManager.Shutdown();
-    graphics.Shutdown();
+    graphics.Shutdown(shouldDestroyVulkanInstance);
     timeManager.Shutdown();
 
     isRunning = false;
@@ -162,6 +176,9 @@ void Engine::Shutdown()
 
 void Engine::Update()
 {
+    if(!isRunning)
+        return;
+
     glfwPollEvents();
 
     timeManager.Update();
@@ -169,6 +186,7 @@ void Engine::Update()
     physicsSystem.Update();
     networkSystem.Update();
     graphics.Update();
+    debugManager.Update();
 
     //EntityManager::GetComponent<TransformComponent>(0).rotation = glm::angleAxis(1.0f * TimeManager::GetDeltaTime(), glm::vec3(1, 0, 0)) * glm::angleAxis(1.0f * TimeManager::GetDeltaTime(), glm::vec3(0, 1, 0)) * glm::angleAxis(1.0f * TimeManager::GetDeltaTime(), glm::vec3(0, 0, 1)) * EntityManager::GetComponent<TransformComponent>(0).rotation;
 

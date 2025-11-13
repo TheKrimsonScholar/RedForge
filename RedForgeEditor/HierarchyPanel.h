@@ -2,42 +2,26 @@
 
 #include "EditorPanel.h"
 
-#include "gtkmm/frame.h"
-#include "gtkmm/listbox.h"
-#include "gtkmm/button.h"
+#include <QPushButton>
+#include <QTreeView>
 
-#include "HierarchicalEntityList.h"
-
-#include "InspectorPanel.h"
+#include "EntityHierarchyTreeView.h"
 
 class HierarchyPanel : public EditorPanel
 {
-private:
-	Gtk::Button createEntityButton;
-
-	//Gtk::ListBox entityList;
-	//std::unordered_map<Gtk::ListBoxRow*, Entity> entityRows;
-
-	HierarchicalEntityList entityList;
-
-	std::vector<Entity> selectedEntities;
-
-public:
-	InspectorPanel* inspector = nullptr;
-
-public:
-	HierarchyPanel();
-	~HierarchyPanel();
-
-	void Initialize();
-	void UpdateHierarchy();
+    Q_OBJECT
 
 private:
-	void CreateEntity();
-	void DestroyEntity(Entity entity);
+    QPushButton* newEntityButton;
+    EntityHierarchyTreeView* treeView;
 
-	void OnRowActivated(Gtk::ListBoxRow* row);
-	void OnSelectedRowsChanged();
+public:
+    HierarchyPanel(QWidget* parent = nullptr);
+    ~HierarchyPanel();
 
-	void DestroyHierarchy();
+protected:
+    void Initialize() override;
+    void Update() override;
+
+    friend class MainEditorWindow;
 };

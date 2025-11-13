@@ -2,15 +2,16 @@
 
 #include "EntityManager.h"
 
-#include <glm/glm.hpp>
+#include <QHBoxLayout>
 
-#include <gtkmm/spinbutton.h>
-#include <glibmm.h>
-
-ComponentVariableEntry::ComponentVariableEntry(const std::string& label, void* variablePtr) : Gtk::Box(Gtk::Orientation::HORIZONTAL),
-	variableLabel(label)
+ComponentVariableEntry::ComponentVariableEntry(const std::string& label, void* variablePtr, QWidget* parent) : QWidget(parent)
 {
-	append(variableLabel);
+	variableLabel = new QLabel(label.c_str(), this);
+
+	QHBoxLayout* hBox = new QHBoxLayout();
+	hBox->addWidget(variableLabel);
+
+	setLayout(hBox);
 }
 ComponentVariableEntry::~ComponentVariableEntry()
 {

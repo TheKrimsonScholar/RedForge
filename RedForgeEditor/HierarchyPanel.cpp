@@ -1,28 +1,31 @@
 #include "HierarchyPanel.h"
 
-#include "LevelManager.h"
+#include <QVBoxLayout>
 
-#include <gtkmm/label.h>
+#include "MainEditorWindow.h"
 
-#include "DebugMacros.h"
+#include "EditorPaths.h"
 
-HierarchyPanel::HierarchyPanel() : EditorPanel("Hierarchy"), 
-	createEntityButton("New Entity"), entityList() //entityList()
+HierarchyPanel::HierarchyPanel(QWidget* parent) : EditorPanel("Hierarchy", parent)
 {
-	//entityList.add_css_class("entity-list");
+    newEntityButton = new QPushButton(QICON_FROM_PATH("Basic/Plus"), "New Entity", this);
+    QObject::connect(newEntityButton, &QPushButton::clicked, this, 
+        [this]()
+        {
+            const Entity& newEntity = LevelManager::CreateEntity();
+            
+            if(!treeView->GetSelectedEntities().empty())
+                LevelManager::SetEntityParent(newEntity, treeView->GetSelectedEntities()[0]);
+        });
 
-	createEntityButton.set_tooltip_text("Create a new entity");
-	createEntityButton.signal_clicked().connect(sigc::mem_fun(*this, &HierarchyPanel::CreateEntity), false);
+    treeView = new EntityHierarchyTreeView(this);
+    treeView->expandAll();
 
-	/*entityList.set_selection_mode(Gtk::SelectionMode::MULTIPLE);
-	entityList.set_activate_on_single_click(false);
+    QVBoxLayout* vBox = new QVBoxLayout();
+    vBox->addWidget(newEntityButton);
+    vBox->addWidget(treeView);
 
-	entityList.signal_row_activated().connect(sigc::mem_fun(*this, &HierarchyPanel::OnRowActivated), false);
-	entityList.signal_selected_rows_changed().connect(sigc::mem_fun(*this, &HierarchyPanel::OnSelectedRowsChanged), false);*/
-	
-	contentArea.append(createEntityButton);
-	contentArea.append(entityList);
-	//contentArea.append(entityList);
+    contentArea->setLayout(vBox);
 }
 HierarchyPanel::~HierarchyPanel()
 {
@@ -31,101 +34,9 @@ HierarchyPanel::~HierarchyPanel()
 
 void HierarchyPanel::Initialize()
 {
-	entityList.Initialize();
-	entityList.SetOnSelectionChanged([this](const std::vector<Entity> selectedEntities)
-		{
-			this->selectedEntities = selectedEntities;
-
-			if(selectedEntities.empty())
-				inspector->ResetTarget();
-			else if(selectedEntities.size() == 1)
-				inspector->SetTarget(selectedEntities[0]);
-			else
-				inspector->SetTargets(selectedEntities);
-		});
+    treeView->InitializeHierarchy();
 }
-void HierarchyPanel::UpdateHierarchy()
+void HierarchyPanel::Update()
 {
-	static const int CHILD_DEPTH_PADDING = 32;
 
-	DestroyHierarchy();
-
-	//hierarchicalList.UpdateHierarchy();
-
-	//LevelManager::ForEachEntity([this](const Entity& entity)
-	//	{
-	//		Gtk::ListBoxRow* row = Gtk::manage(new Gtk::ListBoxRow());
-	//		Gtk::Box* box = Gtk::manage(new Gtk::Box(Gtk::Orientation::HORIZONTAL));
-	//	
-	//		Gtk::Label* entityLabel = Gtk::manage(new Gtk::Label(LevelManager::GetEntityName(entity)));
-	//		entityLabel->set_margin_start(CHILD_DEPTH_PADDING * (LevelManager::GetEntityDepth(entity) - 1));
-	//		Gtk::Box* spacer = Gtk::manage(new Gtk::Box(Gtk::Orientation::HORIZONTAL));
-	//		spacer->set_hexpand(true);
-
-	//		Gtk::Button* destroyButton = Gtk::manage(new Gtk::Button("X"));
-	//		destroyButton->set_halign(Gtk::Align::END);
-	//		destroyButton->set_tooltip_text("Destroy this entity");
-	//		destroyButton->signal_clicked().connect(sigc::bind(sigc::mem_fun(*this, &HierarchyPanel::DestroyEntity), entity), false);
-	//	
-	//		box->append(*entityLabel);
-	//		box->append(*spacer);
-	//		box->append(*destroyButton);
-
-	//		//Glib::RefPtr<Gtk::GestureClick> click = Gtk::GestureClick::create();
-	//		//Gtk::GestureDrag
-	//		//click->set_button(0); // Respond to all mouse buttons
-	//		//click->signal_pressed().connect([entity](int, double, double) { LOG("Pressed {}", LevelManager::GetEntityName(entity)); }, false);
-	//		//click->signal_released().connect([entity](int, double, double) { LOG("Released {}", LevelManager::GetEntityName(entity)); }, false);
-	//		//box->add_controller(click);
-
-	//		//row->set_child(*box);
-
-	//		//entityList.append(*row);
-	//		//entityRows.emplace(row, entity);
-	//	});
-}
-
-void HierarchyPanel::CreateEntity()
-{
-	// If no entity is selected, create the entity at the root level
-	// Otherwise, parent the new entity to the first selected entity
-	LevelManager::CreateEntity("", selectedEntities.empty() ? Entity() : selectedEntities[0]);
-
-	//UpdateHierarchy();
-}
-void HierarchyPanel::DestroyEntity(Entity entity)
-{
-	/*if(selectedEntity == entity)
-	{
-		inspector->ResetTarget();
-		selectedEntity = {};
-	}*/
-
-	LevelManager::DestroyEntity(entity);
-
-	//UpdateHierarchy();
-}
-
-void HierarchyPanel::OnRowActivated(Gtk::ListBoxRow* row)
-{
-	//LOG("Activated %i", row->get_index());
-
-	/*selectedEntity = entityRows[row];
-
-	if(inspector)
-		inspector->SetTarget(entityRows[row]);*/
-}
-void HierarchyPanel::OnSelectedRowsChanged()
-{
-	//LOG("Selection Changed");
-}
-
-void HierarchyPanel::DestroyHierarchy()
-{
-	// Invalidate selected entity
-	//selectedEntity = {};
-
-	/*while(auto child = entityList.get_first_child())
-		entityList.remove(*child);
-	entityRows.clear();*/
 }

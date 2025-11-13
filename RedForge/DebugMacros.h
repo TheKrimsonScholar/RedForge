@@ -3,4 +3,6 @@
 #include <iostream>
 #include <format>
 
-#define LOG(Format, ...) std::cout << std::format(Format, __VA_ARGS__) << std::endl;
+#include "DebugManager.h"
+
+#define LOG(Format, ...) DebugManager::PrintLogMessage(LogType::Engine, std::format(Format, __VA_ARGS__));

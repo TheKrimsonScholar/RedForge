@@ -2,23 +2,23 @@
 
 #include "ComponentVariableEntry.h"
 
-#include <memory>
-
 #include <glm/glm.hpp>
 
-#include "NumberField.h"
+#include "DragFloat.h"
 
 class ComponentVariableEntry_Vector3 : public ComponentVariableEntry
 {
+	Q_OBJECT
+
 private:
 	glm::vec3* variablePtr;
 
-	DragFloat fieldX;
-	DragFloat fieldY;
-	DragFloat fieldZ;
+	DragFloat* fieldX;
+	DragFloat* fieldY;
+	DragFloat* fieldZ;
 
 public:
-	ComponentVariableEntry_Vector3(const std::string& label, void* variablePtr);
+	ComponentVariableEntry_Vector3(const std::string& label, void* variablePtr, QWidget* parent = nullptr);
 	~ComponentVariableEntry_Vector3();
 
 private:

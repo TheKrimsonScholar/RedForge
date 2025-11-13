@@ -42,5 +42,9 @@ public:
 	REDFORGE_API glm::dvec2 GetMouseDelta() { return mouseDelta; };
 
 	REDFORGE_API bool IsKeyDown(RFKeyCode key) { return keysDown[(size_t) key]; };
+	REDFORGE_API bool WasKeyPressedThisFrame(RFKeyCode key) { return keysPressedThisFrame[(size_t) key]; };
+	REDFORGE_API bool WasKeyReleasedThisFrame(RFKeyCode key) { return keysReleasedThisFrame[(size_t) key]; };
 	REDFORGE_API bool IsMouseButtonDown(MouseButtonCode mouseButton) { return mouseButtonsDown[(size_t) mouseButton]; };
+	REDFORGE_API bool WasMouseButtonPressedThisFrame(MouseButtonCode mouseButton) { return mouseButtonsPressedThisFrame[(size_t) mouseButton]; };
+	REDFORGE_API bool WasMouseButtonReleasedThisFrame(MouseButtonCode mouseButton) { return mouseButtonsReleasedThisFrame[(size_t) mouseButton]; };
 };

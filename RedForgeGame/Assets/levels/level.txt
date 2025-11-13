@@ -9,13 +9,13 @@ $Level
 			scale=(1, 1, 1) 
 		$$
 		$Component
+			TypeName=TestComponent
+			k=3.2 
+		$$
+		$Component
 			TypeName=MeshRendererComponent
 			mesh="default.obj" 
 			material="default" 
-		$$
-		$Component
-			TypeName=TestComponent
-			k=3.2 
 		$$
 		$Entity
 			Name=Entity 3

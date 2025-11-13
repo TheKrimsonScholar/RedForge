@@ -1,0 +1,25 @@
+/* Defaults */
+
+EditorPanel > *
+{
+	background-color: #690500;
+}
+EditorPanel #title
+{
+	background-color: #690500;
+	color: #d3d7cf;
+}
+EditorPanel #float-button
+{
+	background-color: #690500;
+}
+EditorPanel #close-button
+{
+	background-color: #690500;
+}
+
+QPushButton
+{
+	background-color: #690500;
+	color: #d3d7cf;
+}

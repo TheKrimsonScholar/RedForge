@@ -51,34 +51,48 @@ void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT
         func(instance, debugMessenger, pAllocator);
 }
 
-void GraphicsSystem::Startup(bool shouldOverrideFramebuffer, unsigned int overrideExtentWidth, unsigned int overrideExtentHeight)
+void GraphicsSystem::CreateVulkanInstance_PreStartup()
 {
     Instance = this;
 
-    this->shouldRenderOffscreen = shouldOverrideFramebuffer;
-    this->externalRenderImageExtent = { overrideExtentWidth, overrideExtentHeight };
+    CreateVulkanInstance();
+}
+void GraphicsSystem::DestroyVulkanInstance_PostShutdown()
+{
+    DestroyVulkanInstance();
+}
 
-    if(!shouldOverrideFramebuffer)
+void GraphicsSystem::Startup(VkSurfaceKHR surfaceOverride)
+{
+    Instance = this;
+
+    surface = surfaceOverride;
+
+    //this->shouldRenderOffscreen = shouldOverrideFramebuffer;
+    //this->externalRenderImageExtent = { overrideExtentWidth, overrideExtentHeight };
+    
+    isSurfaceOverridden = surfaceOverride != VK_NULL_HANDLE;
+    //this->externalRenderImageExtent = { overrideExtentWidth, overrideExtentHeight };
+
+    if(!isSurfaceOverridden)
         InitWindow();
 
     InitVulkan();
 
-    if(!shouldOverrideFramebuffer)
-        InitImGui();
+#ifdef _DEBUG
+    InitImGui();
+#endif
 }
-void GraphicsSystem::Shutdown()
+void GraphicsSystem::Shutdown(bool shouldDestroyVulkanInstance)
 {
-    if(!shouldRenderOffscreen)
-    {
-        ImGui_ImplVulkan_Shutdown();
+#ifdef _DEBUG
+    ImGui_ImplVulkan_Shutdown();
+    if(!isSurfaceOverridden)
         ImGui_ImplGlfw_Shutdown();
-        ImGui::DestroyContext();
-    }
+    ImGui::DestroyContext();
+#endif
 
     CleanupSwapChain();
-
-    vkDestroySemaphore(device, externalRenderCompleteSemaphore, nullptr);
-    vkDestroySemaphore(device, externalRenderReleaseSemaphore, nullptr);
 
     for(size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
     {
@@ -125,8 +139,10 @@ void GraphicsSystem::Shutdown()
     if(enableValidationLayers)
         DestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
 
-    vkDestroySurfaceKHR(instance, surface, nullptr);
-    vkDestroyInstance(instance, nullptr);
+    if(!isSurfaceOverridden)
+        vkDestroySurfaceKHR(instance, surface, nullptr);
+    if(shouldDestroyVulkanInstance)
+        DestroyVulkanInstance();
 
     glfwDestroyWindow(window);
 
@@ -140,17 +156,14 @@ void GraphicsSystem::Update()
 
     // Acquire an image from the swap chain
     uint32_t imageIndex = 0;
-    if(!shouldRenderOffscreen)
+    VkResult result = vkAcquireNextImageKHR(device, swapChain, UINT64_MAX, imageAvailableSemaphores[currentFrame], VK_NULL_HANDLE, &imageIndex);
+    if(result == VK_ERROR_OUT_OF_DATE_KHR)
     {
-        VkResult result = vkAcquireNextImageKHR(device, swapChain, UINT64_MAX, imageAvailableSemaphores[currentFrame], VK_NULL_HANDLE, &imageIndex);
-        if(result == VK_ERROR_OUT_OF_DATE_KHR)
-        {
-            RecreateSwapChain();
-            return;
-        }
-        else if(result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
-            throw std::runtime_error("Failed to acquire swap chain image!");
+        RecreateSwapChain();
+        return;
     }
+    else if(result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
+        throw std::runtime_error("Failed to acquire swap chain image!");
 
     // Only reset the fence if we are submitting work
     vkResetFences(device, 1, &inFlightFences[currentFrame]);
@@ -168,7 +181,7 @@ void GraphicsSystem::Update()
     VkSubmitInfo submitInfo{};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
-    VkSemaphore waitSemaphores[] = { shouldRenderOffscreen ? externalRenderReleaseSemaphore : imageAvailableSemaphores[currentFrame] };
+    VkSemaphore waitSemaphores[] = { imageAvailableSemaphores[currentFrame] };
     VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
     submitInfo.waitSemaphoreCount = 1;
     submitInfo.pWaitSemaphores = waitSemaphores;
@@ -177,7 +190,7 @@ void GraphicsSystem::Update()
     submitInfo.commandBufferCount = 1;
     submitInfo.pCommandBuffers = &commandBuffers[currentFrame];
 
-    VkSemaphore signalSemaphores[] = { shouldRenderOffscreen ? externalRenderCompleteSemaphore : renderFinishedSemaphores[currentFrame] };
+    VkSemaphore signalSemaphores[] = { renderFinishedSemaphores[currentFrame] };
     submitInfo.signalSemaphoreCount = 1;
     submitInfo.pSignalSemaphores = signalSemaphores;
 
@@ -198,17 +211,14 @@ void GraphicsSystem::Update()
     presentInfo.pImageIndices = &imageIndex;
     presentInfo.pResults = nullptr; // Optional
 
-    if(!shouldRenderOffscreen)
+    result = vkQueuePresentKHR(presentQueue, &presentInfo);
+    if(result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || framebufferResized)
     {
-        VkResult result = vkQueuePresentKHR(presentQueue, &presentInfo);
-        if(result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || framebufferResized)
-        {
-            framebufferResized = false;
-            RecreateSwapChain();
-        }
-        else if(result != VK_SUCCESS)
-            throw std::runtime_error("Failed to present swap chain image!");
+        framebufferResized = false;
+        RecreateSwapChain();
     }
+    else if(result != VK_SUCCESS)
+        throw std::runtime_error("Failed to present swap chain image!");
 
     currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
 }
@@ -541,18 +551,17 @@ void GraphicsSystem::InitWindow()
 }
 void GraphicsSystem::InitVulkan()
 {
-    CreateInstance();
+    CreateVulkanInstance();
     SetupDebugMessenger();
-    if(!shouldRenderOffscreen)
+    if(!isSurfaceOverridden)
         CreateSurface();
     SelectPhysicalDevice();
     CreateLogicalDevice();
-    LoadExtensionFunctions();
-    if(!shouldRenderOffscreen)
-    {
+    //if(!shouldRenderOffscreen)
+    //{
         CreateSwapChain();
         CreateImageViews();
-    }
+    //}
     CreateRenderPass();
     CreateDescriptorSetLayout();
     CreateGraphicsPipeline();
@@ -561,7 +570,7 @@ void GraphicsSystem::InitVulkan()
     CreateCommandPool();
     CreateColorResources();
     CreateDepthResources();
-    if(!shouldRenderOffscreen)
+    //if(!shouldRenderOffscreen)
         CreateFramebuffers();
     CreateUniformBuffers();
     CreateGlobalBuffers();
@@ -569,11 +578,11 @@ void GraphicsSystem::InitVulkan()
     CreateCommandBuffers();
     CreateSyncObjects();
 
-    if(shouldRenderOffscreen)
+    /*if(shouldRenderOffscreen)
     {
         CreateExternalRenderSyncObjects();
         CreateExternalRenderResources();
-    }
+    }*/
 
     ResourceManager::LoadAllTextures();
 
@@ -604,9 +613,10 @@ void GraphicsSystem::InitImGui()
     ImGuiIO& io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
-    io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
+    //io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
 
-    ImGui_ImplGlfw_InitForVulkan(window, true);  // `window` is your GLFWwindow*
+    if(!isSurfaceOverridden)
+        ImGui_ImplGlfw_InitForVulkan(window, true);
 
     QueueFamilyIndices indices = FindQueueFamilies(physicalDevice);
 
@@ -632,8 +642,12 @@ void GraphicsSystem::InitImGui()
     ImGui_ImplVulkan_DestroyFontsTexture();
 }
 
-void GraphicsSystem::CreateInstance()
+void GraphicsSystem::CreateVulkanInstance()
 {
+    // Skip if Vulkan instance has already been created
+    if(instance)
+        return;
+
     if(enableValidationLayers && !CheckValidationLayerSupport())
         throw std::runtime_error("Validation layers requested, but not available!");
 
@@ -714,34 +728,6 @@ std::vector<const char*> GraphicsSystem::GetRequiredExtensions()
         extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 
     return extensions;
-}
-void GraphicsSystem::LoadExtensionFunctions()
-{
-    #ifdef _WIN32
-        // Load memory functions
-        vkGetMemoryWin32HandleKHR = (PFN_vkGetMemoryWin32HandleKHR) vkGetDeviceProcAddr(device, "vkGetMemoryWin32HandleKHR");
-
-        if(!vkGetMemoryWin32HandleKHR)
-            throw std::runtime_error("Failed to load vkGetMemoryWin32HandleKHR!");
-
-        // Load semaphore functions
-        vkGetSemaphoreWin32HandleKHR = (PFN_vkGetSemaphoreWin32HandleKHR) vkGetDeviceProcAddr(device, "vkGetSemaphoreWin32HandleKHR");
-
-        if(!vkGetSemaphoreWin32HandleKHR)
-            throw std::runtime_error("Failed to load vkGetSemaphoreWin32HandleKHR!");
-    #else
-        // Load memory functions
-        vkGetMemoryFdKHR = (PFN_vkGetMemoryFdKHR) vkGetDeviceProcAddr(device, "vkGetMemoryFdKHR");
-
-        if(!vkGetMemoryFdKHR)
-            throw std::runtime_error("Failed to load vkGetMemoryFdKHR!");
-
-        // Load semaphore functions
-        vkGetSemaphoreFdKHR = (PFN_vkGetSemaphoreFdKHR) vkGetDeviceProcAddr(device, "vkGetSemaphoreFdKHR");
-
-        if(!vkGetSemaphoreFdKHR)
-            throw std::runtime_error("Failed to load vkGetSemaphoreFdKHR!");
-    #endif
 }
 
 void GraphicsSystem::SetupDebugMessenger()
@@ -834,7 +820,7 @@ int GraphicsSystem::RateDeviceSuitability(VkPhysicalDevice device)
         return 0;
 
     // Swap chain checks - ignore if rendering offscreen
-    if(!shouldRenderOffscreen)
+    if(!isSurfaceOverridden)
     {
         SwapChainSupportDetails swapChainSupport = QuerySwapChainSupport(device);
         bool swapChainAdequate = !swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty();
@@ -862,7 +848,7 @@ QueueFamilyIndices GraphicsSystem::FindQueueFamilies(VkPhysicalDevice device)
             indices.graphicsFamily = i;
 
         // Check if the queue family supports presenting to the window surface (If rendering offscreen, don't need present support)
-        if(!shouldRenderOffscreen)
+        if(!isSurfaceOverridden)
         {
             VkBool32 presentSupport = false;
             vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &presentSupport);
@@ -2224,8 +2210,6 @@ void GraphicsSystem::CreateSyncObjects()
 
 void GraphicsSystem::CleanupSwapChain()
 {
-    CleanupExternalRenderResources();
-
     vkDestroyImageView(device, colorImageView, nullptr);
     vkDestroyImage(device, colorImage, nullptr);
     vkFreeMemory(device, colorImageMemory, nullptr);
@@ -2234,23 +2218,26 @@ void GraphicsSystem::CleanupSwapChain()
     vkDestroyImage(device, depthImage, nullptr);
     vkFreeMemory(device, depthImageMemory, nullptr);
 
-    if(!shouldRenderOffscreen)
-    {
-        for(auto framebuffer : swapChainFramebuffers)
-            vkDestroyFramebuffer(device, framebuffer, nullptr);
+    for(auto framebuffer : swapChainFramebuffers)
+        vkDestroyFramebuffer(device, framebuffer, nullptr);
 
-        for(auto imageView : swapChainImageViews)
-            vkDestroyImageView(device, imageView, nullptr);
+    for(auto imageView : swapChainImageViews)
+        vkDestroyImageView(device, imageView, nullptr);
 
-        vkDestroySwapchainKHR(device, swapChain, nullptr);
-    }
+    vkDestroySwapchainKHR(device, swapChain, nullptr);
 }
+
+void GraphicsSystem::DestroyVulkanInstance()
+{
+    vkDestroyInstance(instance, nullptr);
+}
+
 void GraphicsSystem::RecreateSwapChain()
 {
     if(!Instance)
         return;
 
-    if(!Instance->shouldRenderOffscreen)
+    if(!Instance->isSurfaceOverridden)
     {
         int width = 0, height = 0;
         // Pause while window is minimized
@@ -2265,18 +2252,12 @@ void GraphicsSystem::RecreateSwapChain()
 
     Instance->CleanupSwapChain();
 
-    if(!Instance->shouldRenderOffscreen)
-    {
-        Instance->CreateSwapChain();
-        Instance->CreateImageViews();
-    }
+    Instance->CreateSwapChain();
+    Instance->CreateImageViews();
     Instance->CreateColorResources();
     Instance->CreateDepthResources();
-    if(!Instance->shouldRenderOffscreen)
+    //if(!Instance->isSurfaceOverridden)
         Instance->CreateFramebuffers();
-
-    if(Instance->shouldRenderOffscreen)
-        Instance->CreateExternalRenderResources();
 
     // Update main camera's aspect ratio
     CameraManager::SetTargetAspectRatio(GetAspectRatio());
@@ -2295,7 +2276,7 @@ void GraphicsSystem::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t
     VkRenderPassBeginInfo renderPassInfo{};
     renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
     renderPassInfo.renderPass = renderPass;
-    renderPassInfo.framebuffer = shouldRenderOffscreen ? externalRenderFramebuffer : swapChainFramebuffers[imageIndex];
+    renderPassInfo.framebuffer = swapChainFramebuffers[imageIndex];
     renderPassInfo.renderArea.offset = { 0, 0 };
     renderPassInfo.renderArea.extent = GetRenderExtent();
 
@@ -2548,130 +2529,135 @@ void GraphicsSystem::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t
 	// Draw the skybox
 	vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(mesh->indices.size()), 1, 0, 0, 0);
 
+#ifdef _DEBUG
 	/* --- Draw ImGui UI --- */
 
-    // Only draw immediate-mode GUI if not in editor
-    if(!shouldRenderOffscreen)
-    {
-        ImGui_ImplVulkan_NewFrame();
+    // Only draw immediate-mode GUI in debug builds
+    ImGui_ImplVulkan_NewFrame();
+    if(!isSurfaceOverridden)
         ImGui_ImplGlfw_NewFrame();
-        ImGui::NewFrame();
+    else
+    {
+        ImGuiIO& io = ImGui::GetIO();
+        io.DisplaySize = ImVec2((float) swapChainExtent.width, (float) swapChainExtent.height);
+    }
+    ImGui::NewFrame();
 
-        // Create a full-screen, borderless window for the dockspace
-        ImGuiWindowFlags window_flags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking;
-        ImGuiViewport* imguiViewport = ImGui::GetMainViewport();
-        ImGui::SetNextWindowPos(imguiViewport->WorkPos);
-        ImGui::SetNextWindowSize(imguiViewport->WorkSize);
-        ImGui::SetNextWindowViewport(imguiViewport->ID);
-        window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse |
-            ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
-            ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
-        window_flags |= ImGuiWindowFlags_NoBackground;
+    // Create a full-screen, borderless window for the dockspace
+    ImGuiWindowFlags window_flags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking;
+    ImGuiViewport* imguiViewport = ImGui::GetMainViewport();
+    ImGui::SetNextWindowPos(imguiViewport->WorkPos);
+    ImGui::SetNextWindowSize(imguiViewport->WorkSize);
+    ImGui::SetNextWindowViewport(imguiViewport->ID);
+    window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse |
+        ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
+        ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
+    window_flags |= ImGuiWindowFlags_NoBackground;
 
-        ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
-        ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
 
-        ImGui::Begin("DockSpaceWindow", nullptr, window_flags);
-        ImGui::PopStyleVar(2);
+    ImGui::Begin("DockSpaceWindow", nullptr, window_flags);
+    ImGui::PopStyleVar(2);
 
-        // Dockspace ID and creation
-        ImGuiID dockspace_id = ImGui::GetID("DockSpace");
-        ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_PassthruCentralNode);
+    // Dockspace ID and creation
+    ImGuiID dockspace_id = ImGui::GetID("DockSpace");
+    ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_PassthruCentralNode);
 
-        ImGui::End();
+    ImGui::End();
 
-        /* Draw UI */
+    /* Draw UI */
 
-        ImGui::Begin("FPS", nullptr,
-            ImGuiWindowFlags_NoDecoration |
-            ImGuiWindowFlags_AlwaysAutoResize |
-            ImGuiWindowFlags_NoSavedSettings |
-            ImGuiWindowFlags_NoFocusOnAppearing |
-            ImGuiWindowFlags_NoNav |
-            ImGuiWindowFlags_NoMove);
-        ImGui::Text("FPS: %.0f \t Average: %.0f \t Low: %.0f", TimeManager::GetFPS(), TimeManager::GetAverageFPS(), TimeManager::GetMinFPS());
-        ImGui::End();
+    ImGui::Begin("FPS", nullptr,
+        ImGuiWindowFlags_NoDecoration |
+        ImGuiWindowFlags_AlwaysAutoResize |
+        ImGuiWindowFlags_NoSavedSettings |
+        ImGuiWindowFlags_NoFocusOnAppearing |
+        ImGuiWindowFlags_NoNav |
+        ImGuiWindowFlags_NoMove);
+    ImGui::Text("FPS: %.0f \t Average: %.0f \t Low: %.0f", TimeManager::GetFPS(), TimeManager::GetAverageFPS(), TimeManager::GetMinFPS());
+    ImGui::End();
 
-        ImGui::Begin("Hello Vulkan");
-        ImGui::Text("This is a Vulkan + ImGui integration!");
-        ImGui::End();
+    ImGui::Begin("Hello Vulkan");
+    ImGui::Text("This is a Vulkan + ImGui integration!");
+    ImGui::End();
 
-        ImGui::Begin("Entities");
-        if(ImGui::TreeNode("Entities"))
-        {
-            LevelManager::ForEachEntity([this](const Entity& entity)
-                {
-                    if(EntityManager::HasComponent<TransformComponent>(entity))
-                        if(ImGui::TreeNode(std::format("Entity {}", entity).c_str()))
+    ImGui::Begin("Entities");
+    if(ImGui::TreeNode("Entities"))
+    {
+        LevelManager::ForEachEntity([this](const Entity& entity)
+            {
+                if(EntityManager::HasComponent<TransformComponent>(entity))
+                    if(ImGui::TreeNode(std::format("Entity {}", entity).c_str()))
+                    {
+                        TransformComponent& transform = EntityManager::GetComponent<TransformComponent>(entity);
+
+                        if(ImGui::TreeNode("Transform"))
                         {
-                            TransformComponent& transform = EntityManager::GetComponent<TransformComponent>(entity);
+                            glm::vec3 location = transform.location;
+                            glm::vec3 eulerAngles = glm::eulerAngles(transform.rotation);
+                            glm::vec3 scale = transform.scale;
+                            ImGui::DragFloat3("Location", &location.x, 0.1f, -5.0f, 5.0f);
+                            ImGui::DragFloat3("Rotation", &eulerAngles.x, 0.1f, -5.0f, 5.0f);
+                            ImGui::DragFloat3("Scale", &scale.x, 0.1f, -5.0f, 5.0f);
 
-                            if(ImGui::TreeNode("Transform"))
+                            if(location != transform.location)
+                                transform.location = location;
+                            if(eulerAngles != glm::eulerAngles(transform.rotation))
                             {
-                                glm::vec3 location = transform.location;
-                                glm::vec3 eulerAngles = glm::eulerAngles(transform.rotation);
-                                glm::vec3 scale = transform.scale;
-                                ImGui::DragFloat3("Location", &location.x, 0.1f, -5.0f, 5.0f);
-                                ImGui::DragFloat3("Rotation", &eulerAngles.x, 0.1f, -5.0f, 5.0f);
-                                ImGui::DragFloat3("Scale", &scale.x, 0.1f, -5.0f, 5.0f);
+                                glm::vec3 eulerDeltas = eulerAngles - glm::eulerAngles(transform.rotation);
 
-                                if(location != transform.location)
-                                    transform.location = location;
-                                if(eulerAngles != glm::eulerAngles(transform.rotation))
-                                {
-                                    glm::vec3 eulerDeltas = eulerAngles - glm::eulerAngles(transform.rotation);
-
-                                    transform.rotation =
-                                        glm::angleAxis(eulerDeltas.x, glm::vec3(1, 0, 0))
-                                        * glm::angleAxis(eulerDeltas.y, glm::vec3(0, 1, 0))
-                                        * glm::angleAxis(eulerDeltas.z, glm::vec3(0, 0, 1)) * transform.rotation;
-                                }
-                                if(scale != transform.scale)
-                                    transform.scale = scale;
-
-                                ImGui::TreePop();
+                                transform.rotation =
+                                    glm::angleAxis(eulerDeltas.x, glm::vec3(1, 0, 0))
+                                    * glm::angleAxis(eulerDeltas.y, glm::vec3(0, 1, 0))
+                                    * glm::angleAxis(eulerDeltas.z, glm::vec3(0, 0, 1)) * transform.rotation;
                             }
-
-                            if(EntityManager::HasComponent<MeshRendererComponent>(entity))
-                            {
-                                MeshRendererComponent& meshRenderer = EntityManager::GetComponent<MeshRendererComponent>(entity);
-
-                                if(ImGui::TreeNode("MeshRenderer"))
-                                {
-                                    ImGui::Text("Renderer Index: %i", meshRenderer.rendererIndex);
-
-                                    int meshIndex = ResourceManager::GetMesh(meshRenderer.mesh.identifier)->index;
-                                    int materialIndex = ResourceManager::GetMaterial(meshRenderer.material.identifier)->index;
-                                    ImGui::DragInt("Mesh Index", &meshIndex, 0.1f, 0, ResourceManager::GetMeshes().size() - 1);
-                                    ImGui::DragInt("Material Index", &materialIndex, 0.1f, 0, ResourceManager::GetMaterials().size() - 1);
-
-                                    if(meshIndex != ResourceManager::GetMesh(meshRenderer.mesh.identifier)->index)
-                                        meshRenderer.mesh = MeshRef(ResourceManager::GetMesh(meshIndex)->identifier);
-                                    if(materialIndex != ResourceManager::GetMaterial(meshRenderer.material.identifier)->index)
-                                        meshRenderer.material = MaterialRef(ResourceManager::GetMaterial(materialIndex)->identifier);
-
-                                    ImGui::TreePop();
-                                }
-                            }
+                            if(scale != transform.scale)
+                                transform.scale = scale;
 
                             ImGui::TreePop();
                         }
-                });
 
-            ImGui::TreePop();
-        }
-        ImGui::End();
+                        if(EntityManager::HasComponent<MeshRendererComponent>(entity))
+                        {
+                            MeshRendererComponent& meshRenderer = EntityManager::GetComponent<MeshRendererComponent>(entity);
 
-        ImGui::Render();
-        ImDrawData* draw_data = ImGui::GetDrawData();
-        ImGui_ImplVulkan_RenderDrawData(draw_data, commandBuffer);
+                            if(ImGui::TreeNode("MeshRenderer"))
+                            {
+                                ImGui::Text("Renderer Index: %i", meshRenderer.rendererIndex);
 
-        if(ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
-        {
-            ImGui::UpdatePlatformWindows();
-            ImGui::RenderPlatformWindowsDefault();
-        }
+                                int meshIndex = ResourceManager::GetMesh(meshRenderer.mesh.identifier)->index;
+                                int materialIndex = ResourceManager::GetMaterial(meshRenderer.material.identifier)->index;
+                                ImGui::DragInt("Mesh Index", &meshIndex, 0.1f, 0, ResourceManager::GetMeshes().size() - 1);
+                                ImGui::DragInt("Material Index", &materialIndex, 0.1f, 0, ResourceManager::GetMaterials().size() - 1);
+
+                                if(meshIndex != ResourceManager::GetMesh(meshRenderer.mesh.identifier)->index)
+                                    meshRenderer.mesh = MeshRef(ResourceManager::GetMesh(meshIndex)->identifier);
+                                if(materialIndex != ResourceManager::GetMaterial(meshRenderer.material.identifier)->index)
+                                    meshRenderer.material = MaterialRef(ResourceManager::GetMaterial(materialIndex)->identifier);
+
+                                ImGui::TreePop();
+                            }
+                        }
+
+                        ImGui::TreePop();
+                    }
+            });
+
+        ImGui::TreePop();
     }
+    ImGui::End();
+
+    ImGui::Render();
+    ImDrawData* draw_data = ImGui::GetDrawData();
+    ImGui_ImplVulkan_RenderDrawData(draw_data, commandBuffer);
+
+    if(ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+    {
+        ImGui::UpdatePlatformWindows();
+        ImGui::RenderPlatformWindowsDefault();
+    }
+#endif
 
     vkCmdEndRenderPass(commandBuffer);
 
@@ -2692,152 +2678,4 @@ void GraphicsSystem::UpdateUniformBuffer(uint32_t currentImage)
     ubo.proj[1][1] *= -1;
 
     memcpy(cameraUBOsMapped[currentImage], &ubo, sizeof(ubo));
-}
-
-void GraphicsSystem::CreateExternalRenderSyncObjects()
-{
-    // Create Vulkan semaphores with external handle support
-    VkExportSemaphoreCreateInfo exportInfo = {};
-    exportInfo.sType = VK_STRUCTURE_TYPE_EXPORT_SEMAPHORE_CREATE_INFO;
-    #ifdef _WIN32
-        exportInfo.handleTypes = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32_BIT;
-    #else
-        exportInfo.handleTypes = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_FD_BIT;
-    #endif
-
-    VkSemaphoreCreateInfo semaphoreInfo = {};
-    semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-    semaphoreInfo.pNext = &exportInfo;
-
-    vkCreateSemaphore(device, &semaphoreInfo, nullptr, &externalRenderCompleteSemaphore);
-    vkCreateSemaphore(device, &semaphoreInfo, nullptr, &externalRenderReleaseSemaphore);
-
-    // Export semaphore handles
-    #ifdef _WIN32
-        VkSemaphoreGetWin32HandleInfoKHR handleInfo = {};
-        handleInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_GET_WIN32_HANDLE_INFO_KHR;
-        handleInfo.handleType = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32_BIT;
-        
-        handleInfo.semaphore = Instance->externalRenderCompleteSemaphore;
-        vkGetSemaphoreWin32HandleKHR(Instance->device, &handleInfo, &externalRenderCompleteSemaphoreHandle);
-
-        handleInfo.semaphore = Instance->externalRenderReleaseSemaphore;
-        vkGetSemaphoreWin32HandleKHR(Instance->device, &handleInfo, &externalRenderReleaseSemaphoreHandle);
-    #else
-        VkSemaphoreGetFdInfoKHR handleInfo = {};
-        handleInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_GET_FD_INFO_KHR;
-        handleInfo.handleType = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_FD_BIT;
-
-        handleInfo.semaphore = Instance->externalRenderCompleteSemaphore;
-        vkGetSemaphoreFdKHR(Instance->device, &handleInfo, &externalRenderCompleteSemaphoreFd);
-
-        handleInfo.semaphore = Instance->externalRenderReleaseSemaphore;
-        vkGetSemaphoreFdKHR(Instance->device, &handleInfo, &externalRenderReleaseSemaphoreFd);
-    #endif
-}
-void GraphicsSystem::CreateExternalRenderResources()
-{
-    CreateExternalRenderImage();
-    CreateExternalRenderImageView();
-    CreateExternalRenderFramebuffer();
-}
-void GraphicsSystem::CreateExternalRenderImage()
-{
-    // Create Vulkan image with external memory
-    VkExternalMemoryImageCreateInfo externalInfo = {};
-    externalInfo.sType = VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMAGE_CREATE_INFO;
-    #ifdef _WIN32
-        externalInfo.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT; // Windows
-    #else
-        externalInfo.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT; // Linux
-    #endif
-
-    VkImageCreateInfo imageInfo = {};
-    imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-    imageInfo.imageType = VK_IMAGE_TYPE_2D;
-    imageInfo.format = EXTERNAL_RENDER_IMAGE_FORMAT;
-    imageInfo.extent = { externalRenderImageExtent.width, externalRenderImageExtent.height, 1 };
-    imageInfo.mipLevels = 1;
-    imageInfo.arrayLayers = 1;
-    imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
-    imageInfo.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
-    imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    imageInfo.pNext = &externalInfo;
-
-    vkCreateImage(device, &imageInfo, nullptr, &externalRenderImage);
-
-    // Allocate exportable memory
-    VkMemoryRequirements memReqs;
-    vkGetImageMemoryRequirements(device, externalRenderImage, &memReqs);
-    externalRenderMemorySize = memReqs.size;
-
-    VkExportMemoryAllocateInfo exportInfo = {};
-    exportInfo.sType = VK_STRUCTURE_TYPE_EXPORT_MEMORY_ALLOCATE_INFO;
-    #ifdef _WIN32
-        exportInfo.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT; // Windows
-    #else
-        exportInfo.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT; // Linux
-    #endif
-
-    VkMemoryAllocateInfo allocInfo = {};
-    allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-    allocInfo.allocationSize = memReqs.size;
-    allocInfo.memoryTypeIndex = FindMemoryType(memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-    allocInfo.pNext = &exportInfo;
-
-    vkAllocateMemory(device, &allocInfo, nullptr, &externalRenderMemory);
-    vkBindImageMemory(device, externalRenderImage, externalRenderMemory, 0);
-
-    // Export memory handle
-    #ifdef _WIN32
-        VkMemoryGetWin32HandleInfoKHR handleInfo = {};
-        handleInfo.sType = VK_STRUCTURE_TYPE_MEMORY_GET_WIN32_HANDLE_INFO_KHR;
-
-        handleInfo.handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT;
-        handleInfo.memory = Instance->externalRenderMemory;
-
-        vkGetMemoryWin32HandleKHR(Instance->device, &handleInfo, &externalRenderMemoryHandle);
-    #else
-        VkMemoryGetFdInfoKHR handleInfo = {};
-        handleInfo.sType = VK_STRUCTURE_TYPE_MEMORY_GET_FD_INFO_KHR;
-
-        handleInfo.handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
-        handleInfo.memory = Instance->externalRenderMemory;
-
-        vkGetMemoryFdKHR(Instance->device, &handleInfo, &externalRenderMemoryFd);
-    #endif
-}
-void GraphicsSystem::CreateExternalRenderImageView()
-{
-    externalRenderImageView = CreateImageView(externalRenderImage, EXTERNAL_RENDER_IMAGE_FORMAT, VK_IMAGE_ASPECT_COLOR_BIT, 1);
-}
-void GraphicsSystem::CreateExternalRenderFramebuffer()
-{
-    std::vector<VkImageView> attachments = 
-    {
-        colorImageView,
-        depthImageView,
-        externalRenderImageView
-    };
-
-    VkFramebufferCreateInfo framebufferInfo = {};
-    framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-    framebufferInfo.renderPass = renderPass;
-    framebufferInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
-    framebufferInfo.pAttachments = attachments.data();
-    framebufferInfo.width = externalRenderImageExtent.width;
-    framebufferInfo.height = externalRenderImageExtent.height;
-    framebufferInfo.layers = 1;
-
-    if(vkCreateFramebuffer(device, &framebufferInfo, nullptr, &externalRenderFramebuffer) != VK_SUCCESS)
-        throw std::runtime_error("Failed to create editor framebuffer!");
-}
-
-void GraphicsSystem::CleanupExternalRenderResources()
-{
-    vkDestroyImageView(device, externalRenderImageView, nullptr);
-    vkDestroyImage(device, externalRenderImage, nullptr);
-    vkFreeMemory(device, externalRenderMemory, nullptr);
-
-    vkDestroyFramebuffer(device, externalRenderFramebuffer, nullptr);
 }

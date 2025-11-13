@@ -4,19 +4,21 @@
 
 #include "MaterialRef.h"
 
-#include <gtkmm/dropdown.h>
+#include "SearchField.h"
 
 class ComponentVariableEntry_Material : public ComponentVariableEntry
 {
+	Q_OBJECT
+
 private:
 	MaterialRef* variablePtr;
 
-	Gtk::DropDown dropdown;
+	SearchField* searchField;
 
 	std::vector<MaterialRef> materials;
 
 public:
-	ComponentVariableEntry_Material(const std::string& label, void* variablePtr);
+	ComponentVariableEntry_Material(const std::string& label, void* variablePtr, QWidget* parent = nullptr);
 	~ComponentVariableEntry_Material();
 
 private:

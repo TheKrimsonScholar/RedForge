@@ -3,25 +3,33 @@
 #include "ResourceManager.h"
 #include "PathUtils.h"
 
-ComponentVariableEntry_Material::ComponentVariableEntry_Material(const std::string& label, void* variablePtr) : ComponentVariableEntry(label, variablePtr), 
+#include <QLayout>
+
+ComponentVariableEntry_Material::ComponentVariableEntry_Material(const std::string& label, void* variablePtr, QWidget* parent) : ComponentVariableEntry(label, variablePtr, parent),
 	variablePtr(static_cast<MaterialRef*>(variablePtr))
 {
-	std::vector<Glib::ustring> materialNames;
+	int initialMeshIndex = -1;
+	QStringList materialNames;
 	for(auto& material : ResourceManager::GetMaterialMap())
 	{
-		materialNames.push_back(Glib::ustring(WideToNarrow(material.first)));
-		materials.push_back(material.first);
-	}
-	
-	dropdown = Gtk::DropDown(materialNames);
+		// If this is the initially selected material, remember the index
+		if(material.first == this->variablePtr->identifier)
+			initialMeshIndex = materials.size();
 
-	dropdown.signal_state_flags_changed().connect([this](Gtk::StateFlags flags)
+		materialNames << QString(WideToNarrow(material.first).c_str());
+		materials.emplace_back(material.first);
+	}
+
+	searchField = new SearchField("Mesh", this);
+	searchField->SetItems(materialNames);
+	searchField->SetSelectedIndex(initialMeshIndex);
+	QObject::connect(searchField, &SearchField::OnSelectionChanged,
+		[this](int index)
 		{
-			*this->variablePtr = materials[(uint32_t) dropdown.get_selected()];
-			//OnValueChanged();
+			OnValueChanged();
 		});
 
-	append(dropdown);
+	layout()->addWidget(searchField);
 }
 ComponentVariableEntry_Material::~ComponentVariableEntry_Material()
 {
@@ -34,5 +42,5 @@ void ComponentVariableEntry_Material::UpdateDisplayedValue()
 }
 void ComponentVariableEntry_Material::OnValueChanged()
 {
-
+	*variablePtr = materials[searchField->GetSelectedIndex()];
 }

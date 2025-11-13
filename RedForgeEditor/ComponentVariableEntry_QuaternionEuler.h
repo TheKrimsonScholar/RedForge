@@ -5,19 +5,21 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
 
-#include "NumberField.h"
+#include "DragFloat.h"
 
 class ComponentVariableEntry_QuaternionEuler : public ComponentVariableEntry
 {
+	Q_OBJECT
+
 private:
 	glm::quat* variablePtr;
 
-	DragFloat fieldPitch;
-	DragFloat fieldYaw;
-	DragFloat fieldRoll;
+	DragFloat* fieldPitch;
+	DragFloat* fieldYaw;
+	DragFloat* fieldRoll;
 
 public:
-	ComponentVariableEntry_QuaternionEuler(const std::string& label, void* variablePtr);
+	ComponentVariableEntry_QuaternionEuler(const std::string& label, void* variablePtr, QWidget* parent = nullptr);
 	~ComponentVariableEntry_QuaternionEuler();
 
 private:

@@ -2,17 +2,32 @@
 
 #include "EditorPanel.h"
 
-#include "gtkmm/textview.h"
+#include "DebugManager.h"
+
+#include <QTextBrowser>
+#include <QLineEdit>
+#include <QLabel>
 
 class ConsolePanel : public EditorPanel
 {
+	Q_OBJECT
+
 private:
 	std::streambuf* coutBuffer = nullptr;
 	std::stringstream consoleStream;
 
-	Gtk::TextView text;
+	QTextBrowser* text;
+	std::vector<QLabel*> lines;
 
 public:
-	ConsolePanel();
+	ConsolePanel(QWidget* parent = nullptr);
 	~ConsolePanel();
+
+protected:
+	void Initialize() override;
+	void Update() override;
+
+	void OnLogMessagePrinted(const LogMessage& message);
+
+	friend class MainEditorWindow;
 };

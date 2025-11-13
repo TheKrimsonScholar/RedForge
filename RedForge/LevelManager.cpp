@@ -4,6 +4,8 @@
 
 #include "EntityManager.h"
 
+#include "DebugMacros.h"
+
 void LevelManager::Startup()
 {
 	Instance = this;
@@ -60,8 +62,9 @@ Entity LevelManager::CreateEntity(std::string name, Entity parent)
 }
 void LevelManager::DestroyEntity(Entity entity)
 {
-	assert(EntityManager::IsEntityValid(entity) && "Attempting to destroy invalid entity.");
-	assert(Instance->entityLevelDataMap.find(entity) != Instance->entityLevelDataMap.end() && "Attempting to destroy entity not in level.");
+	// Silently return if entity is invalid or not present in level
+	if(!EntityManager::IsEntityValid(entity) || Instance->entityLevelDataMap.find(entity) == Instance->entityLevelDataMap.end())
+		return;
 
 	Instance->onEntityDestroyed.Broadcast(entity);
 
@@ -114,65 +117,15 @@ void LevelManager::DestroyEntity(Entity entity)
 	EntityManager::DestroyEntity(entity);
 }
 
-//uint32_t LevelManager::GetLevelIndex(Entity entity)
-//{
-//	// If valid and in level, get from data map
-//	if(EntityManager::IsEntityValid(entity) && Instance->entityLevelDataMap.find(entity.index) != Instance->entityLevelDataMap.end())
-//		return Instance->entityLevelDataMap[entity.index].levelIndex;
-//	// Otherwise return invalid
-//	else
-//		return INVALID_ENTITY;
-//}
-std::string LevelManager::GetEntityName(Entity entity)
-{
-	//assert(EntityManager::IsEntityValid(entity) && "Trying to access invalid entity.");
-
-	assert(Instance->entityLevelDataMap.find(entity) != Instance->entityLevelDataMap.end() && "Entity not in level.");
-	return Instance->entityLevelDataMap[entity].name;
-}
-Entity LevelManager::GetEntityParent(Entity entity)
-{
-	//assert(EntityManager::IsEntityValid(entity) && "Trying to access invalid entity.");
-
-	assert(Instance->entityLevelDataMap.find(entity) != Instance->entityLevelDataMap.end() && "Entity not in level.");
-	return Instance->entityLevelDataMap[entity].parent;
-}
-Entity LevelManager::GetEntityFirstChild(Entity entity)
-{
-	//assert(EntityManager::IsEntityValid(entity) && "Trying to access invalid entity.");
-
-	assert(Instance->entityLevelDataMap.find(entity) != Instance->entityLevelDataMap.end() && "Entity not in level.");
-	return Instance->entityLevelDataMap[entity].firstChild;
-}
-Entity LevelManager::GetEntityNextSibling(Entity entity)
-{
-	//assert(EntityManager::IsEntityValid(entity) && "Trying to access invalid entity.");
-
-	assert(Instance->entityLevelDataMap.find(entity) != Instance->entityLevelDataMap.end() && "Entity not in level.");
-	return Instance->entityLevelDataMap[entity].nextSibling;
-}
-Entity LevelManager::GetEntityLastSibling(Entity entity)
-{
-	//assert(EntityManager::IsEntityValid(entity) && "Trying to access invalid entity.");
-
-	assert(Instance->entityLevelDataMap.find(entity) != Instance->entityLevelDataMap.end() && "Entity not in level.");
-	return Instance->entityLevelDataMap[entity].lastSibling;
-}
-uint32_t LevelManager::GetEntityDepth(Entity entity)
-{
-	//assert(EntityManager::IsEntityValid(entity) && "Trying to access invalid entity.");
-
-	assert(Instance->entityLevelDataMap.find(entity) != Instance->entityLevelDataMap.end() && "Entity not in level.");
-	return Instance->entityLevelDataMap[entity].depth;
-}
-
 bool LevelManager::SetEntityParent(Entity entity, Entity newParent)
 {
-	assert((entity.IsValid() && newParent.IsValid()) && "Invalid entities.");
+	assert(entity.IsValid() && "Invalid entity.");
 
     // If trying to parent the entity to itself or its children, ignore
     if(IsEntityChildOf(entity, newParent))
         return false;
+
+	Instance->onEntityReparented.Broadcast(entity, newParent);
 
     /* Update entity level data to set entity as the last child of newParent */
 
@@ -214,6 +167,8 @@ bool LevelManager::MoveEntityBefore(Entity entity, Entity next)
     if(IsEntityChildOf(entity, next))
         return false;
 
+	Instance->onEntityMovedBefore.Broadcast(entity, next);
+
     /* Update entity level data to set entity as the last sibling before next */
 
     // Update parent's firstChild if this is the first child
@@ -253,6 +208,8 @@ bool LevelManager::MoveEntityAfter(Entity entity, Entity previous)
     if(IsEntityChildOf(entity, previous))
         return false;
 
+	Instance->onEntityMovedAfter.Broadcast(entity, previous);
+
     /* Update entity level data to set entity as the next sibling after previous */
 
     // Update parent's firstChild if this is the first child
@@ -282,22 +239,6 @@ bool LevelManager::MoveEntityAfter(Entity entity, Entity previous)
     return true;
 }
 
-bool LevelManager::IsEntityChildOf(Entity parent, Entity child)
-{
-	bool isChild = false;
-    // Look for the entity in parent's children
-    ForEachEntity([child, &isChild](const Entity& entity)
-        {
-            if(entity == child)
-            {
-                isChild = true;
-                return;
-            }
-        }, parent);
-
-    return isChild;
-}
-
 void LevelManager::ForEachEntity(std::function<void(const Entity&)> callback, Entity root)
 {
 	if(EntityManager::IsEntityValid(root))
@@ -312,6 +253,25 @@ void LevelManager::ForEachEntity(std::function<void(const Entity&)> callback, En
 
 		// Next child
 		child = GetEntityNextSibling(child);
+	}
+}
+void LevelManager::ForEachEntity_Reversed(std::function<void(const Entity&)> callback, Entity root)
+{
+	std::vector<Entity> allEntities;
+	// Gather all entities in order of normal iteration
+	LevelManager::ForEachEntity(
+		[&allEntities](const Entity& entity)
+		{
+			allEntities.push_back(entity);
+		}, root);
+
+	// Process in reverse order
+	for(int i = allEntities.size() - 1; i >= 0; i--)
+	{
+		const Entity& entity = allEntities[i];
+
+		if(EntityManager::IsEntityValid(entity))
+			callback(entity);
 	}
 }
 
@@ -333,21 +293,26 @@ void LevelManager::SaveLevel()
 
 	/* Save the object to file */
 
-	std::ofstream fileOut(GetGameAssetsPath().append(L"levels/level.txt"));
+	std::ofstream fileOut(GetGameAssetsPath().append(L"Levels/Level.txt"));
 	FileManager::SaveObject(fileOut, levelObject);
 	fileOut.close();
+
+	LOG("Level Saved: \"Level0\"");
 }
 void LevelManager::LoadLevel()
 {
 	/* Load the object from file */
 
-	std::ifstream fileIn(GetGameAssetsPath().append(L"levels/level.txt"));
+	std::cout << GetGameAssetsPath().append(L"Levels/Level.txt").string() << std::endl;
+	std::ifstream fileIn(GetGameAssetsPath().append(L"Levels/Level.txt"));
 	SerializedObject levelObject = FileManager::LoadObject(fileIn);
 	fileIn.close();
 
 	// Load each top-level entity as a child of the root (each entity will recursively load its children)
 	for(SerializedObject& child : levelObject.children)
 		LoadEntity(child, {});
+	
+	LOG("Level Loaded: \"Level0\"");
 }
 
 SerializedObject LevelManager::SaveEntity(Entity entity)
@@ -429,4 +394,96 @@ void LevelManager::LoadEntity(const SerializedObject& entityObject, Entity paren
 		if(child.typeName == "Entity")
 			LoadEntity(child, newEntity);
 	}
+}
+
+std::vector<Entity> LevelManager::GetAllEntityAncestors(const Entity& entity)
+{
+	Entity currentAncestor = GetEntityParent(entity);
+	std::vector<Entity> ancestors;
+	while(currentAncestor.IsValid())
+	{
+		ancestors.push_back(currentAncestor);
+		currentAncestor = GetEntityParent(currentAncestor);
+	}
+	return ancestors;
+}
+bool LevelManager::IsEntityAncestorContainedInList(const Entity& entity, const std::vector<Entity>& list)
+{
+	std::vector<Entity> ancestors = GetAllEntityAncestors(entity);
+	std::unordered_set<Entity> ancestorSet(ancestors.begin(), ancestors.end());
+
+	// Check for overlap between ancestor set and given entity list
+	for(const Entity& e : list)
+		if(ancestorSet.contains(e))
+			return true;
+
+	return false;
+}
+
+bool LevelManager::IsEntityChildOf(Entity parent, Entity child)
+{
+	bool isChild = false;
+    // Look for the entity in parent's children
+    ForEachEntity([child, &isChild](const Entity& entity)
+        {
+            if(entity == child)
+            {
+                isChild = true;
+                return;
+            }
+        }, parent);
+
+    return isChild;
+}
+
+//uint32_t LevelManager::GetLevelIndex(Entity entity)
+//{
+//	// If valid and in level, get from data map
+//	if(EntityManager::IsEntityValid(entity) && Instance->entityLevelDataMap.find(entity.index) != Instance->entityLevelDataMap.end())
+//		return Instance->entityLevelDataMap[entity.index].levelIndex;
+//	// Otherwise return invalid
+//	else
+//		return INVALID_ENTITY;
+//}
+std::string LevelManager::GetEntityName(Entity entity)
+{
+	//assert(EntityManager::IsEntityValid(entity) && "Trying to access invalid entity.");
+
+	assert(Instance->entityLevelDataMap.find(entity) != Instance->entityLevelDataMap.end() && "Entity not in level.");
+	return Instance->entityLevelDataMap[entity].name;
+}
+Entity LevelManager::GetEntityParent(Entity entity)
+{
+	//assert(EntityManager::IsEntityValid(entity) && "Trying to access invalid entity.");
+
+	assert(Instance->entityLevelDataMap.find(entity) != Instance->entityLevelDataMap.end() && "Entity not in level.");
+	return Instance->entityLevelDataMap[entity].parent;
+}
+Entity LevelManager::GetEntityFirstChild(Entity entity)
+{
+	//assert(EntityManager::IsEntityValid(entity) && "Trying to access invalid entity.");
+
+	assert(Instance->entityLevelDataMap.find(entity) != Instance->entityLevelDataMap.end() && "Entity not in level.");
+	return Instance->entityLevelDataMap[entity].firstChild;
+}
+Entity LevelManager::GetEntityNextSibling(Entity entity)
+{
+	//assert(EntityManager::IsEntityValid(entity) && "Trying to access invalid entity.");
+
+	assert(Instance->entityLevelDataMap.find(entity) != Instance->entityLevelDataMap.end() && "Entity not in level.");
+	return Instance->entityLevelDataMap[entity].nextSibling;
+}
+Entity LevelManager::GetEntityLastSibling(Entity entity)
+{
+	//assert(EntityManager::IsEntityValid(entity) && "Trying to access invalid entity.");
+
+	assert(Instance->entityLevelDataMap.find(entity) != Instance->entityLevelDataMap.end() && "Entity not in level.");
+	return Instance->entityLevelDataMap[entity].lastSibling;
+}
+uint32_t LevelManager::GetEntityDepth(Entity entity)
+{
+	//assert(EntityManager::IsEntityValid(entity) && "Trying to access invalid entity.");
+
+	assert(Instance->entityLevelDataMap.find(entity) != Instance->entityLevelDataMap.end() && "Entity not in level.");
+	return Instance->entityLevelDataMap[entity].depth;
 }

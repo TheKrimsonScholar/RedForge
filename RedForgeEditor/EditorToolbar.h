@@ -1,15 +1,18 @@
 #pragma once
 
-#include "gtkmm/box.h"
-#include "gtkmm/button.h"
+#include <QWidget>
 
-class EditorToolbar : public Gtk::Box
+#include <QPushButton>
+
+class EditorToolbar : public QWidget
 {
+	Q_OBJECT
+
 private:
-	Gtk::Button saveButton;
+	QPushButton* saveLevelButton;
 
 public:
-	EditorToolbar();
+	explicit EditorToolbar(QWidget* parent = nullptr);
 	~EditorToolbar();
 
 private:

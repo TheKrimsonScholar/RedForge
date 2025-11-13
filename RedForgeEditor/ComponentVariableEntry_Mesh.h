@@ -4,19 +4,21 @@
 
 #include "MeshRef.h"
 
-#include <gtkmm/dropdown.h>
+#include "SearchField.h"
 
 class ComponentVariableEntry_Mesh : public ComponentVariableEntry
 {
+	Q_OBJECT
+
 private:
 	MeshRef* variablePtr;
 
-	Gtk::DropDown dropdown;
+	SearchField* searchField;
 
 	std::vector<MeshRef> meshes;
 
 public:
-	ComponentVariableEntry_Mesh(const std::string& label, void* variablePtr);
+	ComponentVariableEntry_Mesh(const std::string& label, void* variablePtr, QWidget* parent = nullptr);
 	~ComponentVariableEntry_Mesh();
 
 private:

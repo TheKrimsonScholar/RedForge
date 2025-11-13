@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug Client|Win32">
@@ -53,18 +53,14 @@
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
-    <ProjectGuid>{81381700-1a21-4e75-8b39-0a15a5aec202}</ProjectGuid>
+    <ProjectGuid>{e15cb3fa-7eff-4380-904a-b203fc172583}</ProjectGuid>
     <RootNamespace>RedForgeEditor</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <Keyword>QtVS_v304</Keyword>
+    <QtMsBuild Condition="'$(QtMsBuild)'=='' OR !Exists('$(QtMsBuild)\qt.targets')">$(MSBuildProjectDirectory)\QtMsBuild</QtMsBuild>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
-    <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
-    <CharacterSet>Unicode</CharacterSet>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug Client|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v143</PlatformToolset>
@@ -76,14 +72,13 @@
     <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug Client|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
-    <UseDebugLibraries>false</UseDebugLibraries>
+    <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v143</PlatformToolset>
-    <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release Client|Win32'" Label="Configuration">
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v143</PlatformToolset>
@@ -97,13 +92,14 @@
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release Client|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
-    <UseDebugLibraries>true</UseDebugLibraries>
+    <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v143</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug Client|x64'" Label="Configuration">
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v143</PlatformToolset>
@@ -115,14 +111,13 @@
     <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug Client|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
-    <UseDebugLibraries>false</UseDebugLibraries>
+    <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v143</PlatformToolset>
-    <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release Client|x64'" Label="Configuration">
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v143</PlatformToolset>
@@ -136,149 +131,170 @@
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release Client|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <Import Project="$(QtMsBuild)\qt_defaults.props" Condition="Exists('$(QtMsBuild)\qt_defaults.props')" />
+  <PropertyGroup Label="QtSettings" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <QtModules>core;gui;widgets</QtModules>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug Server|Win32'" Label="QtSettings">
+    <QtModules>core;gui;widgets</QtModules>
+    <QtBuildConfig>debug</QtBuildConfig>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug Client|Win32'" Label="QtSettings">
+    <QtModules>core;gui;widgets</QtModules>
+    <QtBuildConfig>debug</QtBuildConfig>
+  </PropertyGroup>
+  <PropertyGroup Label="QtSettings" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <QtModules>core;gui;widgets</QtModules>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release Server|Win32'" Label="QtSettings">
+    <QtModules>core;gui;widgets</QtModules>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release Client|Win32'" Label="QtSettings">
+    <QtModules>core;gui;widgets</QtModules>
+  </PropertyGroup>
+  <PropertyGroup Label="QtSettings" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <QtModules>core;gui;widgets</QtModules>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug Server|x64'" Label="QtSettings">
+    <QtModules>core;gui;widgets</QtModules>
+    <QtBuildConfig>debug</QtBuildConfig>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug Client|x64'" Label="QtSettings">
+    <QtModules>core;gui;widgets</QtModules>
+    <QtBuildConfig>debug</QtBuildConfig>
+  </PropertyGroup>
+  <PropertyGroup Label="QtSettings" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <QtModules>core;gui;widgets</QtModules>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release Server|x64'" Label="QtSettings">
+    <QtModules>core;gui;widgets</QtModules>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release Client|x64'" Label="QtSettings">
+    <QtModules>core;gui;widgets</QtModules>
+  </PropertyGroup>
+  <Target Name="QtMsBuildNotFound" BeforeTargets="CustomBuild;ClCompile" Condition="!Exists('$(QtMsBuild)\qt.targets') OR !Exists('$(QtMsBuild)\Qt.props')">
+    <Message Importance="High" Text="QtMsBuild: could not locate qt.targets, qt.props; project may not build correctly." />
+  </Target>
   <ImportGroup Label="ExtensionSettings">
   </ImportGroup>
   <ImportGroup Label="Shared">
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-  </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug Client|Win32'" Label="PropertySheets">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(QtMsBuild)\Qt.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug Server|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(QtMsBuild)\Qt.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug Client|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(QtMsBuild)\Qt.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-  </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release Client|Win32'" Label="PropertySheets">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(QtMsBuild)\Qt.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release Server|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(QtMsBuild)\Qt.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release Client|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(QtMsBuild)\Qt.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-  </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug Client|x64'" Label="PropertySheets">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(QtMsBuild)\Qt.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug Server|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(QtMsBuild)\Qt.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug Client|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(QtMsBuild)\Qt.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-  </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release Client|x64'" Label="PropertySheets">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(QtMsBuild)\Qt.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release Server|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(QtMsBuild)\Qt.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release Client|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(QtMsBuild)\Qt.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug Client|Win32'">
-    <TargetName>$(ProjectName)Client</TargetName>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug Client|x64'">
-    <TargetName>$(ProjectName)Client</TargetName>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug Server|Win32'">
-    <TargetName>$(ProjectName)Server</TargetName>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug Server|x64'">
-    <TargetName>$(ProjectName)Server</TargetName>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release Client|Win32'">
-    <TargetName>$(ProjectName)Client</TargetName>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release Client|x64'">
-    <TargetName>$(ProjectName)Client</TargetName>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release Server|Win32'">
-    <TargetName>$(ProjectName)Server</TargetName>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release Server|x64'">
-    <TargetName>$(ProjectName)Server</TargetName>
-  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;GTKMM_4_0
-;GLIBMM_2_68</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>C:\vcpkg\installed\x64-windows\lib\graphene-1.0\include;C:\vcpkg\installed\x64-windows\include\graphene-1.0;C:\vcpkg\installed\x64-windows\include\pangomm-2.48;C:\vcpkg\installed\x64-windows\include\gdk-pixbuf-2.0;C:\vcpkg\installed\x64-windows\include\harfbuzz;C:\vcpkg\installed\x64-windows\include\pango-1.0;C:\vcpkg\installed\x64-windows\include\cairo;C:\vcpkg\installed\x64-windows\lib\pangomm-2.48\include;C:\vcpkg\installed\x64-windows\include\giomm-2.68;C:\vcpkg\installed\x64-windows\include\glib-2.0;C:/vcpkg/installed/x64-windows/lib/giomm-2.68/include;C:/vcpkg/installed/x64-windows/lib/glib-2.0/include;C:/vcpkg/installed/x64-windows/lib/gtkmm-4.0/include;C:/vcpkg/installed/x64-windows/lib/glibmm-2.68/include;C:\vcpkg\installed\x64-windows\include;$(SolutionDir)RedForge\;$(VULKAN_SDK)\Include;C:/vcpkg/installed/x64-windows/include/glibmm-2.68/;C:/vcpkg/installed/x64-windows/include/gtk-4.0/;C:/vcpkg/installed/x64-windows/include/gtkmm-4.0/</AdditionalIncludeDirectories>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <AdditionalIncludeDirectories>$(SolutionDir)RedForge\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>C:\msys64\mingw64\lib\;$(VULKAN_SDK)\Lib;C:\vcpkg\installed\x64-windows\lib\;$(SolutionDir)x64\$(Configuration)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>RedForge.lib;gtkmm-4.0.lib;
-gtk-4.lib
-;glibmm-2.68.lib
-;cairomm-1.16.lib;
-pangomm-2.48.lib;
-sigc-3.0.lib
-;gdk_pixbuf-2.0.lib
-;gio-2.0.lib;
-gobject-2.0.lib
-;glib-2.0.lib;glfw3dll.lib;vulkan-1.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)x64\$(Configuration)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>RedForge.lib;glfw3dll.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
-  </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug Client|Win32'">
-    <ClCompile>
-      <WarningLevel>Level3</WarningLevel>
-      <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;NETMODE_CLIENT;GTKMM_4_0
-;GLIBMM_2_68</PreprocessorDefinitions>
-      <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>C:\vcpkg\installed\x64-windows\lib\graphene-1.0\include;C:\vcpkg\installed\x64-windows\include\graphene-1.0;C:\vcpkg\installed\x64-windows\include\pangomm-2.48;C:\vcpkg\installed\x64-windows\include\gdk-pixbuf-2.0;C:\vcpkg\installed\x64-windows\include\harfbuzz;C:\vcpkg\installed\x64-windows\include\pango-1.0;C:\vcpkg\installed\x64-windows\include\cairo;C:\vcpkg\installed\x64-windows\lib\pangomm-2.48\include;C:\vcpkg\installed\x64-windows\include\giomm-2.68;C:\vcpkg\installed\x64-windows\include\glib-2.0;C:/vcpkg/installed/x64-windows/lib/giomm-2.68/include;C:/vcpkg/installed/x64-windows/lib/glib-2.0/include;C:/vcpkg/installed/x64-windows/lib/gtkmm-4.0/include;C:/vcpkg/installed/x64-windows/lib/glibmm-2.68/include;C:\vcpkg\installed\x64-windows\include;$(SolutionDir)RedForge\;$(VULKAN_SDK)\Include;C:/vcpkg/installed/x64-windows/include/glibmm-2.68/;C:/vcpkg/installed/x64-windows/include/gtk-4.0/;C:/vcpkg/installed/x64-windows/include/gtkmm-4.0/</AdditionalIncludeDirectories>
-      <LanguageStandard>stdcpp20</LanguageStandard>
-    </ClCompile>
-    <Link>
-      <SubSystem>Console</SubSystem>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>C:\msys64\mingw64\lib\;$(VULKAN_SDK)\Lib;C:\vcpkg\installed\x64-windows\lib\;$(SolutionDir)x64\$(Configuration)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>RedForgeClient.lib;gtkmm-4.0.lib;
-gtk-4.lib
-;glibmm-2.68.lib
-;cairomm-1.16.lib;
-pangomm-2.48.lib;
-sigc-3.0.lib
-;gdk_pixbuf-2.0.lib
-;gio-2.0.lib;
-gobject-2.0.lib
-;glib-2.0.lib;glfw3dll.lib;vulkan-1.lib;%(AdditionalDependencies)</AdditionalDependencies>
-    </Link>
+    <PostBuildEvent>
+      <Command>"$(QTDIR)\bin\windeployqt6.exe" "$(TargetDir)$(TargetFileName)" --debug</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug Server|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;NETMODE_SERVER;GTKMM_4_0
-;GLIBMM_2_68</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions);NETMODE_SERVER</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>C:\vcpkg\installed\x64-windows\lib\graphene-1.0\include;C:\vcpkg\installed\x64-windows\include\graphene-1.0;C:\vcpkg\installed\x64-windows\include\pangomm-2.48;C:\vcpkg\installed\x64-windows\include\gdk-pixbuf-2.0;C:\vcpkg\installed\x64-windows\include\harfbuzz;C:\vcpkg\installed\x64-windows\include\pango-1.0;C:\vcpkg\installed\x64-windows\include\cairo;C:\vcpkg\installed\x64-windows\lib\pangomm-2.48\include;C:\vcpkg\installed\x64-windows\include\giomm-2.68;C:\vcpkg\installed\x64-windows\include\glib-2.0;C:/vcpkg/installed/x64-windows/lib/giomm-2.68/include;C:/vcpkg/installed/x64-windows/lib/glib-2.0/include;C:/vcpkg/installed/x64-windows/lib/gtkmm-4.0/include;C:/vcpkg/installed/x64-windows/lib/glibmm-2.68/include;C:\vcpkg\installed\x64-windows\include;$(SolutionDir)RedForge\;$(VULKAN_SDK)\Include;C:/vcpkg/installed/x64-windows/include/glibmm-2.68/;C:/vcpkg/installed/x64-windows/include/gtk-4.0/;C:/vcpkg/installed/x64-windows/include/gtkmm-4.0/</AdditionalIncludeDirectories>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <AdditionalIncludeDirectories>$(SolutionDir)RedForge\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>C:\msys64\mingw64\lib\;$(VULKAN_SDK)\Lib;C:\vcpkg\installed\x64-windows\lib\;$(SolutionDir)x64\$(Configuration)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>RedForgeServer.lib;gtkmm-4.0.lib;
-gtk-4.lib
-;glibmm-2.68.lib
-;cairomm-1.16.lib;
-pangomm-2.48.lib;
-sigc-3.0.lib
-;gdk_pixbuf-2.0.lib
-;gio-2.0.lib;
-gobject-2.0.lib
-;glib-2.0.lib;glfw3dll.lib;vulkan-1.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)x64\$(Configuration)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>RedForgeServer.lib;glfw3dll.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <PostBuildEvent>
+      <Command>"$(QTDIR)\bin\windeployqt6.exe" "$(TargetDir)$(TargetFileName)" --debug</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug Client|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions);NETMODE_CLIENT</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <AdditionalIncludeDirectories>$(SolutionDir)RedForge\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>$(SolutionDir)x64\$(Configuration)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>RedForgeClient.lib;glfw3dll.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <PostBuildEvent>
+      <Command>"$(QTDIR)\bin\windeployqt6.exe" "$(TargetDir)$(TargetFileName)" --debug</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -286,10 +302,10 @@ gobject-2.0.lib
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>GTKMM_4_0
-;GLIBMM_2_68</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>C:\vcpkg\installed\x64-windows\lib\graphene-1.0\include;C:\vcpkg\installed\x64-windows\include\graphene-1.0;C:\vcpkg\installed\x64-windows\include\pangomm-2.48;C:\vcpkg\installed\x64-windows\include\gdk-pixbuf-2.0;C:\vcpkg\installed\x64-windows\include\harfbuzz;C:\vcpkg\installed\x64-windows\include\pango-1.0;C:\vcpkg\installed\x64-windows\include\cairo;C:\vcpkg\installed\x64-windows\lib\pangomm-2.48\include;C:\vcpkg\installed\x64-windows\include\giomm-2.68;C:\vcpkg\installed\x64-windows\include\glib-2.0;C:/vcpkg/installed/x64-windows/lib/giomm-2.68/include;C:/vcpkg/installed/x64-windows/lib/glib-2.0/include;C:/vcpkg/installed/x64-windows/lib/gtkmm-4.0/include;C:/vcpkg/installed/x64-windows/lib/glibmm-2.68/include;C:\vcpkg\installed\x64-windows\include;$(SolutionDir)RedForge\;$(VULKAN_SDK)\Include;C:/vcpkg/installed/x64-windows/include/glibmm-2.68/;C:/vcpkg/installed/x64-windows/include/gtk-4.0/;C:/vcpkg/installed/x64-windows/include/gtkmm-4.0/</AdditionalIncludeDirectories>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <AdditionalIncludeDirectories>$(SolutionDir)RedForge\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
     <Link>
@@ -297,48 +313,12 @@ gobject-2.0.lib
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>C:\msys64\mingw64\lib\;$(VULKAN_SDK)\Lib;C:\vcpkg\installed\x64-windows\lib\;$(SolutionDir)x64\$(Configuration)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>RedForge.lib;gtkmm-4.0.lib;
-gtk-4.lib
-;glibmm-2.68.lib
-;cairomm-1.16.lib;
-pangomm-2.48.lib;
-sigc-3.0.lib
-;gdk_pixbuf-2.0.lib
-;gio-2.0.lib;
-gobject-2.0.lib
-;glib-2.0.lib;glfw3dll.lib;vulkan-1.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)x64\$(Configuration)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>RedForge.lib;glfw3dll.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
-  </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release Client|Win32'">
-    <ClCompile>
-      <WarningLevel>Level3</WarningLevel>
-      <FunctionLevelLinking>true</FunctionLevelLinking>
-      <IntrinsicFunctions>true</IntrinsicFunctions>
-      <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NETMODE_CLIENT;GTKMM_4_0
-;GLIBMM_2_68</PreprocessorDefinitions>
-      <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>C:\vcpkg\installed\x64-windows\lib\graphene-1.0\include;C:\vcpkg\installed\x64-windows\include\graphene-1.0;C:\vcpkg\installed\x64-windows\include\pangomm-2.48;C:\vcpkg\installed\x64-windows\include\gdk-pixbuf-2.0;C:\vcpkg\installed\x64-windows\include\harfbuzz;C:\vcpkg\installed\x64-windows\include\pango-1.0;C:\vcpkg\installed\x64-windows\include\cairo;C:\vcpkg\installed\x64-windows\lib\pangomm-2.48\include;C:\vcpkg\installed\x64-windows\include\giomm-2.68;C:\vcpkg\installed\x64-windows\include\glib-2.0;C:/vcpkg/installed/x64-windows/lib/giomm-2.68/include;C:/vcpkg/installed/x64-windows/lib/glib-2.0/include;C:/vcpkg/installed/x64-windows/lib/gtkmm-4.0/include;C:/vcpkg/installed/x64-windows/lib/glibmm-2.68/include;C:\vcpkg\installed\x64-windows\include;$(SolutionDir)RedForge\;$(VULKAN_SDK)\Include;C:/vcpkg/installed/x64-windows/include/glibmm-2.68/;C:/vcpkg/installed/x64-windows/include/gtk-4.0/;C:/vcpkg/installed/x64-windows/include/gtkmm-4.0/</AdditionalIncludeDirectories>
-      <LanguageStandard>stdcpp20</LanguageStandard>
-    </ClCompile>
-    <Link>
-      <SubSystem>Console</SubSystem>
-      <EnableCOMDATFolding>true</EnableCOMDATFolding>
-      <OptimizeReferences>true</OptimizeReferences>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>C:\msys64\mingw64\lib\;$(VULKAN_SDK)\Lib;C:\vcpkg\installed\x64-windows\lib\;$(SolutionDir)x64\$(Configuration)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>RedForgeClient.lib;gtkmm-4.0.lib;
-gtk-4.lib
-;glibmm-2.68.lib
-;cairomm-1.16.lib;
-pangomm-2.48.lib;
-sigc-3.0.lib
-;gdk_pixbuf-2.0.lib
-;gio-2.0.lib;
-gobject-2.0.lib
-;glib-2.0.lib;glfw3dll.lib;vulkan-1.lib;%(AdditionalDependencies)</AdditionalDependencies>
-    </Link>
+    <PostBuildEvent>
+      <Command>"$(QTDIR)\bin\windeployqt6.exe" "$(TargetDir)$(TargetFileName)" --release</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release Server|Win32'">
     <ClCompile>
@@ -346,10 +326,10 @@ gobject-2.0.lib
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NETMODE_SERVER;GTKMM_4_0
-;GLIBMM_2_68</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions);NETMODE_SERVER</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>C:\vcpkg\installed\x64-windows\lib\graphene-1.0\include;C:\vcpkg\installed\x64-windows\include\graphene-1.0;C:\vcpkg\installed\x64-windows\include\pangomm-2.48;C:\vcpkg\installed\x64-windows\include\gdk-pixbuf-2.0;C:\vcpkg\installed\x64-windows\include\harfbuzz;C:\vcpkg\installed\x64-windows\include\pango-1.0;C:\vcpkg\installed\x64-windows\include\cairo;C:\vcpkg\installed\x64-windows\lib\pangomm-2.48\include;C:\vcpkg\installed\x64-windows\include\giomm-2.68;C:\vcpkg\installed\x64-windows\include\glib-2.0;C:/vcpkg/installed/x64-windows/lib/giomm-2.68/include;C:/vcpkg/installed/x64-windows/lib/glib-2.0/include;C:/vcpkg/installed/x64-windows/lib/gtkmm-4.0/include;C:/vcpkg/installed/x64-windows/lib/glibmm-2.68/include;C:\vcpkg\installed\x64-windows\include;$(SolutionDir)RedForge\;$(VULKAN_SDK)\Include;C:/vcpkg/installed/x64-windows/include/glibmm-2.68/;C:/vcpkg/installed/x64-windows/include/gtk-4.0/;C:/vcpkg/installed/x64-windows/include/gtkmm-4.0/</AdditionalIncludeDirectories>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <AdditionalIncludeDirectories>$(SolutionDir)RedForge\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
     <Link>
@@ -357,96 +337,96 @@ gobject-2.0.lib
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>C:\msys64\mingw64\lib\;$(VULKAN_SDK)\Lib;C:\vcpkg\installed\x64-windows\lib\;$(SolutionDir)x64\$(Configuration)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>RedForgeServer.lib;gtkmm-4.0.lib;
-gtk-4.lib
-;glibmm-2.68.lib
-;cairomm-1.16.lib;
-pangomm-2.48.lib;
-sigc-3.0.lib
-;gdk_pixbuf-2.0.lib
-;gio-2.0.lib;
-gobject-2.0.lib
-;glib-2.0.lib;glfw3dll.lib;vulkan-1.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)x64\$(Configuration)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>RedForgeServer.lib;glfw3dll.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <PostBuildEvent>
+      <Command>"$(QTDIR)\bin\windeployqt6.exe" "$(TargetDir)$(TargetFileName)" --release</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release Client|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions);NETMODE_CLIENT</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <AdditionalIncludeDirectories>$(SolutionDir)RedForge\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>$(SolutionDir)x64\$(Configuration)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>RedForgeClient.lib;glfw3dll.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <PostBuildEvent>
+      <Command>"$(QTDIR)\bin\windeployqt6.exe" "$(TargetDir)$(TargetFileName)" --release</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;GTKMM_4_0
-;GLIBMM_2_68</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>C:\vcpkg\installed\x64-windows\lib\graphene-1.0\include;C:\vcpkg\installed\x64-windows\include\graphene-1.0;C:\vcpkg\installed\x64-windows\include\pangomm-2.48;C:\vcpkg\installed\x64-windows\include\gdk-pixbuf-2.0;C:\vcpkg\installed\x64-windows\include\harfbuzz;C:\vcpkg\installed\x64-windows\include\pango-1.0;C:\vcpkg\installed\x64-windows\include\cairo;C:\vcpkg\installed\x64-windows\lib\pangomm-2.48\include;C:\vcpkg\installed\x64-windows\include\giomm-2.68;C:\vcpkg\installed\x64-windows\include\glib-2.0;C:/vcpkg/installed/x64-windows/lib/giomm-2.68/include;C:/vcpkg/installed/x64-windows/lib/glib-2.0/include;C:/vcpkg/installed/x64-windows/lib/gtkmm-4.0/include;C:/vcpkg/installed/x64-windows/lib/glibmm-2.68/include;C:\vcpkg\installed\x64-windows\include;$(SolutionDir)RedForge\;$(VULKAN_SDK)\Include;C:/vcpkg/installed/x64-windows/include/glibmm-2.68/;C:/vcpkg/installed/x64-windows/include/gtk-4.0/;C:/vcpkg/installed/x64-windows/include/gtkmm-4.0/</AdditionalIncludeDirectories>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <AdditionalIncludeDirectories>$(SolutionDir)RedForge\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>C:\msys64\mingw64\lib\;$(VULKAN_SDK)\Lib;C:\vcpkg\installed\x64-windows\lib\;$(SolutionDir)x64\$(Configuration)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>RedForge.lib;gtkmm-4.0.lib;
-gtk-4.lib
-;glibmm-2.68.lib
-;cairomm-1.16.lib;
-pangomm-2.48.lib;
-sigc-3.0.lib
-;gdk_pixbuf-2.0.lib
-;gio-2.0.lib;
-gobject-2.0.lib
-;glib-2.0.lib;glfw3dll.lib;vulkan-1.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)x64\$(Configuration)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>RedForge.lib;glfw3dll.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
-  </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug Client|x64'">
-    <ClCompile>
-      <WarningLevel>Level3</WarningLevel>
-      <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;NETMODE_CLIENT;GTKMM_4_0
-;GLIBMM_2_68</PreprocessorDefinitions>
-      <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>C:\vcpkg\installed\x64-windows\lib\graphene-1.0\include;C:\vcpkg\installed\x64-windows\include\graphene-1.0;C:\vcpkg\installed\x64-windows\include\pangomm-2.48;C:\vcpkg\installed\x64-windows\include\gdk-pixbuf-2.0;C:\vcpkg\installed\x64-windows\include\harfbuzz;C:\vcpkg\installed\x64-windows\include\pango-1.0;C:\vcpkg\installed\x64-windows\include\cairo;C:\vcpkg\installed\x64-windows\lib\pangomm-2.48\include;C:\vcpkg\installed\x64-windows\include\giomm-2.68;C:\vcpkg\installed\x64-windows\include\glib-2.0;C:/vcpkg/installed/x64-windows/lib/giomm-2.68/include;C:/vcpkg/installed/x64-windows/lib/glib-2.0/include;C:/vcpkg/installed/x64-windows/lib/gtkmm-4.0/include;C:/vcpkg/installed/x64-windows/lib/glibmm-2.68/include;C:\vcpkg\installed\x64-windows\include;$(SolutionDir)RedForge\;$(VULKAN_SDK)\Include;C:/vcpkg/installed/x64-windows/include/glibmm-2.68/;C:/vcpkg/installed/x64-windows/include/gtk-4.0/;C:/vcpkg/installed/x64-windows/include/gtkmm-4.0/</AdditionalIncludeDirectories>
-      <LanguageStandard>stdcpp20</LanguageStandard>
-    </ClCompile>
-    <Link>
-      <SubSystem>Console</SubSystem>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>C:\msys64\mingw64\lib\;$(VULKAN_SDK)\Lib;C:\vcpkg\installed\x64-windows\lib\;$(SolutionDir)x64\$(Configuration)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>RedForgeClient.lib;gtkmm-4.0.lib;
-gtk-4.lib
-;glibmm-2.68.lib
-;cairomm-1.16.lib;
-pangomm-2.48.lib;
-sigc-3.0.lib
-;gdk_pixbuf-2.0.lib
-;gio-2.0.lib;
-gobject-2.0.lib
-;glib-2.0.lib;glfw3dll.lib;vulkan-1.lib;%(AdditionalDependencies)</AdditionalDependencies>
-    </Link>
+    <PostBuildEvent>
+      <Command>"$(QTDIR)\bin\windeployqt6.exe" "$(TargetDir)$(TargetFileName)" --debug</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug Server|x64'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;NETMODE_SERVER;GTKMM_4_0
-;GLIBMM_2_68</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions);NETMODE_SERVER</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>C:\vcpkg\installed\x64-windows\lib\graphene-1.0\include;C:\vcpkg\installed\x64-windows\include\graphene-1.0;C:\vcpkg\installed\x64-windows\include\pangomm-2.48;C:\vcpkg\installed\x64-windows\include\gdk-pixbuf-2.0;C:\vcpkg\installed\x64-windows\include\harfbuzz;C:\vcpkg\installed\x64-windows\include\pango-1.0;C:\vcpkg\installed\x64-windows\include\cairo;C:\vcpkg\installed\x64-windows\lib\pangomm-2.48\include;C:\vcpkg\installed\x64-windows\include\giomm-2.68;C:\vcpkg\installed\x64-windows\include\glib-2.0;C:/vcpkg/installed/x64-windows/lib/giomm-2.68/include;C:/vcpkg/installed/x64-windows/lib/glib-2.0/include;C:/vcpkg/installed/x64-windows/lib/gtkmm-4.0/include;C:/vcpkg/installed/x64-windows/lib/glibmm-2.68/include;C:\vcpkg\installed\x64-windows\include;$(SolutionDir)RedForge\;$(VULKAN_SDK)\Include;C:/vcpkg/installed/x64-windows/include/glibmm-2.68/;C:/vcpkg/installed/x64-windows/include/gtk-4.0/;C:/vcpkg/installed/x64-windows/include/gtkmm-4.0/</AdditionalIncludeDirectories>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <AdditionalIncludeDirectories>$(SolutionDir)RedForge\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>C:\msys64\mingw64\lib\;$(VULKAN_SDK)\Lib;C:\vcpkg\installed\x64-windows\lib\;$(SolutionDir)x64\$(Configuration)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>RedForgeServer.lib;gtkmm-4.0.lib;
-gtk-4.lib
-;glibmm-2.68.lib
-;cairomm-1.16.lib;
-pangomm-2.48.lib;
-sigc-3.0.lib
-;gdk_pixbuf-2.0.lib
-;gio-2.0.lib;
-gobject-2.0.lib
-;glib-2.0.lib;glfw3dll.lib;vulkan-1.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)x64\$(Configuration)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>RedForgeServer.lib;glfw3dll.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <PostBuildEvent>
+      <Command>"$(QTDIR)\bin\windeployqt6.exe" "$(TargetDir)$(TargetFileName)" --debug</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug Client|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions);NETMODE_CLIENT</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <AdditionalIncludeDirectories>$(SolutionDir)RedForge\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>$(SolutionDir)x64\$(Configuration)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>RedForgeClient.lib;glfw3dll.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <PostBuildEvent>
+      <Command>"$(QTDIR)\bin\windeployqt6.exe" "$(TargetDir)$(TargetFileName)" --debug</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -454,10 +434,10 @@ gobject-2.0.lib
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>GTKMM_4_0
-;GLIBMM_2_68</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>C:\vcpkg\installed\x64-windows\lib\graphene-1.0\include;C:\vcpkg\installed\x64-windows\include\graphene-1.0;C:\vcpkg\installed\x64-windows\include\pangomm-2.48;C:\vcpkg\installed\x64-windows\include\gdk-pixbuf-2.0;C:\vcpkg\installed\x64-windows\include\harfbuzz;C:\vcpkg\installed\x64-windows\include\pango-1.0;C:\vcpkg\installed\x64-windows\include\cairo;C:\vcpkg\installed\x64-windows\lib\pangomm-2.48\include;C:\vcpkg\installed\x64-windows\include\giomm-2.68;C:\vcpkg\installed\x64-windows\include\glib-2.0;C:/vcpkg/installed/x64-windows/lib/giomm-2.68/include;C:/vcpkg/installed/x64-windows/lib/glib-2.0/include;C:/vcpkg/installed/x64-windows/lib/gtkmm-4.0/include;C:/vcpkg/installed/x64-windows/lib/glibmm-2.68/include;C:\vcpkg\installed\x64-windows\include;$(SolutionDir)RedForge\;$(VULKAN_SDK)\Include;C:/vcpkg/installed/x64-windows/include/glibmm-2.68/;C:/vcpkg/installed/x64-windows/include/gtk-4.0/;C:/vcpkg/installed/x64-windows/include/gtkmm-4.0/</AdditionalIncludeDirectories>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <AdditionalIncludeDirectories>$(SolutionDir)RedForge\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
     <Link>
@@ -465,48 +445,12 @@ gobject-2.0.lib
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>C:\msys64\mingw64\lib\;$(VULKAN_SDK)\Lib;C:\vcpkg\installed\x64-windows\lib\;$(SolutionDir)x64\$(Configuration)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>RedForge.lib;gtkmm-4.0.lib;
-gtk-4.lib
-;glibmm-2.68.lib
-;cairomm-1.16.lib;
-pangomm-2.48.lib;
-sigc-3.0.lib
-;gdk_pixbuf-2.0.lib
-;gio-2.0.lib;
-gobject-2.0.lib
-;glib-2.0.lib;glfw3dll.lib;vulkan-1.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)x64\$(Configuration)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>RedForge.lib;glfw3dll.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
-  </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release Client|x64'">
-    <ClCompile>
-      <WarningLevel>Level3</WarningLevel>
-      <FunctionLevelLinking>true</FunctionLevelLinking>
-      <IntrinsicFunctions>true</IntrinsicFunctions>
-      <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NETMODE_CLIENT;GTKMM_4_0
-;GLIBMM_2_68</PreprocessorDefinitions>
-      <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>C:\vcpkg\installed\x64-windows\lib\graphene-1.0\include;C:\vcpkg\installed\x64-windows\include\graphene-1.0;C:\vcpkg\installed\x64-windows\include\pangomm-2.48;C:\vcpkg\installed\x64-windows\include\gdk-pixbuf-2.0;C:\vcpkg\installed\x64-windows\include\harfbuzz;C:\vcpkg\installed\x64-windows\include\pango-1.0;C:\vcpkg\installed\x64-windows\include\cairo;C:\vcpkg\installed\x64-windows\lib\pangomm-2.48\include;C:\vcpkg\installed\x64-windows\include\giomm-2.68;C:\vcpkg\installed\x64-windows\include\glib-2.0;C:/vcpkg/installed/x64-windows/lib/giomm-2.68/include;C:/vcpkg/installed/x64-windows/lib/glib-2.0/include;C:/vcpkg/installed/x64-windows/lib/gtkmm-4.0/include;C:/vcpkg/installed/x64-windows/lib/glibmm-2.68/include;C:\vcpkg\installed\x64-windows\include;$(SolutionDir)RedForge\;$(VULKAN_SDK)\Include;C:/vcpkg/installed/x64-windows/include/glibmm-2.68/;C:/vcpkg/installed/x64-windows/include/gtk-4.0/;C:/vcpkg/installed/x64-windows/include/gtkmm-4.0/</AdditionalIncludeDirectories>
-      <LanguageStandard>stdcpp20</LanguageStandard>
-    </ClCompile>
-    <Link>
-      <SubSystem>Console</SubSystem>
-      <EnableCOMDATFolding>true</EnableCOMDATFolding>
-      <OptimizeReferences>true</OptimizeReferences>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>C:\msys64\mingw64\lib\;$(VULKAN_SDK)\Lib;C:\vcpkg\installed\x64-windows\lib\;$(SolutionDir)x64\$(Configuration)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>RedForgeClient.lib;gtkmm-4.0.lib;
-gtk-4.lib
-;glibmm-2.68.lib
-;cairomm-1.16.lib;
-pangomm-2.48.lib;
-sigc-3.0.lib
-;gdk_pixbuf-2.0.lib
-;gio-2.0.lib;
-gobject-2.0.lib
-;glib-2.0.lib;glfw3dll.lib;vulkan-1.lib;%(AdditionalDependencies)</AdditionalDependencies>
-    </Link>
+    <PostBuildEvent>
+      <Command>"$(QTDIR)\bin\windeployqt6.exe" "$(TargetDir)$(TargetFileName)" --release</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release Server|x64'">
     <ClCompile>
@@ -514,10 +458,10 @@ gobject-2.0.lib
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NETMODE_SERVER;GTKMM_4_0
-;GLIBMM_2_68</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions);NETMODE_SERVER</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>C:\vcpkg\installed\x64-windows\lib\graphene-1.0\include;C:\vcpkg\installed\x64-windows\include\graphene-1.0;C:\vcpkg\installed\x64-windows\include\pangomm-2.48;C:\vcpkg\installed\x64-windows\include\gdk-pixbuf-2.0;C:\vcpkg\installed\x64-windows\include\harfbuzz;C:\vcpkg\installed\x64-windows\include\pango-1.0;C:\vcpkg\installed\x64-windows\include\cairo;C:\vcpkg\installed\x64-windows\lib\pangomm-2.48\include;C:\vcpkg\installed\x64-windows\include\giomm-2.68;C:\vcpkg\installed\x64-windows\include\glib-2.0;C:/vcpkg/installed/x64-windows/lib/giomm-2.68/include;C:/vcpkg/installed/x64-windows/lib/glib-2.0/include;C:/vcpkg/installed/x64-windows/lib/gtkmm-4.0/include;C:/vcpkg/installed/x64-windows/lib/glibmm-2.68/include;C:\vcpkg\installed\x64-windows\include;$(SolutionDir)RedForge\;$(VULKAN_SDK)\Include;C:/vcpkg/installed/x64-windows/include/glibmm-2.68/;C:/vcpkg/installed/x64-windows/include/gtk-4.0/;C:/vcpkg/installed/x64-windows/include/gtkmm-4.0/</AdditionalIncludeDirectories>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <AdditionalIncludeDirectories>$(SolutionDir)RedForge\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
     <Link>
@@ -525,86 +469,108 @@ gobject-2.0.lib
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>C:\msys64\mingw64\lib\;$(VULKAN_SDK)\Lib;C:\vcpkg\installed\x64-windows\lib\;$(SolutionDir)x64\$(Configuration)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>RedForgeServer.lib;gtkmm-4.0.lib;
-gtk-4.lib
-;glibmm-2.68.lib
-;cairomm-1.16.lib;
-pangomm-2.48.lib;
-sigc-3.0.lib
-;gdk_pixbuf-2.0.lib
-;gio-2.0.lib;
-gobject-2.0.lib
-;glib-2.0.lib;glfw3dll.lib;vulkan-1.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)x64\$(Configuration)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>RedForgeServer.lib;glfw3dll.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <PostBuildEvent>
+      <Command>"$(QTDIR)\bin\windeployqt6.exe" "$(TargetDir)$(TargetFileName)" --release</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release Client|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions);NETMODE_CLIENT</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <AdditionalIncludeDirectories>$(SolutionDir)RedForge\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>$(SolutionDir)x64\$(Configuration)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>RedForgeClient.lib;glfw3dll.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <PostBuildEvent>
+      <Command>"$(QTDIR)\bin\windeployqt6.exe" "$(TargetDir)$(TargetFileName)" --release</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="ComponentEntry.cpp" />
+    <ClCompile Include="ComponentVariableEntry.cpp" />
     <ClCompile Include="ComponentVariableEntry_Float.cpp" />
     <ClCompile Include="ComponentVariableEntry_Material.cpp" />
     <ClCompile Include="ComponentVariableEntry_Mesh.cpp" />
     <ClCompile Include="ComponentVariableEntry_QuaternionEuler.cpp" />
     <ClCompile Include="ComponentVariableEntry_Vector2.cpp" />
     <ClCompile Include="ComponentVariableEntry_Vector3.cpp" />
-    <ClCompile Include="ComponentVariableEntry.cpp" />
     <ClCompile Include="ConsolePanel.cpp" />
+    <ClCompile Include="DragFloat.cpp" />
     <ClCompile Include="EditorPanel.cpp" />
     <ClCompile Include="EditorToolbar.cpp" />
+    <ClCompile Include="EntityHierarchyItemModel.cpp" />
+    <ClCompile Include="EntityHierarchyTreeView.cpp" />
     <ClCompile Include="FileBrowserPanel.cpp" />
-    <ClCompile Include="GTKInputLayer.cpp" />
-    <ClCompile Include="HierarchicalEntityList.cpp" />
+    <ClCompile Include="FloatField.cpp" />
+    <ClCompile Include="HierarchicalItemModel.cpp" />
     <ClCompile Include="HierarchyPanel.cpp" />
     <ClCompile Include="InspectorPanel.cpp" />
     <ClCompile Include="MainEditorWindow.cpp" />
-    <ClCompile Include="NumberField.cpp" />
-    <ClCompile Include="RedForgeEditor.cpp">
-      <PreprocessToFile Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</PreprocessToFile>
-      <PreprocessToFile Condition="'$(Configuration)|$(Platform)'=='Debug Client|Win32'">false</PreprocessToFile>
-      <PreprocessToFile Condition="'$(Configuration)|$(Platform)'=='Debug Server|Win32'">false</PreprocessToFile>
-      <PreprocessToFile Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</PreprocessToFile>
-      <PreprocessToFile Condition="'$(Configuration)|$(Platform)'=='Debug Client|x64'">false</PreprocessToFile>
-      <PreprocessToFile Condition="'$(Configuration)|$(Platform)'=='Debug Server|x64'">false</PreprocessToFile>
-    </ClCompile>
-    <ClCompile Include="SearchFieldPopup.cpp" />
+    <ClCompile Include="QtInputLayer.cpp" />
+    <ClCompile Include="QtUtils.cpp" />
+    <ClCompile Include="RedForgeEditor.cpp" />
+    <ClCompile Include="SearchField.cpp" />
+    <ClCompile Include="StandardFileItemModel.cpp" />
     <ClCompile Include="ViewportCamera.cpp" />
     <ClCompile Include="VulkanViewport.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="ComponentEntry.h" />
-    <ClInclude Include="ComponentVariableEntry_Float.h" />
-    <ClInclude Include="ComponentVariableEntry_Material.h" />
-    <ClInclude Include="ComponentVariableEntry_Mesh.h" />
-    <ClInclude Include="ComponentVariableEntry_QuaternionEuler.h" />
-    <ClInclude Include="ComponentVariableEntry_Vector2.h" />
-    <ClInclude Include="ComponentVariableEntry_Vector3.h" />
-    <ClInclude Include="ComponentVariableEntry.h" />
-    <ClInclude Include="ConsolePanel.h" />
-    <ClInclude Include="EditorPanel.h" />
-    <ClInclude Include="EditorToolbar.h" />
-    <ClInclude Include="FileBrowserPanel.h" />
-    <ClInclude Include="GTKInputLayer.h" />
-    <ClInclude Include="HierarchicalEntityList.h" />
-    <ClInclude Include="HierarchyPanel.h" />
-    <ClInclude Include="InspectorPanel.h" />
-    <ClInclude Include="MainEditorWindow.h" />
-    <ClInclude Include="NumberField.h" />
-    <ClInclude Include="resource.h" />
-    <ClInclude Include="SearchFieldPopup.h" />
+    <QtMoc Include="MainEditorWindow.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <QtMoc Include="DragFloat.h" />
+    <QtMoc Include="ComponentVariableEntry.h" />
+    <QtMoc Include="ComponentVariableEntry_Float.h" />
+    <QtMoc Include="ComponentVariableEntry_Material.h" />
+    <QtMoc Include="ComponentVariableEntry_Mesh.h" />
+    <QtMoc Include="ComponentVariableEntry_QuaternionEuler.h" />
+    <QtMoc Include="ComponentVariableEntry_Vector2.h" />
+    <QtMoc Include="ComponentVariableEntry_Vector3.h" />
+    <QtMoc Include="FloatField.h" />
+    <QtMoc Include="ConsolePanel.h" />
+    <ClInclude Include="EditorPaths.h" />
+    <QtMoc Include="EntityHierarchyTreeView.h" />
+    <QtMoc Include="EditorToolbar.h" />
+    <ClInclude Include="MemoryMacros.h" />
+    <ClInclude Include="QtUtils.h" />
+    <QtMoc Include="ComponentEntry.h" />
+    <QtMoc Include="InspectorPanel.h" />
+    <QtMoc Include="FileBrowserPanel.h" />
+    <QtMoc Include="EntityHierarchyItemModel.h" />
+    <ClInclude Include="HierarchicalItemModel.h" />
+    <QtMoc Include="SearchField.h" />
+    <ClInclude Include="StandardFileItemModel.h" />
+    <QtMoc Include="HierarchyPanel.h" />
+    <QtMoc Include="EditorPanel.h" />
+    <ClInclude Include="QtInputLayer.h" />
     <ClInclude Include="ViewportCamera.h" />
-    <ClInclude Include="VulkanViewport.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <ResourceCompile Include="RedForgeEditor.rc" />
-  </ItemGroup>
-  <ItemGroup>
-    <Image Include="icon.ico" />
+    <QtMoc Include="VulkanViewport.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\RedForge\RedForge.vcxproj">
       <Project>{1c302570-fe8f-453f-90e3-c4e2811ec474}</Project>
     </ProjectReference>
   </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="RedForgeEditor.rc" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <Import Project="$(QtMsBuild)\qt.targets" Condition="Exists('$(QtMsBuild)\qt.targets')" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
 </Project>

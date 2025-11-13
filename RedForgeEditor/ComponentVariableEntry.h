@@ -2,18 +2,18 @@
 
 #include <typeindex>
 
-#include <gtkmm/box.h>
-#include <gtkmm/label.h>
-#include <gtkmm/adjustment.h>
-#include <gtkmm/spinbutton.h>
+#include <QWidget>
+#include <QLabel>
 
-class ComponentVariableEntry : public Gtk::Box
+class ComponentVariableEntry : public QWidget
 {
+	Q_OBJECT
+
 protected:
-	Gtk::Label variableLabel;
+	QLabel* variableLabel;
 
 public:
-	ComponentVariableEntry(const std::string& label, void* variablePtr);
+	ComponentVariableEntry(const std::string& label, void* variablePtr, QWidget* parent = nullptr);
 	~ComponentVariableEntry();
 
 	virtual void UpdateDisplayedValue() = 0;

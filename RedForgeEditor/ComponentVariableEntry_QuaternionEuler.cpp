@@ -1,20 +1,32 @@
 #include "ComponentVariableEntry_QuaternionEuler.h"
 
-#include <glibmm.h>
+#include <QLayout>
 
-ComponentVariableEntry_QuaternionEuler::ComponentVariableEntry_QuaternionEuler(const std::string& label, void* variablePtr) : ComponentVariableEntry(label, variablePtr),
-	variablePtr(static_cast<glm::quat*>(variablePtr)), 
-	fieldPitch(glm::pitch(*this->variablePtr), 1.0, -FLT_MAX, FLT_MAX, 1),
-	fieldYaw(glm::yaw(*this->variablePtr), 1.0, -FLT_MAX, FLT_MAX, 1),
-	fieldRoll(glm::roll(*this->variablePtr), 1.0, -FLT_MAX, FLT_MAX, 1)
+ComponentVariableEntry_QuaternionEuler::ComponentVariableEntry_QuaternionEuler(const std::string& label, void* variablePtr, QWidget* parent) : ComponentVariableEntry(label, variablePtr, parent),
+	variablePtr(static_cast<glm::quat*>(variablePtr))
 {
-	fieldPitch.signal_changed().connect(sigc::mem_fun(*this, &ComponentVariableEntry_QuaternionEuler::OnValueChanged));
-	fieldYaw.signal_changed().connect(sigc::mem_fun(*this, &ComponentVariableEntry_QuaternionEuler::OnValueChanged));
-	fieldRoll.signal_changed().connect(sigc::mem_fun(*this, &ComponentVariableEntry_QuaternionEuler::OnValueChanged));
+	fieldPitch = new DragFloat(glm::pitch(*this->variablePtr), this);
+	QObject::connect(fieldPitch, &DragFloat::valueChanged,
+		[this](float value)
+		{
+			OnValueChanged();
+		});
+	fieldYaw = new DragFloat(glm::yaw(*this->variablePtr), this);
+	QObject::connect(fieldYaw, &DragFloat::valueChanged,
+		[this](float value)
+		{
+			OnValueChanged();
+		});
+	fieldRoll = new DragFloat(glm::roll(*this->variablePtr), this);
+	QObject::connect(fieldRoll, &DragFloat::valueChanged,
+		[this](float value)
+		{
+			OnValueChanged();
+		});
 
-	append(fieldPitch);
-	append(fieldYaw);
-	append(fieldRoll);
+	layout()->addWidget(fieldPitch);
+	layout()->addWidget(fieldYaw);
+	layout()->addWidget(fieldRoll);
 }
 ComponentVariableEntry_QuaternionEuler::~ComponentVariableEntry_QuaternionEuler()
 {
@@ -23,14 +35,14 @@ ComponentVariableEntry_QuaternionEuler::~ComponentVariableEntry_QuaternionEuler(
 
 void ComponentVariableEntry_QuaternionEuler::UpdateDisplayedValue()
 {
-	fieldPitch.set_value(glm::pitch(*variablePtr));
-	fieldYaw.set_value(glm::yaw(*variablePtr));
-	fieldRoll.set_value(glm::roll(*variablePtr));
+	fieldPitch->SetValue(glm::pitch(*variablePtr));
+	fieldYaw->SetValue(glm::yaw(*variablePtr));
+	fieldRoll->SetValue(glm::roll(*variablePtr));
 }
 void ComponentVariableEntry_QuaternionEuler::OnValueChanged()
 {
 	*variablePtr = glm::quat(glm::vec3(
-		fieldPitch.get_value(), 
-		fieldYaw.get_value(), 
-		fieldRoll.get_value()));
+		fieldPitch->GetValue(), 
+		fieldYaw->GetValue(), 
+		fieldRoll->GetValue()));
 }

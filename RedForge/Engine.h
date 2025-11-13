@@ -37,8 +37,12 @@ public:
 
 	REDFORGE_API void Run();
 
-	REDFORGE_API void Startup(bool shouldOverrideFramebuffer = false, unsigned int overrideExtentWidth = 0, unsigned int overrideExtentHeight = 0);
-	REDFORGE_API void Shutdown();
+	// Create the Vulkan instance to be used by the graphics system. Should only be called if the instance is needed before engine initialization.
+	REDFORGE_API void CreateVulkanInstance();
+	REDFORGE_API void DestroyVulkanInstance();
+
+	REDFORGE_API void Startup(VkSurfaceKHR surfaceOverride = VK_NULL_HANDLE);
+	REDFORGE_API void Shutdown(bool shouldDestroyVulkanInstance = true);
 
 	REDFORGE_API void Update();
 

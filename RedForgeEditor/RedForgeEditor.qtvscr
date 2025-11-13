@@ -1,0 +1,429 @@
+<FlowDocument xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" FontFamily="Segoe UI" FontSize="12">
+  <FlowDocument.Tag><![CDATA[{
+  "timestamp": "2025-10-21 13:49:46",
+  "files": {
+    "C:\\Users\\krims\\Documents\\GitHub\\RedForge\\RedForgeEditor\\RedForgeEditor.vcxproj": {
+      "before": "7VnbbuM2EN3nAv2AvglCCtsPtnzJNmkja7ErO4ZR54I4l5cCC1oaxepKokBS2aTdfnL/oSOJoizHzsZI62yD5CGAyOFweDhzZob++4c3b8x3t2Gg3QDjPo36eqfV1jWIHOr60XVfT4TX3NffWd9/Z54y+js4QhuAR5JAnBN2DYL39Q+JH7i6hloi/JoLEf9iGNyZQ0h4K/QdRjn1RMuhoeHCDQQ0BmaEfJYuM7rtdk9H7ZpmjgWEI0aTWJuQGQR9XW5o08jzrxNGBBrIc2EUXzWrjSMnSFzo6wOYJddfrvyo1y1W4JqKKiuTMY3qYGpK+meeBkR4lIVWpsQ01HcugQM5HquWf8W4MwiAcPiKeVLqOQzM0bv9afep2KGK/wS5h0x7NG4bGmcaykNzh0UHQFcWdxWnHQV0RoLSTS9t6SeXeYRZnb1W2zTuDUuv+hXuPlPm5k6XrjSNYkhKSHWjxHetP6Hz1pn1PNLcA89r7vb2282f27ukOeu2e57T2eu+3e/9pVw1WyPVnFEqjkkIPCYOWGfgHlKM56HrC8pMozorl2AguPQzzwO/CAd1rHZ6rAdFUjWZLSVqMvLDmDKhyZP19Z36pS3p5ZSIeeO3I8Uidhy3JAG1YsSf65qx6jYwKvEoGaPVduqVGG182akX1jdq/X5tgStqekE+lSVFGFQJ5PwuBut9HAe+k3HTUqRm0xK6Cw7ZLhN/xgjzgVuCJWAa98flgsLAc0oDDsK66ez2ykgqRqWwPSeMOALYFCUvIh/JG3VXRtdij6CX16FtAluFxbYHnIfR9a8hdzWnASAE14yEJ7HwQ/+P7Crl9aydflbgFTtvD/SX461I+tuD7aX46ngzgq4Sc764kiSHtwKitN5EwhJYZ8p0iRk22yiTXUwNlcVTZDtwc0p+3IqC46ZzwIpV34jlKskhswmT2H08kMhZmjQHPltOVwvZppWgWJG3FrgWbn0ueB0z1cZ6ag2VsibUIQHmowERpMgfKj0+CtqnALWUDl6hUj3LmoIjY6JXmNbDVHjUywOqiLMKr6Whf0TSdlkFbdpwYLXrR1kpm0sv0MZmlW3hanZg0zD2A5ADyGdXhEVIw5O0Pbey/1hsVgbzggdFp4OJPQfnk6yQ1KcSOGWA/O8A55SVtnPranzc6x58HAw/XIwOPtonx9OTyfDgx/oa+UbaKazWpLZKa3Ts0EnkwBGWvNKk5VFZqxnL5zYnfvSpxGCazKZ3HAG3UAHHstA0yiG15QgiwJeIvJof59unbYbce+10YYTaM+8mS4AWc94Tb72Im+zholb2Lk+698MkctKDZt6RngL9RR565ZRCbBwJ5mOydwqxovdZMaEWKbfKC0/1qQTW+UbuZcf/cy8bRmQWgH1yNHh/fkiD9ClOYr1qRoEiOxg4Aw8YvuGpNnPFhFq01mVz6NdO5wpMYxsevdDxPDOLvfKX5Mwt8Fcl7y+z92ZZq+Ceb5y9Xnnr2+OtMjGjyykvLH9pqD6dtpw4VuXb8oPx/bbxwXdOkf/CotQtNMfFK6VqpOVz6equWD0AW/8A",
+      "after": "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"
+    }
+  }
+}]]></FlowDocument.Tag>
+  <Section Margin="0,24" TextAlignment="Center">
+    <Paragraph FontSize="24" FontWeight="Bold" Margin="12,0">
+      <LineBreak />
+      <Span Foreground="Gray">Qt Visual Studio Tools</Span>
+    </Paragraph>
+    <Paragraph FontSize="42" Margin="12,0" FontWeight="Bold">
+      <Span TextDecorations="Underline">Project Format Conversion</Span>
+    </Paragraph>
+    <Paragraph Margin="12,8" FontSize="18">
+      <Span>Report generated on 2025-10-21 13:49:46</Span>
+    </Paragraph>
+  </Section>
+  <Section>
+    <Paragraph FontSize="32" FontWeight="Bold" Margin="12,0">
+      <Span>Files</Span>
+    </Paragraph>
+    <Paragraph Margin="24,12,0,0">
+      <Span FontFamily="Consolas" FontSize="14" Background="WhiteSmoke"><![CDATA[C:\Users\krims\Documents\GitHub\RedForge\RedForgeEditor\RedForgeEditor.vcxproj]]></Span>
+      <LineBreak />
+      <Hyperlink NavigateUri="file://C:\Users\krims\Documents\GitHub\RedForge\RedForgeEditor\RedForgeEditor.vcxproj?before">[Before]</Hyperlink>
+      <Hyperlink NavigateUri="file://C:\Users\krims\Documents\GitHub\RedForge\RedForgeEditor\RedForgeEditor.vcxproj?after">[After]</Hyperlink>
+      <Hyperlink NavigateUri="file://C:\Users\krims\Documents\GitHub\RedForge\RedForgeEditor\RedForgeEditor.vcxproj?diff&amp;before&amp;after">
+                        [Diff before/after]
+                    </Hyperlink>
+      <Hyperlink NavigateUri="file://C:\Users\krims\Documents\GitHub\RedForge\RedForgeEditor\RedForgeEditor.vcxproj?diff&amp;before&amp;current">
+                        [Diff before/current]
+                    </Hyperlink>
+      <Hyperlink NavigateUri="file://C:\Users\krims\Documents\GitHub\RedForge\RedForgeEditor\RedForgeEditor.vcxproj?diff&amp;after&amp;current">
+                        [Diff after/current]
+                    </Hyperlink>
+      <LineBreak />
+    </Paragraph>
+  </Section>
+  <Section>
+    <Paragraph FontSize="32" FontWeight="Bold" Margin="12,0">
+      <Span>Changes</Span>
+    </Paragraph>
+    <Paragraph FontSize="20" FontWeight="Bold" Margin="12">
+      <Span><![CDATA[🡺 Enabling multi-processor compilation]]></Span>
+    </Paragraph>
+    <Table CellSpacing="0" BorderBrush="Gray" BorderThickness="0.5">
+      <Table.Columns>
+        <TableColumn />
+        <TableColumn />
+      </Table.Columns>
+      <TableRowGroup>
+        <TableRow Background="Orange">
+          <TableCell ColumnSpan="2" BorderThickness="0.5" BorderBrush="Gray">
+            <Paragraph Margin="10,5" FontWeight="Bold">
+              <Span><![CDATA[C:\Users\krims\Documents\GitHub\RedForge\RedForgeEditor\RedForgeEditor.vcxproj]]></Span>
+            </Paragraph>
+          </TableCell>
+        </TableRow>
+        <TableRow>
+          <TableCell ColumnSpan="2" Background="WhiteSmoke" BorderBrush="Gray" BorderThickness="0.5" />
+        </TableRow>
+        <TableRow>
+          <TableCell BorderThickness="0, 0, 0.5, 0" BorderBrush="Gray">
+            <Paragraph FontFamily="Consolas" Margin="4, 0" />
+          </TableCell>
+          <TableCell BorderThickness="0, 0, 0.5, 0" BorderBrush="Gray">
+            <Paragraph FontFamily="Consolas" Margin="4, 0">
+              <Span Background="LightGreen"><![CDATA[      <MultiProcessorCompilation>true</MultiProcessorCompilation>]]></Span>
+            </Paragraph>
+          </TableCell>
+        </TableRow>
+        <TableRow>
+          <TableCell ColumnSpan="2" Background="WhiteSmoke" BorderBrush="Gray" BorderThickness="0.5" />
+        </TableRow>
+        <TableRow>
+          <TableCell BorderThickness="0, 0, 0.5, 0" BorderBrush="Gray">
+            <Paragraph FontFamily="Consolas" Margin="4, 0" />
+          </TableCell>
+          <TableCell BorderThickness="0, 0, 0.5, 0" BorderBrush="Gray">
+            <Paragraph FontFamily="Consolas" Margin="4, 0">
+              <Span Background="LightGreen"><![CDATA[      <MultiProcessorCompilation>true</MultiProcessorCompilation>]]></Span>
+            </Paragraph>
+          </TableCell>
+        </TableRow>
+        <TableRow>
+          <TableCell ColumnSpan="2" Background="WhiteSmoke" BorderBrush="Gray" BorderThickness="0.5" />
+        </TableRow>
+        <TableRow>
+          <TableCell BorderThickness="0, 0, 0.5, 0" BorderBrush="Gray">
+            <Paragraph FontFamily="Consolas" Margin="4, 0" />
+          </TableCell>
+          <TableCell BorderThickness="0, 0, 0.5, 0" BorderBrush="Gray">
+            <Paragraph FontFamily="Consolas" Margin="4, 0">
+              <Span Background="LightGreen"><![CDATA[      <MultiProcessorCompilation>true</MultiProcessorCompilation>]]></Span>
+            </Paragraph>
+          </TableCell>
+        </TableRow>
+        <TableRow>
+          <TableCell ColumnSpan="2" Background="WhiteSmoke" BorderBrush="Gray" BorderThickness="0.5" />
+        </TableRow>
+        <TableRow>
+          <TableCell BorderThickness="0, 0, 0.5, 0" BorderBrush="Gray">
+            <Paragraph FontFamily="Consolas" Margin="4, 0" />
+          </TableCell>
+          <TableCell BorderThickness="0, 0, 0.5, 0" BorderBrush="Gray">
+            <Paragraph FontFamily="Consolas" Margin="4, 0">
+              <Span Background="LightGreen"><![CDATA[      <MultiProcessorCompilation>true</MultiProcessorCompilation>]]></Span>
+            </Paragraph>
+          </TableCell>
+        </TableRow>
+      </TableRowGroup>
+    </Table>
+    <Paragraph FontSize="20" FontWeight="Bold" Margin="12">
+      <Span><![CDATA[🡺 Project format version]]></Span>
+    </Paragraph>
+    <Table CellSpacing="0" BorderBrush="Gray" BorderThickness="0.5">
+      <Table.Columns>
+        <TableColumn />
+        <TableColumn />
+      </Table.Columns>
+      <TableRowGroup>
+        <TableRow Background="Orange">
+          <TableCell ColumnSpan="2" BorderThickness="0.5" BorderBrush="Gray">
+            <Paragraph Margin="10,5" FontWeight="Bold">
+              <Span><![CDATA[C:\Users\krims\Documents\GitHub\RedForge\RedForgeEditor\RedForgeEditor.vcxproj]]></Span>
+            </Paragraph>
+          </TableCell>
+        </TableRow>
+        <TableRow>
+          <TableCell ColumnSpan="2" Background="WhiteSmoke" BorderBrush="Gray" BorderThickness="0.5" />
+        </TableRow>
+        <TableRow>
+          <TableCell BorderThickness="0, 0, 0.5, 0" BorderBrush="Gray">
+            <Paragraph FontFamily="Consolas" Margin="4, 0" />
+          </TableCell>
+          <TableCell BorderThickness="0, 0, 0.5, 0" BorderBrush="Gray">
+            <Paragraph FontFamily="Consolas" Margin="4, 0">
+              <Span Background="LightGreen"><![CDATA[    <Keyword>QtVS_v304</Keyword>]]></Span>
+            </Paragraph>
+          </TableCell>
+        </TableRow>
+      </TableRowGroup>
+    </Table>
+    <Paragraph FontSize="20" FontWeight="Bold" Margin="12">
+      <Span><![CDATA[🡺 Fallback for QTMSBUILD environment variable]]></Span>
+    </Paragraph>
+    <Table CellSpacing="0" BorderBrush="Gray" BorderThickness="0.5">
+      <Table.Columns>
+        <TableColumn />
+        <TableColumn />
+      </Table.Columns>
+      <TableRowGroup>
+        <TableRow Background="Orange">
+          <TableCell ColumnSpan="2" BorderThickness="0.5" BorderBrush="Gray">
+            <Paragraph Margin="10,5" FontWeight="Bold">
+              <Span><![CDATA[C:\Users\krims\Documents\GitHub\RedForge\RedForgeEditor\RedForgeEditor.vcxproj]]></Span>
+            </Paragraph>
+          </TableCell>
+        </TableRow>
+        <TableRow>
+          <TableCell ColumnSpan="2" Background="WhiteSmoke" BorderBrush="Gray" BorderThickness="0.5" />
+        </TableRow>
+        <TableRow>
+          <TableCell BorderThickness="0, 0, 0.5, 0" BorderBrush="Gray">
+            <Paragraph FontFamily="Consolas" Margin="4, 0" />
+          </TableCell>
+          <TableCell BorderThickness="0, 0, 0.5, 0" BorderBrush="Gray">
+            <Paragraph FontFamily="Consolas" Margin="4, 0">
+              <Span Background="LightGreen"><![CDATA[    <QtMsBuild Condition="'$(QtMsBuild)'=='' OR !Exists('$(QtMsBuild)\qt.targets')">$(MSBuildProjectDirectory)\QtMsBuild</QtMsBuild>]]></Span>
+            </Paragraph>
+          </TableCell>
+        </TableRow>
+      </TableRowGroup>
+    </Table>
+    <Paragraph FontSize="20" FontWeight="Bold" Margin="12">
+      <Span><![CDATA[🡺 Default Qt properties]]></Span>
+    </Paragraph>
+    <Table CellSpacing="0" BorderBrush="Gray" BorderThickness="0.5">
+      <Table.Columns>
+        <TableColumn />
+        <TableColumn />
+      </Table.Columns>
+      <TableRowGroup>
+        <TableRow Background="Orange">
+          <TableCell ColumnSpan="2" BorderThickness="0.5" BorderBrush="Gray">
+            <Paragraph Margin="10,5" FontWeight="Bold">
+              <Span><![CDATA[C:\Users\krims\Documents\GitHub\RedForge\RedForgeEditor\RedForgeEditor.vcxproj]]></Span>
+            </Paragraph>
+          </TableCell>
+        </TableRow>
+        <TableRow>
+          <TableCell ColumnSpan="2" Background="WhiteSmoke" BorderBrush="Gray" BorderThickness="0.5" />
+        </TableRow>
+        <TableRow>
+          <TableCell BorderThickness="0, 0, 0.5, 0" BorderBrush="Gray">
+            <Paragraph FontFamily="Consolas" Margin="4, 0" />
+          </TableCell>
+          <TableCell BorderThickness="0, 0, 0.5, 0" BorderBrush="Gray">
+            <Paragraph FontFamily="Consolas" Margin="4, 0">
+              <Span Background="LightGreen"><![CDATA[  <Import Project="$(QtMsBuild)\qt_defaults.props" Condition="Exists('$(QtMsBuild)\qt_defaults.props')" />]]></Span>
+            </Paragraph>
+          </TableCell>
+        </TableRow>
+      </TableRowGroup>
+    </Table>
+    <Paragraph FontSize="20" FontWeight="Bold" Margin="12">
+      <Span><![CDATA[🡺 Qt build settings]]></Span>
+    </Paragraph>
+    <Table CellSpacing="0" BorderBrush="Gray" BorderThickness="0.5">
+      <Table.Columns>
+        <TableColumn />
+        <TableColumn />
+      </Table.Columns>
+      <TableRowGroup>
+        <TableRow Background="Orange">
+          <TableCell ColumnSpan="2" BorderThickness="0.5" BorderBrush="Gray">
+            <Paragraph Margin="10,5" FontWeight="Bold">
+              <Span><![CDATA[C:\Users\krims\Documents\GitHub\RedForge\RedForgeEditor\RedForgeEditor.vcxproj]]></Span>
+            </Paragraph>
+          </TableCell>
+        </TableRow>
+        <TableRow>
+          <TableCell ColumnSpan="2" Background="WhiteSmoke" BorderBrush="Gray" BorderThickness="0.5" />
+        </TableRow>
+        <TableRow>
+          <TableCell BorderThickness="0, 0, 0.5, 0" BorderBrush="Gray">
+            <Paragraph FontFamily="Consolas" Margin="4, 0" />
+          </TableCell>
+          <TableCell BorderThickness="0, 0, 0.5, 0" BorderBrush="Gray">
+            <Paragraph FontFamily="Consolas" Margin="4, 0">
+              <Span Background="LightGreen"><![CDATA[  <PropertyGroup Label="QtSettings" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" />]]></Span>
+            </Paragraph>
+          </TableCell>
+        </TableRow>
+        <TableRow>
+          <TableCell BorderThickness="0, 0, 0.5, 0" BorderBrush="Gray">
+            <Paragraph FontFamily="Consolas" Margin="4, 0" />
+          </TableCell>
+          <TableCell BorderThickness="0, 0, 0.5, 0" BorderBrush="Gray">
+            <Paragraph FontFamily="Consolas" Margin="4, 0">
+              <Span Background="LightGreen"><![CDATA[  <PropertyGroup Label="QtSettings" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />]]></Span>
+            </Paragraph>
+          </TableCell>
+        </TableRow>
+        <TableRow>
+          <TableCell BorderThickness="0, 0, 0.5, 0" BorderBrush="Gray">
+            <Paragraph FontFamily="Consolas" Margin="4, 0" />
+          </TableCell>
+          <TableCell BorderThickness="0, 0, 0.5, 0" BorderBrush="Gray">
+            <Paragraph FontFamily="Consolas" Margin="4, 0">
+              <Span Background="LightGreen"><![CDATA[  <PropertyGroup Label="QtSettings" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" />]]></Span>
+            </Paragraph>
+          </TableCell>
+        </TableRow>
+        <TableRow>
+          <TableCell BorderThickness="0, 0, 0.5, 0" BorderBrush="Gray">
+            <Paragraph FontFamily="Consolas" Margin="4, 0" />
+          </TableCell>
+          <TableCell BorderThickness="0, 0, 0.5, 0" BorderBrush="Gray">
+            <Paragraph FontFamily="Consolas" Margin="4, 0">
+              <Span Background="LightGreen"><![CDATA[  <PropertyGroup Label="QtSettings" Condition="'$(Configuration)|$(Platform)'=='Release|x64'" />]]></Span>
+            </Paragraph>
+          </TableCell>
+        </TableRow>
+      </TableRowGroup>
+    </Table>
+    <Paragraph FontSize="20" FontWeight="Bold" Margin="12">
+      <Span><![CDATA[🡺 Warn if Qt/MSBuild is not found]]></Span>
+    </Paragraph>
+    <Table CellSpacing="0" BorderBrush="Gray" BorderThickness="0.5">
+      <Table.Columns>
+        <TableColumn />
+        <TableColumn />
+      </Table.Columns>
+      <TableRowGroup>
+        <TableRow Background="Orange">
+          <TableCell ColumnSpan="2" BorderThickness="0.5" BorderBrush="Gray">
+            <Paragraph Margin="10,5" FontWeight="Bold">
+              <Span><![CDATA[C:\Users\krims\Documents\GitHub\RedForge\RedForgeEditor\RedForgeEditor.vcxproj]]></Span>
+            </Paragraph>
+          </TableCell>
+        </TableRow>
+        <TableRow>
+          <TableCell ColumnSpan="2" Background="WhiteSmoke" BorderBrush="Gray" BorderThickness="0.5" />
+        </TableRow>
+        <TableRow>
+          <TableCell BorderThickness="0, 0, 0.5, 0" BorderBrush="Gray">
+            <Paragraph FontFamily="Consolas" Margin="4, 0" />
+          </TableCell>
+          <TableCell BorderThickness="0, 0, 0.5, 0" BorderBrush="Gray">
+            <Paragraph FontFamily="Consolas" Margin="4, 0">
+              <Span Background="LightGreen"><![CDATA[  <Target Name="QtMsBuildNotFound" BeforeTargets="CustomBuild;ClCompile" Condition="!Exists('$(QtMsBuild)\qt.targets') OR !Exists('$(QtMsBuild)\Qt.props')">]]></Span>
+            </Paragraph>
+          </TableCell>
+        </TableRow>
+        <TableRow>
+          <TableCell BorderThickness="0, 0, 0.5, 0" BorderBrush="Gray">
+            <Paragraph FontFamily="Consolas" Margin="4, 0" />
+          </TableCell>
+          <TableCell BorderThickness="0, 0, 0.5, 0" BorderBrush="Gray">
+            <Paragraph FontFamily="Consolas" Margin="4, 0">
+              <Span Background="LightGreen"><![CDATA[    <Message Importance="High" Text="QtMsBuild: could not locate qt.targets, qt.props; project may not build correctly." />]]></Span>
+            </Paragraph>
+          </TableCell>
+        </TableRow>
+        <TableRow>
+          <TableCell BorderThickness="0, 0, 0.5, 0" BorderBrush="Gray">
+            <Paragraph FontFamily="Consolas" Margin="4, 0" />
+          </TableCell>
+          <TableCell BorderThickness="0, 0, 0.5, 0" BorderBrush="Gray">
+            <Paragraph FontFamily="Consolas" Margin="4, 0">
+              <Span Background="LightGreen"><![CDATA[  </Target>]]></Span>
+            </Paragraph>
+          </TableCell>
+        </TableRow>
+      </TableRowGroup>
+    </Table>
+    <Paragraph FontSize="20" FontWeight="Bold" Margin="12">
+      <Span><![CDATA[🡺 Qt property sheet]]></Span>
+    </Paragraph>
+    <Table CellSpacing="0" BorderBrush="Gray" BorderThickness="0.5">
+      <Table.Columns>
+        <TableColumn />
+        <TableColumn />
+      </Table.Columns>
+      <TableRowGroup>
+        <TableRow Background="Orange">
+          <TableCell ColumnSpan="2" BorderThickness="0.5" BorderBrush="Gray">
+            <Paragraph Margin="10,5" FontWeight="Bold">
+              <Span><![CDATA[C:\Users\krims\Documents\GitHub\RedForge\RedForgeEditor\RedForgeEditor.vcxproj]]></Span>
+            </Paragraph>
+          </TableCell>
+        </TableRow>
+        <TableRow>
+          <TableCell ColumnSpan="2" Background="WhiteSmoke" BorderBrush="Gray" BorderThickness="0.5" />
+        </TableRow>
+        <TableRow>
+          <TableCell BorderThickness="0, 0, 0.5, 0" BorderBrush="Gray">
+            <Paragraph FontFamily="Consolas" Margin="4, 0" />
+          </TableCell>
+          <TableCell BorderThickness="0, 0, 0.5, 0" BorderBrush="Gray">
+            <Paragraph FontFamily="Consolas" Margin="4, 0">
+              <Span Background="LightGreen"><![CDATA[    <Import Project="$(QtMsBuild)\Qt.props" />]]></Span>
+            </Paragraph>
+          </TableCell>
+        </TableRow>
+        <TableRow>
+          <TableCell ColumnSpan="2" Background="WhiteSmoke" BorderBrush="Gray" BorderThickness="0.5" />
+        </TableRow>
+        <TableRow>
+          <TableCell BorderThickness="0, 0, 0.5, 0" BorderBrush="Gray">
+            <Paragraph FontFamily="Consolas" Margin="4, 0" />
+          </TableCell>
+          <TableCell BorderThickness="0, 0, 0.5, 0" BorderBrush="Gray">
+            <Paragraph FontFamily="Consolas" Margin="4, 0">
+              <Span Background="LightGreen"><![CDATA[    <Import Project="$(QtMsBuild)\Qt.props" />]]></Span>
+            </Paragraph>
+          </TableCell>
+        </TableRow>
+        <TableRow>
+          <TableCell ColumnSpan="2" Background="WhiteSmoke" BorderBrush="Gray" BorderThickness="0.5" />
+        </TableRow>
+        <TableRow>
+          <TableCell BorderThickness="0, 0, 0.5, 0" BorderBrush="Gray">
+            <Paragraph FontFamily="Consolas" Margin="4, 0" />
+          </TableCell>
+          <TableCell BorderThickness="0, 0, 0.5, 0" BorderBrush="Gray">
+            <Paragraph FontFamily="Consolas" Margin="4, 0">
+              <Span Background="LightGreen"><![CDATA[    <Import Project="$(QtMsBuild)\Qt.props" />]]></Span>
+            </Paragraph>
+          </TableCell>
+        </TableRow>
+        <TableRow>
+          <TableCell ColumnSpan="2" Background="WhiteSmoke" BorderBrush="Gray" BorderThickness="0.5" />
+        </TableRow>
+        <TableRow>
+          <TableCell BorderThickness="0, 0, 0.5, 0" BorderBrush="Gray">
+            <Paragraph FontFamily="Consolas" Margin="4, 0" />
+          </TableCell>
+          <TableCell BorderThickness="0, 0, 0.5, 0" BorderBrush="Gray">
+            <Paragraph FontFamily="Consolas" Margin="4, 0">
+              <Span Background="LightGreen"><![CDATA[    <Import Project="$(QtMsBuild)\Qt.props" />]]></Span>
+            </Paragraph>
+          </TableCell>
+        </TableRow>
+      </TableRowGroup>
+    </Table>
+    <Paragraph FontSize="20" FontWeight="Bold" Margin="12">
+      <Span><![CDATA[🡺 Qt targets]]></Span>
+    </Paragraph>
+    <Table CellSpacing="0" BorderBrush="Gray" BorderThickness="0.5">
+      <Table.Columns>
+        <TableColumn />
+        <TableColumn />
+      </Table.Columns>
+      <TableRowGroup>
+        <TableRow Background="Orange">
+          <TableCell ColumnSpan="2" BorderThickness="0.5" BorderBrush="Gray">
+            <Paragraph Margin="10,5" FontWeight="Bold">
+              <Span><![CDATA[C:\Users\krims\Documents\GitHub\RedForge\RedForgeEditor\RedForgeEditor.vcxproj]]></Span>
+            </Paragraph>
+          </TableCell>
+        </TableRow>
+        <TableRow>
+          <TableCell ColumnSpan="2" Background="WhiteSmoke" BorderBrush="Gray" BorderThickness="0.5" />
+        </TableRow>
+        <TableRow>
+          <TableCell BorderThickness="0, 0, 0.5, 0" BorderBrush="Gray">
+            <Paragraph FontFamily="Consolas" Margin="4, 0" />
+          </TableCell>
+          <TableCell BorderThickness="0, 0, 0.5, 0" BorderBrush="Gray">
+            <Paragraph FontFamily="Consolas" Margin="4, 0">
+              <Span Background="LightGreen"><![CDATA[  <Import Project="$(QtMsBuild)\qt.targets" Condition="Exists('$(QtMsBuild)\qt.targets')" />]]></Span>
+            </Paragraph>
+          </TableCell>
+        </TableRow>
+      </TableRowGroup>
+    </Table>
+  </Section>
+  <Section>
+    <Paragraph />
+  </Section>
+</FlowDocument>
+<!--ytRTZiYaCzLNNd6K7xMuZ50RrzkV17DyYa0UwYEa8yI=-->

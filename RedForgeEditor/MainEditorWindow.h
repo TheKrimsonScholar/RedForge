@@ -1,47 +1,53 @@
 #pragma once
 
+#include <QtWidgets/QMainWindow>
+
 #include "VulkanViewport.h"
-
-#include "Exports.h"
-#ifdef _WIN32
-    #define VK_USE_PLATFORM_WIN32_KHR
-#else
-    #define VK_USE_PLATFORM_XLIB_KHR
-#endif
-
-#include <gtkmm/application.h>
-#include <gtkmm/window.h>
-#include <gtkmm/button.h>
-
-#include "Engine.h"
-
 #include "EditorToolbar.h"
 #include "HierarchyPanel.h"
-#include "ConsolePanel.h"
 #include "FileBrowserPanel.h"
+#include "InspectorPanel.h"
+#include "ConsolePanel.h"
 
-#include "ViewportCamera.h"
+class Engine;
 
-class MainEditorWindow : public Gtk::Window
+class MainEditorWindow : public QMainWindow
 {
-protected:
+    Q_OBJECT
+
+private:
+    static inline MainEditorWindow* Instance;
+
     Engine* engine;
-
-    Gtk::HeaderBar* headerBar;
-    Gtk::Paned* windowPanel;
     EditorToolbar* toolbar;
-    Gtk::Paned* mainPanel;
-    Gtk::Paned* leftPanel;
-    Gtk::Paned* rightPanel;
-
-    InspectorPanel* inspectorWindow;
+    VulkanViewport* viewport;
     HierarchyPanel* hierarchyPanel;
-    ConsolePanel* consolePanel;
     FileBrowserPanel* fileBrowserPanel;
+    InspectorPanel* inspectorPanel;
+    ConsolePanel* consolePanel;
 
-    VulkanViewport viewport;
+    QtInputLayer* inputLayer;
 
 public:
-    MainEditorWindow();
-    ~MainEditorWindow() override;
+    MainEditorWindow(QWidget* parent = nullptr);
+    ~MainEditorWindow();
+
+protected:
+    void Initialize();
+    void Update();
+
+    void changeEvent(QEvent* event) override;
+
+    void closeEvent(QCloseEvent* event) override;
+
+    void OnWindowMinimized();
+    void OnWindowRestored();
+    void OnWindowMaximized();
+
+public:
+    static MainEditorWindow* Get() { return Instance; }
+
+    HierarchyPanel* GetHierarchyPanel() const { return hierarchyPanel; }
+    FileBrowserPanel* GetFileBrowserPanel() const { return fileBrowserPanel; }
+    InspectorPanel* GetInspectorPanel() const { return inspectorPanel; }
 };

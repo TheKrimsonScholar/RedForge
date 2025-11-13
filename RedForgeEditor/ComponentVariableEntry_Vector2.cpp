@@ -1,16 +1,25 @@
 #include "ComponentVariableEntry_Vector2.h"
 
-#include <glibmm.h>
+#include <QLayout>
 
-ComponentVariableEntry_Vector2::ComponentVariableEntry_Vector2(const std::string& label, void* variablePtr) : ComponentVariableEntry(label, variablePtr),
-	variablePtr(static_cast<glm::vec2*>(variablePtr)), 
-	fieldX(this->variablePtr->x, 1.0, -FLT_MAX, FLT_MAX, 1), fieldY(this->variablePtr->y, 1.0, -FLT_MAX, FLT_MAX, 1)
+ComponentVariableEntry_Vector2::ComponentVariableEntry_Vector2(const std::string& label, void* variablePtr, QWidget* parent) : ComponentVariableEntry(label, variablePtr, parent),
+	variablePtr(static_cast<glm::vec2*>(variablePtr))
 {
-	fieldX.signal_changed().connect(sigc::mem_fun(*this, &ComponentVariableEntry_Vector2::OnValueChanged));
-	fieldY.signal_changed().connect(sigc::mem_fun(*this, &ComponentVariableEntry_Vector2::OnValueChanged));
+	fieldX = new DragFloat(this->variablePtr->x, this);
+	QObject::connect(fieldX, &DragFloat::valueChanged,
+		[this](float value)
+		{
+			OnValueChanged();
+		});
+	fieldY = new DragFloat(this->variablePtr->y, this);
+	QObject::connect(fieldY, &DragFloat::valueChanged,
+		[this](float value)
+		{
+			OnValueChanged();
+		});
 
-	append(fieldX);
-	append(fieldY);
+	layout()->addWidget(fieldX);
+	layout()->addWidget(fieldY);
 }
 ComponentVariableEntry_Vector2::~ComponentVariableEntry_Vector2()
 {
@@ -19,11 +28,11 @@ ComponentVariableEntry_Vector2::~ComponentVariableEntry_Vector2()
 
 void ComponentVariableEntry_Vector2::UpdateDisplayedValue()
 {
-	fieldX.set_value(variablePtr->x);
-	fieldY.set_value(variablePtr->y);
+	fieldX->SetValue(variablePtr->x);
+	fieldY->SetValue(variablePtr->y);
 }
 void ComponentVariableEntry_Vector2::OnValueChanged()
 {
-	variablePtr->x = fieldX.get_value();
-	variablePtr->y = fieldY.get_value();
+	variablePtr->x = fieldX->GetValue();
+	variablePtr->y = fieldY->GetValue();
 }
