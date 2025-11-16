@@ -59,12 +59,18 @@ bool VulkanViewport::event(QEvent* event)
 			    QDataStream stream(&encodedData, QIODevice::ReadOnly);
 			    QString itemData;
 			
+				std::vector<std::filesystem::path> filesToDrop;
 			    while(!stream.atEnd())
 			    {
-			        stream >> itemData;
+					int r, c;
+					QMap<int, QVariant> roleDataMap;
+					stream >> r >> c >> roleDataMap;
 
-			        qDebug() << "Dropped Item Data:" << itemData;
+					filesToDrop.emplace_back(roleDataMap[Qt::UserRole].value<QString>().toStdString());
 			    }
+
+				for(const std::filesystem::path& file : filesToDrop)
+					OnFileDroppedIntoViewport(file);
 
 				dropEvent->acceptProposedAction();
 			}
@@ -94,6 +100,15 @@ bool VulkanViewport::event(QEvent* event)
 	}
 
 	return QWindow::event(event);
+}
+
+void VulkanViewport::OnFileDroppedIntoViewport(const std::filesystem::path& filePath)
+{
+	if(filePath.extension() == ".entity")
+	{
+		// Spawn the entity under the level root
+		LevelManager::LoadEntityFromPrefab(filePath, {});
+	}
 }
 
 void VulkanViewport::OnSurfaceCreated()

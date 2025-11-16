@@ -5,7 +5,6 @@
 #include <QGroupBox>
 #include <QToolButton>
 #include <QLabel>
-#include <QPushButton>
 #include <QFrame>
 
 #include "ComponentVariableEntry.h"
@@ -17,7 +16,7 @@ class ComponentEntry : public QWidget
 private:
     QToolButton* expandableArrow;
     QLabel* label;
-    QPushButton* removeButton;
+    QToolButton* removeButton;
     //QFrame* frame;
     QFrame* content;
 

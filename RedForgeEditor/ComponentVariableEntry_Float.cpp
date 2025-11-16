@@ -22,7 +22,7 @@ ComponentVariableEntry_Float::~ComponentVariableEntry_Float()
 
 void ComponentVariableEntry_Float::UpdateDisplayedValue()
 {
-	field->SetValue(*variablePtr);
+	if(field->GetValue() != *variablePtr) field->SetValue(*variablePtr);
 }
 void ComponentVariableEntry_Float::OnValueChanged()
 {

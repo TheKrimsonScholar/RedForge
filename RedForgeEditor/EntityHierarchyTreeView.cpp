@@ -5,12 +5,14 @@
 
 #include "MainEditorWindow.h"
 
+#include "EditorPaths.h"
+
 EntityHierarchyTreeView::EntityHierarchyTreeView(QWidget* parent) : QTreeView(parent)
 {
 	model = new EntityHierarchyItemModel(this);
 	setModel(model);
 	setSelectionMode(QAbstractItemView::ExtendedSelection);
-	setDragDropMode(QAbstractItemView::InternalMove);
+	setDragDropMode(QAbstractItemView::DragDrop);
 	setDefaultDropAction(Qt::MoveAction);
 	QObject::connect(selectionModel(), &QItemSelectionModel::selectionChanged,
 		[this](const QItemSelection& selected, const QItemSelection& deselected)
@@ -60,6 +62,9 @@ void EntityHierarchyTreeView::InitializeHierarchy()
 	LevelManager::GetOnEntityCreated()->AddUnique(EventCallback(this, &EntityHierarchyTreeView::OnEntityCreated));
 	LevelManager::GetOnEntityDestroyed()->AddUnique(EventCallback(this, &EntityHierarchyTreeView::OnEntityDestroyed));
 
+	// Bind event for when level data is modified
+	LevelManager::GetOnEntityLevelDataModified()->AddUnique(EventCallback(this, &EntityHierarchyTreeView::OnEntityLevelDataModified));
+
 	// Bind events for move operations
 	LevelManager::GetOnEntityReparented()->AddUnique(EventCallback(this, &EntityHierarchyTreeView::OnEntityReparented));
 	LevelManager::GetOnEntityMovedBefore()->AddUnique(EventCallback(this, &EntityHierarchyTreeView::OnEntityMovedBefore));
@@ -89,6 +94,15 @@ void EntityHierarchyTreeView::OnEntityDestroyed(const Entity& entity)
 			if(model->GetEntityItem(entity))
 				model->DestroyEntityItem(entity);
 		}, entity);
+}
+
+void EntityHierarchyTreeView::OnEntityLevelDataModified(const Entity& entity)
+{
+	if(QStandardItem* entityItem = model->GetEntityItem(entity))
+	{
+		QIcon icon = LevelManager::GetEntityPrefabPath(entity).empty() ? QICON_FROM_PATH("Entity Hierarchy/Entity") : QICON_FROM_PATH("Entity Hierarchy/Prefab");
+		entityItem->setIcon(icon);
+	}
 }
 
 void EntityHierarchyTreeView::OnEntityReparented(const Entity& entity, const Entity& newParent)

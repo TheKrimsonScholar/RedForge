@@ -1,0 +1,25 @@
+$Entity
+	Name=Cube
+	PrefabPath=C:/Users/krims/Documents/GitHub/RedForge/RedForge/../Assets/Engine/Cube.entity
+	$Component
+		TypeName=TransformComponent
+		location=(0, 0, 0) 
+		rotation=(0, -0, -1, 7.54979e-08) 
+		scale=(1, 1, 1) 
+	$$
+	$Component
+		TypeName=MeshRendererComponent
+		mesh="default.obj" 
+		material="default" 
+	$$
+	$Component
+		TypeName=PhysicsComponent
+		bounciness=0 
+		angularVelocity=(0, 0, 0) 
+		mass=1 
+		staticFriction=0.5 
+		gravity=(0, -9.8, 0) 
+		dynamicFriction=0.3 
+		velocity=(0, 0, 0) 
+	$$
+$$

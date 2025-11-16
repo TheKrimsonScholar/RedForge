@@ -2,14 +2,15 @@
 
 #include <QWidget>
 
-#include <QPushButton>
+#include <QToolButton>
 
 class EditorToolbar : public QWidget
 {
 	Q_OBJECT
 
 private:
-	QPushButton* saveLevelButton;
+	QToolButton* saveLevelButton;
+	QToolButton* playButton;
 
 public:
 	explicit EditorToolbar(QWidget* parent = nullptr);
@@ -17,4 +18,6 @@ public:
 
 private:
 	void SaveLevel();
+	
+	void Play();
 };

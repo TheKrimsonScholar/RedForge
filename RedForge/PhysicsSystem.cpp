@@ -9,7 +9,7 @@
 
 void PhysicsSystem::Startup()
 {
-
+	Instance = this;
 }
 void PhysicsSystem::Shutdown()
 {

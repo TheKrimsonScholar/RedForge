@@ -36,6 +36,8 @@ protected:
 
     bool event(QEvent* event) override;
 
+    void OnFileDroppedIntoViewport(const std::filesystem::path& filePath);
+
     void OnSurfaceCreated();
     void OnSurfaceDestroyed();
 

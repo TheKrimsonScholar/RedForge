@@ -25,7 +25,7 @@ void Engine::Run()
     Startup();
 
     // Load default level
-    LevelManager::LoadLevel();
+    LevelManager::LoadLevel(L"Levels/Level.txt");
 
     // TEMP: Main camera creation
     {

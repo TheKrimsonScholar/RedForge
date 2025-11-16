@@ -12,52 +12,25 @@ FileBrowserPanel::FileBrowserPanel(QWidget* parent) : EditorPanel("File Browser"
     static const QIcon UP_ICON = QIcon(GetEditorAssetsPath().append("Icons/Basic/Up.png").string().c_str());
     static const QIcon REFRESH_ICON = QIcon(GetEditorAssetsPath().append("Icons/Basic/Refresh.png").string().c_str());
 
-    listView = new QListView(this);
-    listView->setDragEnabled(true);
-
-    model = new FileItemModel(this);
-    listView->setModel(model);
-
-    listView->setModel(model);
-    listView->setSelectionMode(QAbstractItemView::ExtendedSelection);
-    listView->setDragDropMode(QAbstractItemView::DragDrop);
-    listView->setDefaultDropAction(Qt::CopyAction);
-
-    QObject::connect(listView, &QListView::doubleClicked, 
-        [this](const QModelIndex& index)
-        {
-            QStandardItem* item = model->itemFromIndex(index);
-            if(!item)
-                return;
-
-            QString text = item->text();
-            qDebug() << "Clicked item:" << text;
-
-            std::filesystem::path absolutePath = currentDirectory;
-            absolutePath.append(text.toStdString());
-
-            // If folder, update current directory
-            if(std::filesystem::is_directory(absolutePath))
-                SetCurrentBrowserDirectory(absolutePath);
-        });
+    listView = new FileListView(this);
 
     gameDirectoryButton = new QRadioButton("Game", this);
     QObject::connect(gameDirectoryButton, &QRadioButton::clicked,
         [this](bool checked)
         {
-            SetCurrentBrowserDirectory(GetGameAssetsPath());
+            listView->SetCurrentDirectory(GetGameAssetsPath());
         });
     engineDirectoryButton = new QRadioButton("Engine", this);
     QObject::connect(engineDirectoryButton, &QRadioButton::clicked,
         [this](bool checked)
         {
-            SetCurrentBrowserDirectory(GetEngineAssetsPath());
+            listView->SetCurrentDirectory(GetEngineAssetsPath());
         });
     editorDirectoryButton = new QRadioButton("Editor", this);
     QObject::connect(editorDirectoryButton, &QRadioButton::clicked,
         [this](bool checked)
         {
-            SetCurrentBrowserDirectory(GetEditorAssetsPath());
+            listView->SetCurrentDirectory(GetEditorAssetsPath());
         });
 
     QHBoxLayout* hBox1 = new QHBoxLayout();
@@ -65,17 +38,19 @@ FileBrowserPanel::FileBrowserPanel(QWidget* parent) : EditorPanel("File Browser"
     hBox1->addWidget(engineDirectoryButton);
     hBox1->addWidget(editorDirectoryButton);
 
-    directoryUpButton = new QPushButton(UP_ICON, "", this);
-    QObject::connect(directoryUpButton, &QPushButton::clicked,
+    directoryUpButton = new QToolButton(this);
+    directoryUpButton->setIcon(UP_ICON);
+    QObject::connect(directoryUpButton, &QToolButton::clicked,
         [this](bool checked)
         {
-            SetCurrentBrowserDirectory(currentDirectory.parent_path());
+            listView->SetCurrentDirectory(GetCurrentDirectory().parent_path());
         });
-    directoryRefreshButton = new QPushButton(REFRESH_ICON, "", this);
-    QObject::connect(directoryRefreshButton, &QPushButton::clicked,
+    directoryRefreshButton = new QToolButton(this);
+    directoryRefreshButton->setIcon(REFRESH_ICON);
+    QObject::connect(directoryRefreshButton, &QToolButton::clicked,
         [this](bool checked)
         {
-            SetCurrentBrowserDirectory(currentDirectory);
+            listView->SetCurrentDirectory(GetCurrentDirectory());
         });
 
     QHBoxLayout* hBox2 = new QHBoxLayout();
@@ -93,13 +68,6 @@ FileBrowserPanel::FileBrowserPanel(QWidget* parent) : EditorPanel("File Browser"
 FileBrowserPanel::~FileBrowserPanel()
 {
 
-}
-
-void FileBrowserPanel::SetCurrentBrowserDirectory(const std::filesystem::path& currentDirectory)
-{
-    this->currentDirectory = currentDirectory;
-
-    model->SetCurrentDirectory(currentDirectory);
 }
 
 void FileBrowserPanel::Initialize()

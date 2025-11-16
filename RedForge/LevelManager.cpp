@@ -15,7 +15,7 @@ void LevelManager::Shutdown()
 
 }
 
-Entity LevelManager::CreateEntity(std::string name, Entity parent)
+Entity LevelManager::CreateEntity(std::string name, Entity parent, const std::filesystem::path& prefabPath)
 {
 	// Total number of entites created; used for default entity names
 	static uint32_t createdCount = 0;
@@ -40,6 +40,7 @@ Entity LevelManager::CreateEntity(std::string name, Entity parent)
 	EntityLevelData entityLevelData = {};
 	//entityLevelData.levelIndex = newEntityLevelIndex;
 	entityLevelData.name = name == "" ? "Entity " + std::to_string(createdCount) : name;
+	entityLevelData.prefabPath = prefabPath;
 	entityLevelData.parent = parent;
 	entityLevelData.firstChild = {};
 	entityLevelData.nextSibling = {};
@@ -145,8 +146,11 @@ bool LevelManager::SetEntityParent(Entity entity, Entity newParent)
         lastSibling = Instance->entityLevelDataMap[lastSibling].nextSibling;
 
     // If lastSibling is valid, set entity as the next child after it
-    if(lastSibling.IsValid())
+	if(lastSibling.IsValid())
+	{
 		Instance->entityLevelDataMap[lastSibling].nextSibling = entity;
+		Instance->onEntityLevelDataModified.Broadcast(lastSibling);
+	}
     // Otherwise newParent has no children, so set entity as firstChild instead
     else
 		Instance->entityLevelDataMap[newParent].firstChild = entity;
@@ -156,6 +160,8 @@ bool LevelManager::SetEntityParent(Entity entity, Entity newParent)
     Instance->entityLevelDataMap[entity].nextSibling = {};
     Instance->entityLevelDataMap[entity].lastSibling = lastSibling;
     Instance->entityLevelDataMap[entity].depth = Instance->entityLevelDataMap[newParent].depth + 1;
+
+	Instance->onEntityLevelDataModified.Broadcast(entity);
 
     return true;
 }
@@ -185,18 +191,27 @@ bool LevelManager::MoveEntityBefore(Entity entity, Entity next)
     Entity previous = Instance->entityLevelDataMap[next].lastSibling;
 
     // If next was the first child of its parent, entity will now be the first child instead
-    if(Instance->entityLevelDataMap[parent].firstChild == next)
+	if(Instance->entityLevelDataMap[parent].firstChild == next)
+	{
 		Instance->entityLevelDataMap[parent].firstChild = entity;
+		Instance->onEntityLevelDataModified.Broadcast(parent);
+	}
     // Set entity as the last sibling before next
-    if(previous.IsValid())
+	if(previous.IsValid())
+	{
 		Instance->entityLevelDataMap[previous].nextSibling = entity;
+		Instance->onEntityLevelDataModified.Broadcast(previous);
+	}
 	Instance->entityLevelDataMap[next].lastSibling = entity;
+	Instance->onEntityLevelDataModified.Broadcast(next);
 
     // Update entity's level data
     Instance->entityLevelDataMap[entity].parent = parent;
     Instance->entityLevelDataMap[entity].nextSibling = next;
     Instance->entityLevelDataMap[entity].lastSibling = previous;
     Instance->entityLevelDataMap[entity].depth = Instance->entityLevelDataMap[next].depth;
+
+	Instance->onEntityLevelDataModified.Broadcast(entity);
 
     return true;
 }
@@ -226,15 +241,21 @@ bool LevelManager::MoveEntityAfter(Entity entity, Entity previous)
     Entity next = Instance->entityLevelDataMap[previous].nextSibling;
 
     // Set entity as the next sibling after previous
-    if(next.IsValid())
+	if(next.IsValid())
+	{
 		Instance->entityLevelDataMap[next].lastSibling = entity;
+		Instance->onEntityLevelDataModified.Broadcast(next);
+	}
 	Instance->entityLevelDataMap[previous].nextSibling = entity;
+	Instance->onEntityLevelDataModified.Broadcast(previous);
 
     // Update entity's level data
     Instance->entityLevelDataMap[entity].parent = parent;
     Instance->entityLevelDataMap[entity].nextSibling = next;
     Instance->entityLevelDataMap[entity].lastSibling = previous;
     Instance->entityLevelDataMap[entity].depth = Instance->entityLevelDataMap[previous].depth;
+
+	Instance->onEntityLevelDataModified.Broadcast(entity);
 
     return true;
 }
@@ -275,11 +296,51 @@ void LevelManager::ForEachEntity_Reversed(std::function<void(const Entity&)> cal
 	}
 }
 
-void LevelManager::SaveLevel()
+void LevelManager::SaveEntityAsPrefab(const Entity& entity, const std::filesystem::path& prefabPath)
 {
+	assert(Instance->entityLevelDataMap.find(entity) != Instance->entityLevelDataMap.end() && "Entity not in level.");
+	
+	// Associate this entity with the prefab
+	Instance->entityLevelDataMap[entity].prefabPath = prefabPath;
+	Instance->onEntityLevelDataModified.Broadcast(entity);
+
+	std::string prefabName = GetEntityName(entity);
+
+	/* Save the entity hierarchy (all children will be saved recursively) */
+
+	SerializedObject prefabObject = SaveEntity(entity);
+
+	/* Save the object to file */
+
+	std::ofstream fileOut(GetGameAssetsPath().append(prefabPath.string()));
+	FileManager::SaveObject(fileOut, prefabObject);
+	fileOut.close();
+
+	LOG("Prefab Saved: {}", prefabName);
+}
+Entity LevelManager::LoadEntityFromPrefab(const std::filesystem::path& prefabPath, const Entity& parent)
+{
+	/* Load the object from file */
+
+	std::ifstream fileIn(GetGameAssetsPath().append(prefabPath.string()));
+	SerializedObject prefabObject = FileManager::LoadObject(fileIn);
+	fileIn.close();
+
+	// The prefab itself is an entity, so we can just load it normally (all children will be loaded recursively)
+	Entity newEntity = LoadEntity(prefabObject, parent);
+	
+	LOG("Level Loaded: {}", prefabObject.parameters["Name"]);
+
+	return newEntity;
+}
+
+void LevelManager::SaveLevel(const std::filesystem::path& levelPath)
+{
+	std::string levelName = levelPath.filename().replace_extension().string();
+
 	SerializedObject levelObject = {};
 	levelObject.typeName = "Level";
-	levelObject.parameters.emplace("Name", "Level0");
+	levelObject.parameters.emplace("Name", levelName);
 
 	/* Save all top-level entities in the level (each entity will recursively save their children) */
 
@@ -293,18 +354,18 @@ void LevelManager::SaveLevel()
 
 	/* Save the object to file */
 
-	std::ofstream fileOut(GetGameAssetsPath().append(L"Levels/Level.txt"));
+	std::ofstream fileOut(GetGameAssetsPath().append(levelPath.string()));
 	FileManager::SaveObject(fileOut, levelObject);
 	fileOut.close();
 
-	LOG("Level Saved: \"Level0\"");
+	LOG("Level Saved: {}", levelName);
 }
-void LevelManager::LoadLevel()
+void LevelManager::LoadLevel(const std::filesystem::path& levelPath)
 {
 	/* Load the object from file */
 
-	std::cout << GetGameAssetsPath().append(L"Levels/Level.txt").string() << std::endl;
-	std::ifstream fileIn(GetGameAssetsPath().append(L"Levels/Level.txt"));
+	std::cout << GetGameAssetsPath().append(levelPath.string()).string() << std::endl;
+	std::ifstream fileIn(GetGameAssetsPath().append(levelPath.string()));
 	SerializedObject levelObject = FileManager::LoadObject(fileIn);
 	fileIn.close();
 
@@ -312,7 +373,7 @@ void LevelManager::LoadLevel()
 	for(SerializedObject& child : levelObject.children)
 		LoadEntity(child, {});
 	
-	LOG("Level Loaded: \"Level0\"");
+	LOG("Level Loaded: {}", levelObject.parameters["Name"]);
 }
 
 SerializedObject LevelManager::SaveEntity(Entity entity)
@@ -320,6 +381,7 @@ SerializedObject LevelManager::SaveEntity(Entity entity)
 	SerializedObject entityObject = {};
 	entityObject.typeName = "Entity";
 	entityObject.parameters.emplace("Name", GetEntityName(entity));
+	entityObject.parameters.emplace("PrefabPath", GetEntityPrefabPath(entity).string());
 
 	std::unordered_map<void*, std::type_index> components = EntityManager::GetAllComponents(entity);
 	for(auto& component : components)
@@ -356,11 +418,11 @@ SerializedObject LevelManager::SaveEntity(Entity entity)
 
 	return entityObject;
 }
-void LevelManager::LoadEntity(const SerializedObject& entityObject, Entity parent)
+Entity LevelManager::LoadEntity(const SerializedObject& entityObject, Entity parent)
 {
 	assert(entityObject.typeName == "Entity");
 
-	Entity newEntity = CreateEntity(entityObject.parameters.at("Name"), parent);
+	Entity newEntity = CreateEntity(entityObject.parameters.at("Name"), parent, entityObject.parameters.at("PrefabPath"));
 
 	for(const SerializedObject& child : entityObject.children)
 	{
@@ -394,6 +456,8 @@ void LevelManager::LoadEntity(const SerializedObject& entityObject, Entity paren
 		if(child.typeName == "Entity")
 			LoadEntity(child, newEntity);
 	}
+
+	return newEntity;
 }
 
 std::vector<Entity> LevelManager::GetAllEntityAncestors(const Entity& entity)
@@ -436,54 +500,46 @@ bool LevelManager::IsEntityChildOf(Entity parent, Entity child)
     return isChild;
 }
 
-//uint32_t LevelManager::GetLevelIndex(Entity entity)
-//{
-//	// If valid and in level, get from data map
-//	if(EntityManager::IsEntityValid(entity) && Instance->entityLevelDataMap.find(entity.index) != Instance->entityLevelDataMap.end())
-//		return Instance->entityLevelDataMap[entity.index].levelIndex;
-//	// Otherwise return invalid
-//	else
-//		return INVALID_ENTITY;
-//}
 std::string LevelManager::GetEntityName(Entity entity)
 {
-	//assert(EntityManager::IsEntityValid(entity) && "Trying to access invalid entity.");
-
 	assert(Instance->entityLevelDataMap.find(entity) != Instance->entityLevelDataMap.end() && "Entity not in level.");
 	return Instance->entityLevelDataMap[entity].name;
 }
+std::filesystem::path LevelManager::GetEntityPrefabPath(Entity entity)
+{
+	assert(Instance->entityLevelDataMap.find(entity) != Instance->entityLevelDataMap.end() && "Entity not in level.");
+	return Instance->entityLevelDataMap[entity].prefabPath;
+}
 Entity LevelManager::GetEntityParent(Entity entity)
 {
-	//assert(EntityManager::IsEntityValid(entity) && "Trying to access invalid entity.");
-
 	assert(Instance->entityLevelDataMap.find(entity) != Instance->entityLevelDataMap.end() && "Entity not in level.");
 	return Instance->entityLevelDataMap[entity].parent;
 }
 Entity LevelManager::GetEntityFirstChild(Entity entity)
 {
-	//assert(EntityManager::IsEntityValid(entity) && "Trying to access invalid entity.");
-
 	assert(Instance->entityLevelDataMap.find(entity) != Instance->entityLevelDataMap.end() && "Entity not in level.");
 	return Instance->entityLevelDataMap[entity].firstChild;
 }
 Entity LevelManager::GetEntityNextSibling(Entity entity)
 {
-	//assert(EntityManager::IsEntityValid(entity) && "Trying to access invalid entity.");
-
 	assert(Instance->entityLevelDataMap.find(entity) != Instance->entityLevelDataMap.end() && "Entity not in level.");
 	return Instance->entityLevelDataMap[entity].nextSibling;
 }
 Entity LevelManager::GetEntityLastSibling(Entity entity)
 {
-	//assert(EntityManager::IsEntityValid(entity) && "Trying to access invalid entity.");
-
 	assert(Instance->entityLevelDataMap.find(entity) != Instance->entityLevelDataMap.end() && "Entity not in level.");
 	return Instance->entityLevelDataMap[entity].lastSibling;
 }
 uint32_t LevelManager::GetEntityDepth(Entity entity)
 {
-	//assert(EntityManager::IsEntityValid(entity) && "Trying to access invalid entity.");
-
 	assert(Instance->entityLevelDataMap.find(entity) != Instance->entityLevelDataMap.end() && "Entity not in level.");
 	return Instance->entityLevelDataMap[entity].depth;
+}
+
+void LevelManager::SetEntityName(const Entity& entity, const std::string& name)
+{
+	assert(Instance->entityLevelDataMap.find(entity) != Instance->entityLevelDataMap.end() && "Entity not in level.");
+	Instance->entityLevelDataMap[entity].name = name;
+
+	Instance->onEntityLevelDataModified.Broadcast(entity);
 }

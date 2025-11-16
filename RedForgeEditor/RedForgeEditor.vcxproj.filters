@@ -54,9 +54,6 @@
     <ClCompile Include="FileBrowserPanel.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="HierarchicalItemModel.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="HierarchyPanel.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -93,12 +90,12 @@
     <ClCompile Include="FileItemModel.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="FileListView.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="QtUtils.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="HierarchicalItemModel.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="QtInputLayer.h">
@@ -176,6 +173,9 @@
       <Filter>Header Files</Filter>
     </QtMoc>
     <QtMoc Include="FileItemModel.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
+    <QtMoc Include="FileListView.h">
       <Filter>Header Files</Filter>
     </QtMoc>
   </ItemGroup>

@@ -28,8 +28,8 @@ ComponentVariableEntry_Vector2::~ComponentVariableEntry_Vector2()
 
 void ComponentVariableEntry_Vector2::UpdateDisplayedValue()
 {
-	fieldX->SetValue(variablePtr->x);
-	fieldY->SetValue(variablePtr->y);
+	if(fieldX->GetValue() != variablePtr->x) fieldX->SetValue(variablePtr->x);
+	if(fieldY->GetValue() != variablePtr->y) fieldY->SetValue(variablePtr->y);
 }
 void ComponentVariableEntry_Vector2::OnValueChanged()
 {

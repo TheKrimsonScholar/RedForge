@@ -74,7 +74,7 @@ void MainEditorWindow::Initialize()
 	CameraManager::SetViewMatrixOverride(&viewport->GetCamera()->viewMatrix);
 	CameraManager::SetProjectionMatrixOverride(&viewport->GetCamera()->projectionMatrix);
 
-	LevelManager::LoadLevel();
+	LevelManager::LoadLevel(L"Levels/Level.txt");
 
 	viewport->Initialize();
 	hierarchyPanel->Initialize();

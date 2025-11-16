@@ -7,8 +7,6 @@
 #include <QTextBrowser>
 #include <QLineEdit>
 #include <QLabel>
-#include <QDragEnterEvent>
-#include <QMimeData>
 
 class ConsolePanel : public EditorPanel
 {

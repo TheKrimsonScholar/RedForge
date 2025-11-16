@@ -1,17 +1,16 @@
 #pragma once
 
+#include <QStandardItemModel>
+
 #include "LevelManager.h"
 
 #include <QApplication>
 #include <QTreeView>
-#include <QStandardItemModel>
 #include <QString>
 #include <QDebug>
 #include <QIODevice>
 #include <QMimeData>
 #include <QDataStream>
-
-#include "HierarchicalItemModel.h"
 
 Q_DECLARE_METATYPE(Entity);
 
@@ -32,6 +31,7 @@ public:
     void InitializeHierarchy();
 
 protected:
+    QMimeData* mimeData(const QModelIndexList& indexes) const override;
     bool dropMimeData(const QMimeData* data, Qt::DropAction action, int row, int column, const QModelIndex& parent) override;
 
     void CreateEntityItem(const Entity& entity);

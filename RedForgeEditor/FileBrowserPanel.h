@@ -4,36 +4,33 @@
 
 #include <filesystem>
 
-#include <QListView>
-#include <QPushButton>
+#include <QToolButton>
 #include <QRadioButton>
 
-#include "FileItemModel.h"
+#include "FileListView.h"
 
 class FileBrowserPanel : public EditorPanel
 {
     Q_OBJECT
 
 private:
-    QListView* listView;
-    FileItemModel* model;
+    FileListView* listView;
     QRadioButton* gameDirectoryButton;
     QRadioButton* engineDirectoryButton;
     QRadioButton* editorDirectoryButton;
-    QPushButton* directoryUpButton;
-    QPushButton* directoryRefreshButton;
-
-    std::filesystem::path currentDirectory;
+    QToolButton* directoryUpButton;
+    QToolButton* directoryRefreshButton;
 
 public:
     FileBrowserPanel(QWidget* parent = nullptr);
     ~FileBrowserPanel();
-
-    void SetCurrentBrowserDirectory(const std::filesystem::path& currentDirectory);
 
 protected:
     void Initialize() override;
     void Update() override;
 
     friend class MainEditorWindow;
+
+public:
+    std::filesystem::path GetCurrentDirectory() { return listView->GetCurrentDirectory(); }
 };

@@ -1,5 +1,7 @@
 #include "EntityHierarchyItemModel.h"
 
+#include "EditorPaths.h"
+
 QDataStream& operator<<(QDataStream& out, const Entity& data)
 {
     return out << data.index << data.generation;
@@ -12,6 +14,15 @@ QDataStream& operator>>(QDataStream& in, Entity& data)
 EntityHierarchyItemModel::EntityHierarchyItemModel(QObject* parent) : QStandardItemModel(parent)
 {
     setHorizontalHeaderLabels({ "Name", "Level" });
+    QObject::connect(this, &EntityHierarchyItemModel::itemChanged, this, 
+        [](QStandardItem* item)
+        {
+            std::string itemName = item->data(Qt::DisplayRole).value<QString>().toStdString();
+            Entity entity = item->data(Qt::UserRole).value<Entity>();
+            // Update entity name if it was changed
+            if(LevelManager::GetEntityName(entity) != itemName)
+                LevelManager::SetEntityName(entity, itemName);
+        });
 }
 EntityHierarchyItemModel::~EntityHierarchyItemModel()
 {
@@ -30,23 +41,68 @@ void EntityHierarchyItemModel::InitializeHierarchy()
         });
 }
 
+QMimeData* EntityHierarchyItemModel::mimeData(const QModelIndexList& indexes) const
+{
+    QMimeData* mimeData = QStandardItemModel::mimeData(indexes);
+    QByteArray encoded;
+    QDataStream stream(&encoded, QIODevice::WriteOnly);
+
+    for(const QModelIndex& index : indexes)
+    {
+        if(index.isValid())
+        {
+            QMap<int, QVariant> roleDataMap;
+            roleDataMap.insert(Qt::DisplayRole, data(index, Qt::DisplayRole));
+            roleDataMap.insert(Qt::UserRole, data(index, Qt::UserRole));
+
+            stream << index.row() << index.column() << roleDataMap;
+        }
+    }
+
+    mimeData->setData("application/x-entityhierarchyitem", encoded);
+    return mimeData;
+}
 bool EntityHierarchyItemModel::dropMimeData(const QMimeData* data, Qt::DropAction action, int row, int column, const QModelIndex& parent)
 {
     std::vector<Entity> draggedEntities;
-    QByteArray encoded = data->data("application/x-qabstractitemmodeldatalist");
-    QDataStream stream(&encoded, QIODevice::ReadOnly);
-
-    while(!stream.atEnd())
+    // If it's an entity move operation from within the hierarchy, read the entities in normally
+    if(data->hasFormat("application/x-entityhierarchyitem"))
     {
-        int r, c;
-        QMap<int, QVariant> roleDataMap;
-        stream >> r >> c >> roleDataMap;
-                
-        if(roleDataMap[Qt::UserRole].isValid())
-        {
-            Entity entity = roleDataMap[Qt::UserRole].value<Entity>();
+        QByteArray encoded = data->data("application/x-entityhierarchyitem");
+        QDataStream stream(&encoded, QIODevice::ReadOnly);
 
-            draggedEntities.push_back(entity);
+        while(!stream.atEnd())
+        {
+            int r, c;
+            QMap<int, QVariant> roleDataMap;
+            stream >> r >> c >> roleDataMap;
+                
+            if(roleDataMap[Qt::UserRole].isValid())
+            {
+                Entity entity = roleDataMap[Qt::UserRole].value<Entity>();
+
+                draggedEntities.push_back(entity);
+            }
+        }
+    }
+    // If dropping file items, add them to the hierarchy and then move them to the correct position
+    else if(data->hasFormat("application/x-filelistitem"))
+    {
+        QByteArray encoded = data->data("application/x-filelistitem");
+        QDataStream stream(&encoded, QIODevice::ReadOnly);
+
+        while(!stream.atEnd())
+        {
+            int r, c;
+            QMap<int, QVariant> roleDataMap;
+            stream >> r >> c >> roleDataMap;
+                
+            if(roleDataMap[Qt::UserRole].isValid())
+            {
+                Entity entity = LevelManager::LoadEntityFromPrefab(roleDataMap[Qt::UserRole].value<QString>().toStdString(), {});
+
+                draggedEntities.push_back(entity);
+            }
         }
     }
 
@@ -83,8 +139,9 @@ bool EntityHierarchyItemModel::dropMimeData(const QMimeData* data, Qt::DropActio
 
 void EntityHierarchyItemModel::CreateEntityItem(const Entity& entity)
 {
-    QStandardItem* item = new QStandardItem(LevelManager::GetEntityName(entity).c_str());
-    item->setFlags(Qt::ItemIsSelectable | Qt::ItemIsDragEnabled | Qt::ItemIsDropEnabled | Qt::ItemIsEnabled);
+    QIcon icon = LevelManager::GetEntityPrefabPath(entity).empty() ? QICON_FROM_PATH("Entity Hierarchy/Entity") : QICON_FROM_PATH("Entity Hierarchy/Prefab");
+    QStandardItem* item = new QStandardItem(icon, LevelManager::GetEntityName(entity).c_str());
+    item->setFlags(Qt::ItemIsSelectable | Qt::ItemIsDragEnabled | Qt::ItemIsDropEnabled | Qt::ItemIsEnabled | Qt::ItemIsEditable);
     item->setData(QVariant::fromValue(entity), Qt::UserRole);
 
     entityItems.emplace(entity, item);

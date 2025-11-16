@@ -1,0 +1,8 @@
+$Entity
+	Name=Entity 3
+	PrefabPath=C:/Users/krims/Documents/GitHub/RedForge/RedForge/../RedForgeGame\Assets/Entity 3.entity
+	$Entity
+		Name=Entity 6
+		PrefabPath=
+	$$
+$$

@@ -37,9 +37,9 @@ ComponentVariableEntry_Vector3::~ComponentVariableEntry_Vector3()
 
 void ComponentVariableEntry_Vector3::UpdateDisplayedValue()
 {
-	fieldX->SetValue(variablePtr->x);
-	fieldY->SetValue(variablePtr->y);
-	fieldZ->SetValue(variablePtr->z);
+	if(fieldX->GetValue() != variablePtr->x) fieldX->SetValue(variablePtr->x);
+	if(fieldY->GetValue() != variablePtr->y) fieldY->SetValue(variablePtr->y);
+	if(fieldZ->GetValue() != variablePtr->z) fieldZ->SetValue(variablePtr->z);
 }
 void ComponentVariableEntry_Vector3::OnValueChanged()
 {

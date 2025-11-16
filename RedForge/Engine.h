@@ -12,6 +12,8 @@
 #include "LevelManager.h"
 #include "NetworkSystem.h"
 
+#include "DebugMacros.h"
+
 #include "Exports.h"
 
 REDFORGE_API class Engine

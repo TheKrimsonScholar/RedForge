@@ -10,6 +10,9 @@ class FileItemModel : public QStandardItemModel
 {
 	Q_OBJECT
 
+private:
+	std::filesystem::path currentDirectory;
+
 public:
 	explicit FileItemModel(QObject* parent = nullptr);
 	~FileItemModel();
@@ -17,24 +20,11 @@ public:
     void SetCurrentDirectory(const std::filesystem::path& currentDirectory);
 
 protected:
-    QMimeData* mimeData(const QModelIndexList& indexes) const
-    {
-        QMimeData* mimeData = new QMimeData();
-        QByteArray encoded;
-        QDataStream stream(&encoded, QIODevice::WriteOnly);
-
-        for(const QModelIndex& index : indexes)
-        {
-            if(index.isValid())
-            {
-                stream << data(index, Qt::DisplayRole).toString();
-                stream << data(index, Qt::UserRole).toString();
-            }
-        }
-
-        mimeData->setData("application/x-filelistitem", encoded);
-        return mimeData;
-    }
+	QMimeData* mimeData(const QModelIndexList& indexes) const override;
+	bool dropMimeData(const QMimeData* data, Qt::DropAction action, int row, int column, const QModelIndex& parent) override;
 
     QIcon GetFileTypeIcon(const std::filesystem::path& path) const;
+
+public:
+	std::filesystem::path GetCurrentDirectory() { return currentDirectory; }
 };

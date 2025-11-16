@@ -37,7 +37,8 @@ ComponentEntry::ComponentEntry(const Entity& entity, std::type_index componentTy
 
     label = new QLabel((GET_COMPONENT_NAME(componentTypeID)).c_str(), this);
 
-    removeButton = new QPushButton(QICON_FROM_PATH("Basic/Cross"), "", this);
+    removeButton = new QToolButton(this);
+    removeButton->setIcon(QICON_FROM_PATH("Basic/Cross"));
     removeButton->setMaximumSize(QSize(32, 32));
     QObject::connect(removeButton, &QPushButton::clicked, this, 
         [entity, componentTypeID]()

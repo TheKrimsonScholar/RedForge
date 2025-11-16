@@ -1,0 +1,53 @@
+$Entity
+	Name=Entity 1
+	PrefabPath=C:/Users/krims/Documents/GitHub/RedForge/RedForge/../RedForgeGame\Assets/Entity 1.entity
+	$Component
+		TypeName=TestComponent
+		k=3.2 
+	$$
+	$Component
+		location=(9.8, 0, 0) 
+		TypeName=TransformComponent
+		rotation=(0.709575, -0.405816, -0.572663, -0.0622365) 
+		scale=(1, 1, 1) 
+	$$
+	$Component
+		TypeName=MeshRendererComponent
+		mesh="default.obj" 
+		material="default" 
+	$$
+	$Entity
+		Name=Entity 3
+		PrefabPath=C:/Users/krims/Documents/GitHub/RedForge/RedForge/../RedForgeGame\Assets/Entity 3.entity
+		$Entity
+			Name=Entity 6
+			PrefabPath=
+		$$
+	$$
+	$Entity
+		Name=Entity 4
+		PrefabPath=
+		$Component
+			TypeName=TransformComponent
+			location=(0, 0, 0) 
+			rotation=(7.54816e-08, -0.999784, -0.0207949, 1.56997e-09) 
+			scale=(1, 1, 1) 
+		$$
+		$Entity
+			Name=Entity 5
+			PrefabPath=
+		$$
+		$Entity
+			Name=Entity 3
+			PrefabPath=C:/Users/krims/Documents/GitHub/RedForge/RedForge/../RedForgeGame\Assets/Entity 3.entity
+			$Entity
+				Name=Entity 6
+				PrefabPath=
+			$$
+		$$
+	$$
+	$Entity
+		Name=Entity 10
+		PrefabPath=
+	$$
+$$

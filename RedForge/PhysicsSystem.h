@@ -100,6 +100,9 @@ public:
 
 	REDFORGE_API void Update();
 
+	REDFORGE_API static void Pause() { Instance->tickPhysics = false; }
+	REDFORGE_API static void Unpause() { Instance->tickPhysics = true; }
+
 private:
 	void UpdatePhysics(TransformComponent& transform, PhysicsComponent& rigidbody, float deltaTime);
 

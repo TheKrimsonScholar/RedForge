@@ -25,6 +25,8 @@ protected:
 	void OnEntityCreated(const Entity& entity);
 	void OnEntityDestroyed(const Entity& entity);
 
+	void OnEntityLevelDataModified(const Entity& entity);
+
 	void OnEntityReparented(const Entity& entity, const Entity& newParent);
 	void OnEntityMovedBefore(const Entity& entity, const Entity& newNext);
 	void OnEntityMovedAfter(const Entity& entity, const Entity& newPrevious);

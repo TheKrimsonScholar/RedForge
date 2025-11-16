@@ -9,17 +9,34 @@ EditorPanel #title
 	background-color: #690500;
 	color: #d3d7cf;
 }
-EditorPanel #float-button
+/*EditorPanel #float-button
 {
-	background-color: #690500;
+	background-color: rgba(0, 0, 0, 0);
 }
 EditorPanel #close-button
 {
 	background-color: #690500;
-}
+}*/
 
 QPushButton
 {
 	background-color: #690500;
 	color: #d3d7cf;
+}
+
+QToolButton
+{
+    background-color: #00000000;
+    
+    color: white;
+    
+    border: none;
+}
+QToolButton:hover
+{
+    background-color: #101010;
+    
+    color: white;
+    
+    border: 1px solid #333333;
 }

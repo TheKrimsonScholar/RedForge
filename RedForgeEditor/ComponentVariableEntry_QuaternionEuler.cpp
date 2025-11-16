@@ -35,9 +35,9 @@ ComponentVariableEntry_QuaternionEuler::~ComponentVariableEntry_QuaternionEuler(
 
 void ComponentVariableEntry_QuaternionEuler::UpdateDisplayedValue()
 {
-	fieldPitch->SetValue(glm::pitch(*variablePtr));
-	fieldYaw->SetValue(glm::yaw(*variablePtr));
-	fieldRoll->SetValue(glm::roll(*variablePtr));
+	if(fieldPitch->GetValue() != glm::pitch(*variablePtr)) fieldPitch->SetValue(glm::pitch(*variablePtr));
+	if(fieldYaw->GetValue() != glm::yaw(*variablePtr)) fieldYaw->SetValue(glm::yaw(*variablePtr));
+	if(fieldRoll->GetValue() != glm::roll(*variablePtr)) fieldRoll->SetValue(glm::roll(*variablePtr));
 }
 void ComponentVariableEntry_QuaternionEuler::OnValueChanged()
 {
