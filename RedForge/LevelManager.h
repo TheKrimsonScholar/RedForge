@@ -46,7 +46,8 @@ public:
 	void Startup();
 	void Shutdown();
 
-	REDFORGE_API static Entity CreateEntity(std::string name = "", Entity parent = {}, const std::filesystem::path& prefabPath = {});
+	template<typename... Components>
+	static inline Entity CreateEntity(std::string name = "", Entity parent = {}, const std::filesystem::path& prefabPath = {});
 	REDFORGE_API static void DestroyEntity(Entity entity);
 
 	REDFORGE_API static bool SetEntityParent(Entity entity, Entity newParent);
@@ -98,4 +99,57 @@ public:
 	REDFORGE_API static Event<const Entity&, const Entity&>* GetOnEntityMovedBefore() { return Instance ? &Instance->onEntityMovedBefore : nullptr; }
 	// Triggers right before an entity is moved to the position right after another entity. Provides the moved entity and its new previous sibling entity.
 	REDFORGE_API static Event<const Entity&, const Entity&>* GetOnEntityMovedAfter() { return Instance ? &Instance->onEntityMovedAfter : nullptr; }
+
+private:
+	REDFORGE_API static LevelManager* GetInstance() { return Instance; }
 };
+
+template<typename... Components>
+inline Entity LevelManager::CreateEntity(std::string name, Entity parent, const std::filesystem::path& prefabPath)
+{
+	// Total number of entites created; used for default entity names
+	static uint32_t createdCount = 0;
+
+	createdCount++;
+
+	//assert(EntityManager::IsEntityValid(parent) && "Parent entity is invalid."); Invalid parent will instead be interpreted as no parent
+
+	/* Insert the new entity as parent's last child */
+
+	//uint32_t newEntityLevelIndex = Instance->entities.size(); // If no parent, insert at the end of the entities list
+	
+	//assert(Instance->entityLevelDataMap.find(parent) != Instance->entityLevelDataMap.end() && "Parent entity not in level.");
+	
+	Entity lastSibling = GetEntityFirstChild(parent);
+	// Find the last child of the parent
+	while(GetEntityNextSibling(lastSibling).IsValid())
+		lastSibling = GetEntityNextSibling(lastSibling);
+	
+	Entity newEntity = EntityManager::CreateEntity<Components...>();
+
+	EntityLevelData entityLevelData = {};
+	//entityLevelData.levelIndex = newEntityLevelIndex;
+	entityLevelData.name = name == "" ? "Entity " + std::to_string(createdCount) : name;
+	entityLevelData.prefabPath = prefabPath;
+	entityLevelData.parent = parent;
+	entityLevelData.firstChild = {};
+	entityLevelData.nextSibling = {};
+	entityLevelData.lastSibling = lastSibling;
+	entityLevelData.depth = GetEntityDepth(parent) + 1;
+
+	LevelManager* Instance = GetInstance();
+
+	// If parent doesn't have any children yet, this is the first child
+	if(!Instance->entityLevelDataMap[parent].firstChild.IsValid())
+		Instance->entityLevelDataMap[parent].firstChild = newEntity;
+	// If there is a sibling before this entity, update it
+	if(lastSibling.IsValid())
+		Instance->entityLevelDataMap[lastSibling].nextSibling = newEntity;
+
+	//Instance->entities.insert(Instance->entities.begin() + newEntityLevelIndex, newEntity);
+	Instance->entityLevelDataMap.emplace(newEntity, entityLevelData);
+
+	Instance->onEntityCreated.Broadcast(newEntity);
+
+	return newEntity;
+}

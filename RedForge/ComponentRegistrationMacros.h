@@ -3,6 +3,9 @@
 #include "ComponentMacros.h"
 #include "EntityManager.h"
 
+#define REGISTER_COMPONENT(Type)	\
+REGISTER_COMPONENT_BEGIN(Type)		\
+REGISTER_COMPONENT_END(Type)
 #define REGISTER_COMPONENT_BEGIN(Type)																													\
 struct RegisterComponent_##Type																															\
 {																																						\
@@ -58,4 +61,4 @@ struct RegisterComponent_##Type																															\
 #define REGISTER_COMPONENT_END(Type)																													\
 	}																																					\
 };																																						\
-static RegisterComponent_##Type registerComponent_##Type;
+static inline RegisterComponent_##Type registerComponent_##Type;

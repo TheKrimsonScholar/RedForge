@@ -14,14 +14,14 @@ private:
     std::function<void(Args...)> lambda;
 
 public:
-    // Constructor for free functions.
+    // Constructor for free functions
     EventCallback(void(*function)(Args...))
     {
         this->obj = nullptr;
         this->memberFunction = *reinterpret_cast<void**>(&function);
         this->lambda = [function](Args... args) { (*function)(args...); };
     };
-    // Constructor for non-const member functions.
+    // Constructor for non-const member functions
     template<typename ClassType>
     EventCallback(ClassType* obj, void(ClassType::* memberFunction)(Args...))
     {
@@ -29,7 +29,7 @@ public:
         this->memberFunction = *reinterpret_cast<void**>(&memberFunction);
         this->lambda = [obj, memberFunction](Args... args) { (obj->*memberFunction)(args...); };
     };
-    // Constructor for const member functions.
+    // Constructor for const member functions
     template<typename ClassType>
     EventCallback(const ClassType* obj, void(ClassType::* memberFunction)(Args...) const)
     {

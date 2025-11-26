@@ -28,7 +28,7 @@ MainEditorWindow::MainEditorWindow(QWidget* parent) : QMainWindow(parent)
 					engine->Update();
 					Update();
 				});
-			updateTimer->start(1000 / 60);
+			updateTimer->start(0);
 		};
 
 	inputLayer = new QtInputLayer(viewport);

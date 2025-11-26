@@ -16,6 +16,8 @@
 
 #include "Exports.h"
 
+#include "Archetype.h"
+
 REDFORGE_API class Engine
 {
 private:
@@ -30,6 +32,8 @@ private:
 	FileManager fileManager;
 	LevelManager levelManager;
 	NetworkSystem networkSystem;
+
+	std::vector<System*> archetypes;
 
 	bool isRunning = false;
 

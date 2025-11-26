@@ -21,7 +21,7 @@ ViewportCamera::~ViewportCamera()
 
 void ViewportCamera::Update()
 {
-	static const float LOOK_SPEED = 1.0f;
+	static const float LOOK_SPEED = 10.0f;
 	static const float MOVE_SPEED = 5.0f;
 
 	if(InputSystem::IsMouseButtonDown(MouseButtonCode::Left))

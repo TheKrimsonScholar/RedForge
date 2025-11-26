@@ -33,24 +33,6 @@ void EntityManager::Shutdown()
 	Instance = nullptr;
 }
 
-Entity EntityManager::CreateEntity()
-{
-	/* Determine next entity index */
-
-	Entity entity = {};
-	if(!Instance->freeQueue.empty())
-	{
-		entity.index = Instance->freeQueue.top();
-		Instance->freeQueue.pop();
-	}
-	else
-		entity.index = Instance->lastEntity++;
-
-	Instance->entityStates[entity.index] = true;
-	entity.generation = ++Instance->generationCounts[entity.index];
-
-	return entity;
-}
 void EntityManager::DestroyEntity(Entity entity)
 {
 	assert(IsEntityValid(entity) && "Attempting to destroy invalid entity.");

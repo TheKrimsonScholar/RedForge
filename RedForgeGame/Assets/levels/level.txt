@@ -7,6 +7,231 @@ $Level
 			TypeName=InputComponent
 		$$
 		$Component
+			TypeName=MeshRendererComponent
+			mesh="default.obj" 
+			material="default" 
+		$$
+		$Component
+			location=(0, 0, -4) 
+			TypeName=TransformComponent
+			rotation=(0, -0, -1, 7.54979e-08) 
+			scale=(1, 1, 1) 
+		$$
+		$Component
+			TypeName=PhysicsComponent
+			bounciness=0 
+			angularVelocity=(0, 0, 0) 
+			mass=1 
+			staticFriction=0.5 
+			gravity=(0, -9.8, 0) 
+			dynamicFriction=0.3 
+			velocity=(0, 0, 0) 
+		$$
+	$$
+	$Entity
+		Name=Cube
+		PrefabPath=C:/Users/krims/Documents/GitHub/RedForge/RedForge/../Assets/Engine/Cube.entity
+		$Component
+			TypeName=MeshRendererComponent
+			mesh="default.obj" 
+			material="default" 
+		$$
+		$Component
+			TypeName=TransformComponent
+			location=(0, 0, 0) 
+			rotation=(0, -0, -1, 7.54979e-08) 
+			scale=(1, 1, 1) 
+		$$
+		$Component
+			angularVelocity=(0, 0, 0) 
+			bounciness=0 
+			TypeName=PhysicsComponent
+			mass=1 
+			gravity=(0, -9.8, 0) 
+			staticFriction=0.5 
+			dynamicFriction=0.3 
+			velocity=(0, 0, 0) 
+		$$
+	$$
+	$Entity
+		Name=Cube
+		PrefabPath=C:/Users/krims/Documents/GitHub/RedForge/RedForge/../Assets/Engine/Cube.entity
+		$Component
+			TypeName=TransformComponent
+			location=(0, 0, 0) 
+			rotation=(0, -0, -1, 7.54979e-08) 
+			scale=(1, 1, 1) 
+		$$
+		$Component
+			TypeName=MeshRendererComponent
+			mesh="default.obj" 
+			material="default" 
+		$$
+		$Component
+			TypeName=PhysicsComponent
+			bounciness=0 
+			angularVelocity=(0, 0, 0) 
+			mass=1 
+			staticFriction=0.5 
+			gravity=(0, -9.8, 0) 
+			dynamicFriction=0.3 
+			velocity=(0, 0, 0) 
+		$$
+	$$
+	$Entity
+		Name=Cube
+		PrefabPath=C:/Users/krims/Documents/GitHub/RedForge/RedForge/../Assets/Engine/Cube.entity
+		$Component
+			location=(0, 0, 0) 
+			TypeName=TransformComponent
+			rotation=(0, -0, -1, 7.54979e-08) 
+			scale=(1, 1, 1) 
+		$$
+		$Component
+			TypeName=MeshRendererComponent
+			mesh="default.obj" 
+			material="default" 
+		$$
+		$Component
+			angularVelocity=(0, 0, 0) 
+			bounciness=0 
+			TypeName=PhysicsComponent
+			mass=1 
+			gravity=(0, -9.8, 0) 
+			staticFriction=0.5 
+			dynamicFriction=0.3 
+			velocity=(0, 0, 0) 
+		$$
+	$$
+	$Entity
+		Name=Cube
+		PrefabPath=C:/Users/krims/Documents/GitHub/RedForge/RedForge/../Assets/Engine/Cube.entity
+		$Component
+			TypeName=TransformComponent
+			location=(0, 0, 0) 
+			rotation=(0, -0, -1, 7.54979e-08) 
+			scale=(1, 1, 1) 
+		$$
+		$Component
+			TypeName=MeshRendererComponent
+			mesh="default.obj" 
+			material="default" 
+		$$
+		$Component
+			TypeName=PhysicsComponent
+			bounciness=0 
+			angularVelocity=(0, 0, 0) 
+			mass=1 
+			staticFriction=0.5 
+			gravity=(0, -9.8, 0) 
+			dynamicFriction=0.3 
+			velocity=(0, 0, 0) 
+		$$
+	$$
+	$Entity
+		Name=Cube
+		PrefabPath=C:/Users/krims/Documents/GitHub/RedForge/RedForge/../Assets/Engine/Cube.entity
+		$Component
+			TypeName=PhysicsComponent
+			bounciness=0 
+			angularVelocity=(0, 0, 0) 
+			mass=1 
+			staticFriction=0.5 
+			gravity=(0, -9.8, 0) 
+			dynamicFriction=0.3 
+			velocity=(0, 0, 0) 
+		$$
+		$Component
+			location=(0, 0, 0) 
+			TypeName=TransformComponent
+			rotation=(0, -0, -1, 7.54979e-08) 
+			scale=(1, 1, 1) 
+		$$
+		$Component
+			TypeName=MeshRendererComponent
+			mesh="default.obj" 
+			material="default" 
+		$$
+	$$
+	$Entity
+		Name=Cube
+		PrefabPath=C:/Users/krims/Documents/GitHub/RedForge/RedForge/../Assets/Engine/Cube.entity
+		$Component
+			angularVelocity=(0, 0, 0) 
+			bounciness=0 
+			TypeName=PhysicsComponent
+			mass=1 
+			gravity=(0, -9.8, 0) 
+			staticFriction=0.5 
+			dynamicFriction=0.3 
+			velocity=(0, 0, 0) 
+		$$
+		$Component
+			TypeName=TransformComponent
+			location=(0, 0, 0) 
+			rotation=(0, -0, -1, 7.54979e-08) 
+			scale=(1, 1, 1) 
+		$$
+		$Component
+			TypeName=MeshRendererComponent
+			mesh="default.obj" 
+			material="default" 
+		$$
+	$$
+	$Entity
+		Name=Cube
+		PrefabPath=C:/Users/krims/Documents/GitHub/RedForge/RedForge/../Assets/Engine/Cube.entity
+		$Component
+			angularVelocity=(0, 0, 0) 
+			bounciness=0 
+			TypeName=PhysicsComponent
+			mass=1 
+			gravity=(0, -9.8, 0) 
+			staticFriction=0.5 
+			dynamicFriction=0.3 
+			velocity=(0, 0, 0) 
+		$$
+		$Component
+			TypeName=TransformComponent
+			location=(0, 0, 0) 
+			rotation=(0, -0, -1, 7.54979e-08) 
+			scale=(1, 1, 1) 
+		$$
+		$Component
+			TypeName=MeshRendererComponent
+			mesh="default.obj" 
+			material="default" 
+		$$
+	$$
+	$Entity
+		Name=Cube
+		PrefabPath=C:/Users/krims/Documents/GitHub/RedForge/RedForge/../Assets/Engine/Cube.entity
+		$Component
+			location=(0, 0, 0) 
+			TypeName=TransformComponent
+			rotation=(0, -0, -1, 7.54979e-08) 
+			scale=(1, 1, 1) 
+		$$
+		$Component
+			TypeName=MeshRendererComponent
+			mesh="default.obj" 
+			material="default" 
+		$$
+		$Component
+			angularVelocity=(0, 0, 0) 
+			bounciness=0 
+			TypeName=PhysicsComponent
+			mass=1 
+			gravity=(0, -9.8, 0) 
+			staticFriction=0.5 
+			dynamicFriction=0.3 
+			velocity=(0, 0, 0) 
+		$$
+	$$
+	$Entity
+		Name=Cube
+		PrefabPath=C:/Users/krims/Documents/GitHub/RedForge/RedForge/../Assets/Engine/Cube.entity
+		$Component
 			TypeName=TransformComponent
 			location=(0, 0, 0) 
 			rotation=(0, -0, -1, 7.54979e-08) 

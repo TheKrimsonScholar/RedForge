@@ -149,6 +149,19 @@ void Engine::Startup(VkSurfaceKHR surfaceOverride)
 	levelManager.Startup();
 	networkSystem.Startup();
 
+    archetypes.push_back(new Player());
+    archetypes.push_back(new Enemy());
+    
+    for(size_t i = 0; i < archetypes.size(); i++)
+        archetypes[i]->Startup();
+
+    Entity player = Player::Get()->ConstructEntity({});
+    Entity enemy = Enemy::Get()->ConstructEntity({});
+
+    Player::QueuePlayerEvent1(player, {});
+    Player::QueuePlayerEvent1(player, {});
+    Enemy::QueuePlayerEvent1(enemy, {});
+
     LOG("---- RedForge Version 0.1 ----");
 }
 void Engine::Shutdown(bool shouldDestroyVulkanInstance)
@@ -171,6 +184,10 @@ void Engine::Shutdown(bool shouldDestroyVulkanInstance)
     graphics.Shutdown(shouldDestroyVulkanInstance);
     timeManager.Shutdown();
 
+    for(size_t i = 0; i < archetypes.size(); i++)
+        delete archetypes[i];
+    archetypes.clear();
+
     isRunning = false;
 }
 
@@ -187,6 +204,9 @@ void Engine::Update()
     networkSystem.Update();
     graphics.Update();
     debugManager.Update();
+
+    for(size_t i = 0; i < archetypes.size(); i++)
+        archetypes[i]->Update();
 
     //EntityManager::GetComponent<TransformComponent>(0).rotation = glm::angleAxis(1.0f * TimeManager::GetDeltaTime(), glm::vec3(1, 0, 0)) * glm::angleAxis(1.0f * TimeManager::GetDeltaTime(), glm::vec3(0, 1, 0)) * glm::angleAxis(1.0f * TimeManager::GetDeltaTime(), glm::vec3(0, 0, 1)) * EntityManager::GetComponent<TransformComponent>(0).rotation;
 

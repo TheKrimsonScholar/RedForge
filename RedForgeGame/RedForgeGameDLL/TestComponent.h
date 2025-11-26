@@ -14,3 +14,31 @@ COMPONENT_VARS_BEGIN
 COMPONENT_VAR(float, k)
 COMPONENT_VARS_END
 REGISTER_COMPONENT_END(TestComponent)
+
+struct TestComponent
+{
+	float k;
+
+	void Initialize();
+	void Update();
+};
+
+class TestComponent_System
+{
+	void Initialize()
+	{
+		EntityManager::ForEachComponentOfType<TestComponent>(
+			[](const Entity& entity, TestComponent& component)
+			{
+				component.Initialize();
+			});
+	}
+	void Update()
+	{
+		EntityManager::ForEachComponentOfType<TestComponent>(
+			[](const Entity& entity, TestComponent& component)
+			{
+				component.Update();
+			});
+	}
+};

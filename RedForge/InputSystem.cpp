@@ -88,23 +88,19 @@ void InputSystem::Update()
 
 	/* Update all active input components */
 
-	LevelManager::ForEachEntity([this](const Entity& entity)
+    EntityManager::ForEachComponentOfType<InputComponent>(
+        [this](const Entity& entity, InputComponent& input)
 		{
-			if(EntityManager::HasComponent<InputComponent>(entity))
+			for(auto& mouseCallback : input.mouseDownCallbacks)
 			{
-				InputComponent& input = EntityManager::GetComponent<InputComponent>(entity);
-
-				for(auto& mouseCallback : input.mouseDownCallbacks)
-				{
-					if(InputSystem::IsMouseButtonDown((MouseButtonCode) mouseCallback.first))
-						mouseCallback.second(entity);
-				}
+				if(InputSystem::IsMouseButtonDown((MouseButtonCode) mouseCallback.first))
+					mouseCallback.second(entity);
+			}
 			
-				for(auto& keyCallback : input.keyDownCallbacks)
-				{
-					if(InputSystem::IsKeyDown((RFKeyCode) keyCallback.first))
-						keyCallback.second(entity);
-				}
+			for(auto& keyCallback : input.keyDownCallbacks)
+			{
+				if(InputSystem::IsKeyDown((RFKeyCode) keyCallback.first))
+					keyCallback.second(entity);
 			}
 		});
 

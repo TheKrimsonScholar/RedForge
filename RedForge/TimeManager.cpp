@@ -3,15 +3,13 @@
 #include <cstdio>
 #include <chrono>
 
-#include <GLFW/glfw3.h>
-
 void TimeManager::Startup()
 {
 	Instance = this;
 
-	startTimeMillis = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-	previousTimeMillis = 0;
-	currentTimeMillis = 0;
+	startTimeMicro = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+	previousTimeMicro = 0;
+	currentTimeMicro = 0;
 }
 void TimeManager::Shutdown()
 {
@@ -22,9 +20,9 @@ void TimeManager::Update()
 {
 	static float maxDelta = 0.0f;
 
-	currentTimeMillis = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count() - startTimeMillis;
-	deltaTime = (currentTimeMillis - previousTimeMillis) / 1000.0f;
-	previousTimeMillis = currentTimeMillis;
+	currentTimeMicro = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count() - startTimeMicro;
+	deltaTime = (static_cast<float>(currentTimeMicro - previousTimeMicro)) / 1000000.0f;
+	previousTimeMicro = currentTimeMicro;
 
 	totalFrames++;
 	numFrames++;

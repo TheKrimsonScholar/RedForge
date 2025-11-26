@@ -15,52 +15,6 @@ void LevelManager::Shutdown()
 
 }
 
-Entity LevelManager::CreateEntity(std::string name, Entity parent, const std::filesystem::path& prefabPath)
-{
-	// Total number of entites created; used for default entity names
-	static uint32_t createdCount = 0;
-
-	createdCount++;
-
-	//assert(EntityManager::IsEntityValid(parent) && "Parent entity is invalid."); Invalid parent will instead be interpreted as no parent
-
-	/* Insert the new entity as parent's last child */
-
-	//uint32_t newEntityLevelIndex = Instance->entities.size(); // If no parent, insert at the end of the entities list
-	
-	//assert(Instance->entityLevelDataMap.find(parent) != Instance->entityLevelDataMap.end() && "Parent entity not in level.");
-	
-	Entity lastSibling = GetEntityFirstChild(parent);
-	// Find the last child of the parent
-	while(GetEntityNextSibling(lastSibling).IsValid())
-		lastSibling = GetEntityNextSibling(lastSibling);
-	
-	Entity newEntity = EntityManager::CreateEntity();
-
-	EntityLevelData entityLevelData = {};
-	//entityLevelData.levelIndex = newEntityLevelIndex;
-	entityLevelData.name = name == "" ? "Entity " + std::to_string(createdCount) : name;
-	entityLevelData.prefabPath = prefabPath;
-	entityLevelData.parent = parent;
-	entityLevelData.firstChild = {};
-	entityLevelData.nextSibling = {};
-	entityLevelData.lastSibling = lastSibling;
-	entityLevelData.depth = GetEntityDepth(parent) + 1;
-
-	// If parent doesn't have any children yet, this is the first child
-	if(!Instance->entityLevelDataMap[parent].firstChild.IsValid())
-		Instance->entityLevelDataMap[parent].firstChild = newEntity;
-	// If there is a sibling before this entity, update it
-	if(lastSibling.IsValid())
-		Instance->entityLevelDataMap[lastSibling].nextSibling = newEntity;
-
-	//Instance->entities.insert(Instance->entities.begin() + newEntityLevelIndex, newEntity);
-	Instance->entityLevelDataMap.emplace(newEntity, entityLevelData);
-
-	Instance->onEntityCreated.Broadcast(newEntity);
-
-	return newEntity;
-}
 void LevelManager::DestroyEntity(Entity entity)
 {
 	// Silently return if entity is invalid or not present in level
