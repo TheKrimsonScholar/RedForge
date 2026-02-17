@@ -1,6 +1,12 @@
 #pragma once
 
+#include "System.h"
+
 #include <unordered_map>
+
+#include "DebugState.h"
+
+#include "DebugLogEvent.h"
 
 #include "Mesh.h"
 #include "Event.h"
@@ -9,22 +15,6 @@
 #include <glm/gtc/quaternion.hpp>
 
 #include "Exports.h"
-
-enum class LogType
-{
-	Cout,
-	Engine,
-	Editor,
-	Game
-};
-struct LogMessage
-{
-	double timestamp;
-	LogType logType;
-	std::string text;
-
-	REDFORGE_API std::string ToString() const;
-};
 
 struct DebugEntity
 {
@@ -53,12 +43,12 @@ namespace std
 	};
 }
 
-class DebugManager
+class DebugManager : public System<const DebugState>
 {
 private:
 	static inline DebugManager* Instance;
 
-	Event<const LogMessage&> onLogMessagePrinted;
+	Event<const DebugLogEvent&> onLogMessagePrinted;
 
 	std::streambuf* coutBuffer = nullptr;
 	std::stringstream coutStream;
@@ -70,25 +60,26 @@ private:
 	Mesh* debugBoxMesh;
 	Mesh* debugSphereMesh;
 
-	std::vector<LogMessage> debugLog;
+	std::vector<DebugLogEvent> debugLog;
 	std::unordered_map<DebugEntity, float> debugEntities;
 
 public:
 	DebugManager() {};
 	~DebugManager() {};
 
-	void Startup();
-	void Shutdown();
+	void Startup(const EngineStartupParams& params, World& world) override;
+	void PostStartup(const EngineStartupParams& params, World& world) override;
+	void Shutdown(const EngineShutdownParams& params, World& world) override;
 
-	REDFORGE_API static void PrintLogMessage(LogType logType, const std::string& text);
+	void PrintLogMessage(const DebugLogEvent& logEvent);
 	
 	static void DrawDebugBox(glm::vec3 location, glm::quat rotation, glm::vec3 scale, glm::vec4 color, float duration = 0.0f);
 	static void DrawDebugSphere(glm::vec3 location, glm::quat rotation, glm::vec3 scale, glm::vec4 color, float duration = 0.0f);
 
 private:
-	void Update();
+	void Update(LocalSystemContext& ctx, float deltaTime) override;
 
-	static void UpdateAllWireframes();
+	static void UpdateAllWireframes(float deltaTime);
 
 	friend class GraphicsSystem;
 	friend class Engine;
@@ -100,11 +91,11 @@ private:
 	static void SetDebugSphereMesh(Mesh* mesh) { Instance->debugSphereMesh = mesh; };
 
 public:
-	REDFORGE_API static std::vector<LogMessage> GetDebugLog() { return Instance->debugLog; }
+	REDFORGE_API static std::vector<DebugLogEvent> GetDebugLog() { return Instance->debugLog; }
 
 	static std::unordered_map<DebugEntity, float> GetAllDebugEntities() { return Instance->debugEntities; };
 
-	static Material* GetDebugMaterial() { return Instance->debugMaterial; };
+	static const Material* GetDebugMaterial() { return Instance->debugMaterial; };
 
-	REDFORGE_API static Event<const LogMessage&>* GetOnLogMessagePrinted() { return Instance ? &Instance->onLogMessagePrinted : nullptr; }
+	REDFORGE_API static Event<const DebugLogEvent&>* GetOnLogMessagePrinted() { return Instance ? &Instance->onLogMessagePrinted : nullptr; }
 };

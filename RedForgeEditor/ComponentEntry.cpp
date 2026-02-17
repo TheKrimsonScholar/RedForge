@@ -43,7 +43,7 @@ ComponentEntry::ComponentEntry(const Entity& entity, std::type_index componentTy
     QObject::connect(removeButton, &QPushButton::clicked, this, 
         [entity, componentTypeID]()
         {
-            EntityManager::RemoveComponentOfType(entity, componentTypeID);
+            Editor::GetWorld().GetEntityManager().RemoveComponentOfType(entity, componentTypeID);
 
             // Refresh the inspector
             if(MainEditorWindow::Get())
@@ -73,7 +73,7 @@ ComponentEntry::ComponentEntry(const Entity& entity, std::type_index componentTy
     QObject::connect(timer, &QTimer::timeout, this,
         [this]()
         {
-            if(EntityManager::IsComponentValid(this->entity, this->componentTypeID))
+            if(Editor::GetEntityManager().IsComponentValid(this->entity, this->componentTypeID))
     		    UpdateDisplayedVariables();
         });
     timer->start();

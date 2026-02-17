@@ -33,16 +33,7 @@ void SetGamePath(const std::filesystem::path& gamePath)
     activeGamePath = gamePath;
 }
 
-void FileManager::Startup()
-{
-	Instance = this;
-}
-void FileManager::Shutdown()
-{
-
-}
-
-void FileManager::SaveObject(std::ostream& os, const SerializedObject& object, uint32_t tabDepth)
+void File::SaveObject(std::ostream& os, const SerializedObject& object, uint32_t tabDepth)
 {
 	for(uint32_t i = 0; i < tabDepth; i++)
         os << '\t';
@@ -61,7 +52,7 @@ void FileManager::SaveObject(std::ostream& os, const SerializedObject& object, u
         os << '\t';
     os << "$$" << std::endl;
 }
-SerializedObject FileManager::LoadObject(std::istream& is)
+SerializedObject File::LoadObject(std::istream& is)
 {
 	static const std::string IGNORED_CHARS = " \t";
 
@@ -126,7 +117,7 @@ SerializedObject FileManager::LoadObject(std::istream& is)
     return root.children.size() == 1 ? root.children[0] : root;
 }
 
-std::vector<char> FileManager::ReadFile(const std::filesystem::path& filePath)
+std::vector<char> File::ReadFile(const std::filesystem::path& filePath)
 {
     std::ifstream file(filePath, std::ios::ate | std::ios::binary);
 
@@ -146,7 +137,7 @@ std::vector<char> FileManager::ReadFile(const std::filesystem::path& filePath)
     return buffer;
 }
 
-std::vector<std::filesystem::path> FileManager::GetAllFilesInDirectory(const std::filesystem::path& directory, const std::vector<std::wstring>& extensions)
+std::vector<std::filesystem::path> File::GetAllFilesInDirectory(const std::filesystem::path& directory, const std::vector<std::wstring>& extensions)
 {
     std::vector<std::filesystem::path> files;
     for(const std::filesystem::directory_entry& entry : std::filesystem::recursive_directory_iterator(directory))
@@ -163,7 +154,7 @@ std::vector<std::filesystem::path> FileManager::GetAllFilesInDirectory(const std
 
     return files;
 }
-std::vector<std::filesystem::path> FileManager::GetAllTopLevelItemsInDirectory(const std::filesystem::path& directory)
+std::vector<std::filesystem::path> File::GetAllTopLevelItemsInDirectory(const std::filesystem::path& directory)
 {
     std::vector<std::filesystem::path> items;
     for(const std::filesystem::directory_entry& entry : std::filesystem::directory_iterator(directory))

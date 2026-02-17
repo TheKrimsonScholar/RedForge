@@ -28,88 +28,101 @@ std::filesystem::path GetEngineMeshesPath()
     return GetEngineAssetsPath().append(L"meshes/");
 }
 
-void ResourceManager::Startup()
+void ResourceManager::Startup(const EngineStartupParams& params, World& world)
 {
     Instance = this;
+
+	Assets& assets = world.GetResource<Assets>();
+	GraphicsState& graphicsState = world.GetResource<GraphicsState>();
+
+    ResourceManager::LoadAllTextures(assets, graphicsState);
+
+    //LoadTextureCube(L"textures/textureCubes/Cold Sunset/.png");
+    //LoadTextureCube(L"textures/textureCubes/Planet/.png");
+    LoadTextureCube(assets, graphicsState, GetEngineTextureCubesPath().append(L"Clouds Blue/.png"));
+    graphicsState.skyboxTextureCube = &assets.GetTextureCube(L"Clouds Blue/.png");
+
+    //LoadAllMaterials();
+    LoadAllMeshes(assets, graphicsState);
+
+    Material* material = &assets.GetMaterial(L"default");
+    material->albedoTexture = &assets.GetTexture(L"scratched_albedo.png");
+    material->normalsTexture = &assets.GetTexture(L"scratched_normals.png");
+    material->roughnessTexture = &assets.GetTexture(L"scratched_roughness.png");
+    material->metalnessTexture = &assets.GetTexture(L"scratched_metal.png");
 }
-void ResourceManager::Shutdown()
+void ResourceManager::PostStartup(const EngineStartupParams& params, World& world)
 {
-    for(Mesh* mesh : meshes)
-        delete mesh;
-	meshes.clear();
-    for(Material* material : materials)
-        delete material;
-	materials.clear();
-	for(TextureCube* textureCube : textureCubes)
-		delete textureCube;
-	textureCubes.clear();
-	for(Texture* texture : textures)
-		delete texture;
-	textures.clear();
+
+}
+void ResourceManager::Shutdown(const EngineShutdownParams& params, World& world)
+{
+    
 }
 
-void ResourceManager::LoadAllTextures()
+void ResourceManager::Update(SystemContext<>& ctx, float deltaTime)
+{
+
+}
+
+void ResourceManager::LoadAllTextures(Assets& assets, const GraphicsState& graphicsState)
 {
     const std::vector<std::wstring> VALID_TYPES = { L".png" };
-    std::vector<std::filesystem::path> texturePaths = FileManager::GetAllFilesInDirectory(GetEngineTexturesPath(), VALID_TYPES);
+    std::vector<std::filesystem::path> texturePaths = File::GetAllFilesInDirectory(GetEngineTexturesPath(), VALID_TYPES);
     
     // Load all textures from their paths and associate them with identifiers in an unordered map
 	for(auto& texturePath : texturePaths)
-        LoadTexture(GetEngineTexturesPath().append(texturePath.wstring()));
+        LoadTexture(assets, graphicsState, GetEngineTexturesPath().append(texturePath.wstring()));
 }
-void ResourceManager::LoadAllMaterials()
+void ResourceManager::LoadAllMaterials(Assets& assets, const GraphicsState& graphicsState)
 {
 	const std::vector<std::wstring> VALID_TYPES = { L".mtl" };
-    std::vector<std::filesystem::path> materialPaths = FileManager::GetAllFilesInDirectory(GetEngineMaterialsPath(), VALID_TYPES);
+    std::vector<std::filesystem::path> materialPaths = File::GetAllFilesInDirectory(GetEngineMaterialsPath(), VALID_TYPES);
 
 	// Load all materials from their paths and associate them with identifiers in an unordered map
 	for(auto& materialPath : materialPaths)
-		LoadTexture(GetEngineMaterialsPath().append(materialPath.wstring()));
+		LoadTexture(assets, graphicsState, GetEngineMaterialsPath().append(materialPath.wstring()));
 }
-void ResourceManager::LoadAllMeshes()
+void ResourceManager::LoadAllMeshes(Assets& assets, const GraphicsState& graphicsState)
 {
     const std::vector<std::wstring> VALID_TYPES = { L".obj" };
-    std::vector<std::filesystem::path> meshPaths = FileManager::GetAllFilesInDirectory(GetEngineMeshesPath(), VALID_TYPES);
+    std::vector<std::filesystem::path> meshPaths = File::GetAllFilesInDirectory(GetEngineMeshesPath(), VALID_TYPES);
 
     for(auto& meshPath : meshPaths)
-        LoadModel(GetEngineMeshesPath().append(meshPath.wstring()));
+        LoadModel(assets, graphicsState, GetEngineMeshesPath().append(meshPath.wstring()));
 }
 
-Texture* ResourceManager::LoadTexture(const std::filesystem::path& filePath)
+const Texture& ResourceManager::LoadTexture(Assets& assets, const GraphicsState& graphicsState, const std::filesystem::path& filePath)
 {
 	std::wstring identifier = filePath.wstring().substr(GetEngineTexturesPath().wstring().length());
 
 	// Check if the texture is already loaded
-	if(Instance->textureMap.find(identifier) != Instance->textureMap.end())
-		return Instance->textureMap[identifier];
+	if(assets.HasTexture(identifier))
+		return assets.GetTexture(identifier);
 
-	Texture* texture = new Texture();
+	Texture& texture = assets.CreateTexture(identifier);
 
-	CreateTextureImage(texture, filePath);
+	CreateTextureImage(graphicsState, texture, filePath);
 
-    texture->textureImageView = CreateImageView(texture->textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT, texture->mipLevels);
+    texture.textureImageView = CreateImageView(graphicsState, texture.textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT, texture.mipLevels);
 
-	CreateTextureSampler(texture);
-
-	texture->index = Instance->textures.size();
-	Instance->textures.push_back(texture);
-    Instance->textureMap.emplace(identifier, texture);
+	CreateTextureSampler(graphicsState, texture);
 
 	return texture;
 }
-TextureCube* ResourceManager::LoadTextureCube(const std::filesystem::path& filePath)
+const TextureCube& ResourceManager::LoadTextureCube(Assets& assets, const GraphicsState& graphicsState, const std::filesystem::path& filePath)
 {
     std::wstring identifier = filePath.wstring().substr(GetEngineTextureCubesPath().wstring().length());
 
     // Check if the texture is already loaded
-	if(Instance->textureCubeMap.find(identifier) != Instance->textureCubeMap.end())
-		return Instance->textureCubeMap[identifier];
+	if(assets.HasTextureCube(identifier))
+		return assets.GetTextureCube(identifier);
 
-	TextureCube* textureCube = new TextureCube();
+	TextureCube& textureCube = assets.CreateTextureCube(identifier);
 
 	std::wstring extension = filePath.wstring().substr(filePath.wstring().find_last_of(L"."));
 	std::wstring filePathWithoutExtension = filePath.wstring().substr(0, filePath.wstring().find_last_of(L"."));
-	CreateTextureCubeImage(textureCube, 
+	CreateTextureCubeImage(graphicsState, textureCube, 
         {
             filePathWithoutExtension + L"_right" + extension,
             filePathWithoutExtension + L"_left" + extension,
@@ -119,45 +132,37 @@ TextureCube* ResourceManager::LoadTextureCube(const std::filesystem::path& fileP
             filePathWithoutExtension + L"_backward" + extension
         });
 
-    textureCube->textureImageView = 
-        CreateImageView(textureCube->textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT, textureCube->mipLevels, 
+    textureCube.textureImageView = 
+        CreateImageView(graphicsState, textureCube.textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT, textureCube.mipLevels, 
             VK_IMAGE_VIEW_TYPE_CUBE, 6);
 
-	CreateTextureCubeSampler(textureCube);
-
-	textureCube->index = Instance->textureCubes.size();
-	Instance->textureCubes.push_back(textureCube);
-    Instance->textureCubeMap.emplace(identifier, textureCube);
+	CreateTextureCubeSampler(graphicsState, textureCube);
 
 	return textureCube;
 }
-Material* ResourceManager::LoadMaterial(const std::filesystem::path& filePath)
+const Material& ResourceManager::LoadMaterial(Assets& assets, const std::filesystem::path& filePath)
 {
     std::wstring identifier = filePath.wstring().substr(GetEngineMaterialsPath().wstring().length());
 
     // Check if the material is already loaded
-	if(Instance->materialMap.find(identifier) != Instance->materialMap.end())
-		return Instance->materialMap[identifier];
+	if(assets.HasMaterial(identifier))
+		return assets.GetMaterial(identifier);
 
-    Material* material = new Material();
+    Material& material = assets.CreateMaterial(identifier);
 
 	/* --- Custom MAT parsing --- */
 
-    material->index = Instance->materials.size();
-    Instance->materials.push_back(material);
-    Instance->materialMap.emplace(identifier, material);
-
     return material;
 }
-Mesh* ResourceManager::LoadModel(const std::filesystem::path& filePath)
+const Mesh& ResourceManager::LoadModel(Assets& assets, const GraphicsState& graphicsState, const std::filesystem::path& filePath)
 {
     std::wstring identifier = filePath.wstring().substr(GetEngineMeshesPath().wstring().length());
 
     // Check if the mesh is already loaded
-	if(Instance->meshMap.find(identifier) != Instance->meshMap.end())
-		return Instance->meshMap[identifier];
+	if(assets.HasMesh(identifier))
+		return assets.GetMesh(identifier);
 
-    Mesh* mesh = new Mesh();
+    Mesh& mesh = assets.CreateMesh(identifier);
 
     rapidobj::Result obj = rapidobj::ParseFile(filePath.c_str());
     std::string errorMessage = obj.error.code.message();
@@ -190,34 +195,34 @@ Mesh* ResourceManager::LoadModel(const std::filesystem::path& filePath)
 
                 if(vertexMap.count(vertex) == 0)
                 {
-                    vertexMap[vertex] = mesh->vertices.size();
-                    mesh->vertices.push_back(vertex);
+                    vertexMap[vertex] = mesh.vertices.size();
+                    mesh.vertices.push_back(vertex);
                 }
 
-                mesh->indices.push_back(vertexMap[vertex]);
+                mesh.indices.push_back(vertexMap[vertex]);
                 faceVertices.push_back(vertex);
             }
 
             // If this face is a quad, complete the second triangle by reusing two indices
             if(shape.mesh.num_face_vertices[f] == 4)
             {
-                mesh->indices.push_back(vertexMap[faceVertices[0]]);
-                mesh->indices.push_back(vertexMap[faceVertices[2]]);
+                mesh.indices.push_back(vertexMap[faceVertices[0]]);
+                mesh.indices.push_back(vertexMap[faceVertices[2]]);
             }
 
             firstFaceIndex += shape.mesh.num_face_vertices[f];
         }
 
         // Second pass through triangles for tangent calculations
-        for(int i = 0; i < mesh->indices.size();)
+        for(int i = 0; i < mesh.indices.size();)
         {
 	        // Grab indices and vertices of first triangle
-	        unsigned int i1 = mesh->indices[i++];
-	        unsigned int i2 = mesh->indices[i++];
-	        unsigned int i3 = mesh->indices[i++];
-	        Vertex* v1 = &mesh->vertices[i1];
-	        Vertex* v2 = &mesh->vertices[i2];
-	        Vertex* v3 = &mesh->vertices[i3];
+	        unsigned int i1 = mesh.indices[i++];
+	        unsigned int i2 = mesh.indices[i++];
+	        unsigned int i3 = mesh.indices[i++];
+	        Vertex* v1 = &mesh.vertices[i1];
+	        Vertex* v2 = &mesh.vertices[i2];
+	        Vertex* v3 = &mesh.vertices[i3];
 	        // Calculate vectors relative to triangle positions
 	        float x1 = v2->pos.x - v1->pos.x;
 	        float y1 = v2->pos.y - v1->pos.y;
@@ -247,64 +252,54 @@ Mesh* ResourceManager::LoadModel(const std::filesystem::path& filePath)
 	        v3->tangent.z += tz;
         }
         // Ensure all of the tangents are orthogonal to the normals
-        for(int i = 0; i < mesh->vertices.size(); i++)
+        for(int i = 0; i < mesh.vertices.size(); i++)
         {
 	        // Grab the two vectors
-	        glm::vec3 normal = mesh->vertices[i].normal;
-	        glm::vec3 tangent = mesh->vertices[i].tangent;
+	        glm::vec3 normal = mesh.vertices[i].normal;
+	        glm::vec3 tangent = mesh.vertices[i].tangent;
 	        // Use Gram-Schmidt orthonormalize to ensure
 	        // the normal and tangent are exactly 90 degrees apart
-            mesh->vertices[i].tangent = glm::normalize(tangent - normal * glm::dot(normal, tangent));
+            mesh.vertices[i].tangent = glm::normalize(tangent - normal * glm::dot(normal, tangent));
         }
     }
 
     // For each material associated with the .obj
     for(rapidobj::Material& mat : obj.materials)
     {
-        if(Instance->materialMap.find(NarrowToWide(mat.name)) != Instance->materialMap.end())
+        if(assets.HasMaterial(NarrowToWide(mat.name)))
         {
-		    mesh->defaultMaterial = Instance->materialMap[NarrowToWide(mat.name)];
+		    mesh.defaultMaterial = &assets.GetMaterial(NarrowToWide(mat.name));
             continue;
         }
 
-		Material* material = new Material();
+		Material& material = assets.CreateMaterial(NarrowToWide(mat.name));
 
-		material->albedoTexture = LoadTexture(GetEngineTexturesPath().append(mat.diffuse_texname));
+		material.albedoTexture = &LoadTexture(assets, graphicsState, GetEngineTexturesPath().append(mat.diffuse_texname));
 
-        material->identifier = NarrowToWide(mat.name);
-        material->index = Instance->materials.size();
-        Instance->materials.push_back(material);
-        Instance->materialMap.emplace(material->identifier, material);
-
-		mesh->defaultMaterial = material;
+		mesh.defaultMaterial = &material;
     }
 
-    assert(mesh->vertices.size() > 0 && mesh->indices.size() > 0 && "Attempting to load empty mesh file.");
-
-    GraphicsSystem::CreateVertexBuffer(mesh->vertices, mesh->vertexBuffer, mesh->vertexBufferMemory);
-    GraphicsSystem::CreateIndexBuffer(mesh->indices, mesh->indexBuffer, mesh->indexBufferMemory);
-
-    mesh->identifier = identifier;
-	mesh->index = Instance->meshes.size();
-    Instance->meshes.push_back(mesh);
-    Instance->meshMap.emplace(identifier, mesh);
+    assert(mesh.vertices.size() > 0 && mesh.indices.size() > 0 && "Attempting to load empty mesh file.");
+    
+    graphicsState.CreateVertexBuffer(mesh.vertices, mesh.vertexBuffer, mesh.vertexBufferMemory);
+    graphicsState.CreateIndexBuffer(mesh.indices, mesh.indexBuffer, mesh.indexBufferMemory);
 
     return mesh;
 }
 
-void ResourceManager::CreateTextureImage(Texture* texture, const std::filesystem::path& filePath)
+void ResourceManager::CreateTextureImage(const GraphicsState& graphicsState, Texture& texture, const std::filesystem::path& filePath)
 {
 	int textureWidth, textureHeight, textureChannels;
     stbi_uc* pixels = stbi_load(filePath.string().c_str(), &textureWidth, &textureHeight, &textureChannels, STBI_rgb_alpha);
     VkDeviceSize imageSize = textureWidth * textureHeight * 4;
-    texture->mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(textureWidth, textureHeight)))) + 1;
+    texture.mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(textureWidth, textureHeight)))) + 1;
 
     if(!pixels)
         throw std::runtime_error("Failed to load texture image!");
 
     VkBuffer stagingBuffer;
     VkDeviceMemory stagingBufferMemory;
-    GraphicsSystem::CreateBuffer(
+    graphicsState.CreateBuffer(
         imageSize, 
         VK_BUFFER_USAGE_TRANSFER_SRC_BIT, 
         VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, 
@@ -312,31 +307,31 @@ void ResourceManager::CreateTextureImage(Texture* texture, const std::filesystem
         stagingBufferMemory);
 
     void* data;
-    vkMapMemory(GraphicsSystem::GetDevice(), stagingBufferMemory, 0, imageSize, 0, &data);
+    vkMapMemory(graphicsState.device, stagingBufferMemory, 0, imageSize, 0, &data);
     memcpy(data, pixels, static_cast<size_t>(imageSize));
-    vkUnmapMemory(GraphicsSystem::GetDevice(), stagingBufferMemory);
+    vkUnmapMemory(graphicsState.device, stagingBufferMemory);
 
     stbi_image_free(pixels);
 
-    GraphicsSystem::CreateImage(
-        textureWidth, textureHeight, texture->mipLevels, 
+    graphicsState.CreateImage(
+        textureWidth, textureHeight, texture.mipLevels, 
         VK_SAMPLE_COUNT_1_BIT, 
         VK_FORMAT_R8G8B8A8_SRGB, 
         VK_IMAGE_TILING_OPTIMAL, 
         VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, 
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 
-        texture->textureImage, 
-        texture->textureImageMemory);
+        texture.textureImage, 
+        texture.textureImageMemory);
 
-    GraphicsSystem::TransitionImageLayout(texture->textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, texture->mipLevels);
-    GraphicsSystem::CopyBufferToImage(stagingBuffer, texture->textureImage, static_cast<uint32_t>(textureWidth), static_cast<uint32_t>(textureHeight));
+    graphicsState.TransitionImageLayout(texture.textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, texture.mipLevels);
+    graphicsState.CopyBufferToImage(stagingBuffer, texture.textureImage, static_cast<uint32_t>(textureWidth), static_cast<uint32_t>(textureHeight));
 
-    vkDestroyBuffer(GraphicsSystem::GetDevice(), stagingBuffer, nullptr);
-    vkFreeMemory(GraphicsSystem::GetDevice(), stagingBufferMemory, nullptr);
+    vkDestroyBuffer(graphicsState.device, stagingBuffer, nullptr);
+    vkFreeMemory(graphicsState.device, stagingBufferMemory, nullptr);
 
-    GenerateMipmaps(texture->textureImage, VK_FORMAT_R8G8B8A8_SRGB, textureWidth, textureHeight, texture->mipLevels);
+    GenerateMipmaps(graphicsState, texture.textureImage, VK_FORMAT_R8G8B8A8_SRGB, textureWidth, textureHeight, texture.mipLevels);
 }
-void ResourceManager::CreateTextureCubeImage(TextureCube* textureCube, const std::array<std::filesystem::path, 6>& filePaths)
+void ResourceManager::CreateTextureCubeImage(const GraphicsState& graphicsState, TextureCube& textureCube, const std::array<std::filesystem::path, 6>& filePaths)
 {
     int textureWidth, textureHeight, textureChannels;
     VkDeviceSize imageSize = 0;
@@ -353,11 +348,11 @@ void ResourceManager::CreateTextureCubeImage(TextureCube* textureCube, const std
     }
     
     // Don't use mipmaps for cubemaps
-    textureCube->mipLevels = 1;
+    textureCube.mipLevels = 1;
 
     VkBuffer stagingBuffer;
     VkDeviceMemory stagingBufferMemory;
-    GraphicsSystem::CreateBuffer(
+    graphicsState.CreateBuffer(
         imageSize * 6, 
         VK_BUFFER_USAGE_TRANSFER_SRC_BIT, 
         VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, 
@@ -365,43 +360,43 @@ void ResourceManager::CreateTextureCubeImage(TextureCube* textureCube, const std
         stagingBufferMemory);
 
     void* data;
-    vkMapMemory(GraphicsSystem::GetDevice(), stagingBufferMemory, 0, imageSize * 6, 0, &data);
+    vkMapMemory(graphicsState.device, stagingBufferMemory, 0, imageSize * 6, 0, &data);
     for(int i = 0; i < 6; i++)
     {
         memcpy(static_cast<uint8_t*>(data) + i * imageSize, pixels[i], static_cast<size_t>(imageSize));
         stbi_image_free(pixels[i]);
     }
-    vkUnmapMemory(GraphicsSystem::GetDevice(), stagingBufferMemory);
+    vkUnmapMemory(graphicsState.device, stagingBufferMemory);
 
-    GraphicsSystem::CreateImage(
-        textureWidth, textureHeight, textureCube->mipLevels,
+    graphicsState.CreateImage(
+        textureWidth, textureHeight, textureCube.mipLevels,
         VK_SAMPLE_COUNT_1_BIT, 
         VK_FORMAT_R8G8B8A8_SRGB, 
         VK_IMAGE_TILING_OPTIMAL, 
         VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, 
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 
-        textureCube->textureImage, 
-        textureCube->textureImageMemory, 
+        textureCube.textureImage, 
+        textureCube.textureImageMemory, 
         VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT,
         6);
 
-    GraphicsSystem::TransitionImageLayout(textureCube->textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, textureCube->mipLevels, 6);
-    GraphicsSystem::CopyBufferToImage(stagingBuffer, textureCube->textureImage, static_cast<uint32_t>(textureWidth), static_cast<uint32_t>(textureHeight), 6);
-    GraphicsSystem::TransitionImageLayout(textureCube->textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, textureCube->mipLevels, 6);
+    graphicsState.TransitionImageLayout(textureCube.textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, textureCube.mipLevels, 6);
+    graphicsState.CopyBufferToImage(stagingBuffer, textureCube.textureImage, static_cast<uint32_t>(textureWidth), static_cast<uint32_t>(textureHeight), 6);
+    graphicsState.TransitionImageLayout(textureCube.textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, textureCube.mipLevels, 6);
 
-    vkDestroyBuffer(GraphicsSystem::GetDevice(), stagingBuffer, nullptr);
-    vkFreeMemory(GraphicsSystem::GetDevice(), stagingBufferMemory, nullptr);
+    vkDestroyBuffer(graphicsState.device, stagingBuffer, nullptr);
+    vkFreeMemory(graphicsState.device, stagingBufferMemory, nullptr);
 }
-void ResourceManager::GenerateMipmaps(VkImage image, VkFormat imageFormat, int32_t textureWidth, int32_t textureHeight, uint32_t mipLevels)
+void ResourceManager::GenerateMipmaps(const GraphicsState& graphicsState, VkImage image, VkFormat imageFormat, int32_t textureWidth, int32_t textureHeight, uint32_t mipLevels)
 {
     // Check if image format supports linear blitting
     VkFormatProperties formatProperties;
-    vkGetPhysicalDeviceFormatProperties(GraphicsSystem::GetPhysicalDevice(), imageFormat, &formatProperties);
+    vkGetPhysicalDeviceFormatProperties(graphicsState.physicalDevice, imageFormat, &formatProperties);
 
     if(!(formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT))
         throw std::runtime_error("Texture image format does not support linear blitting!");
 
-    VkCommandBuffer commandBuffer = GraphicsSystem::BeginSingleTimeCommands();
+    VkCommandBuffer commandBuffer = graphicsState.BeginSingleTimeCommands();
 
     VkImageMemoryBarrier barrier{};
     barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -461,9 +456,9 @@ void ResourceManager::GenerateMipmaps(VkImage image, VkFormat imageFormat, int32
 
     vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr, 0, nullptr, 1, &barrier);
     
-    GraphicsSystem::EndSingleTimeCommands(commandBuffer);
+    graphicsState.EndSingleTimeCommands(commandBuffer);
 }
-void ResourceManager::CreateTextureSampler(Texture* texture)
+void ResourceManager::CreateTextureSampler(const GraphicsState& graphicsState, Texture& texture)
 {
     VkSamplerCreateInfo samplerInfo{};
     samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
@@ -475,7 +470,7 @@ void ResourceManager::CreateTextureSampler(Texture* texture)
     samplerInfo.anisotropyEnable = VK_TRUE;
 
     VkPhysicalDeviceProperties properties{};
-    vkGetPhysicalDeviceProperties(GraphicsSystem::GetPhysicalDevice(), &properties);
+    vkGetPhysicalDeviceProperties(graphicsState.physicalDevice, &properties);
     samplerInfo.maxAnisotropy = properties.limits.maxSamplerAnisotropy;
 
     samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
@@ -485,12 +480,12 @@ void ResourceManager::CreateTextureSampler(Texture* texture)
     samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
     samplerInfo.mipLodBias = 0.0f;
     samplerInfo.minLod = 0;
-    samplerInfo.maxLod = static_cast<float>(texture->mipLevels);
+    samplerInfo.maxLod = static_cast<float>(texture.mipLevels);
 
-    if(vkCreateSampler(GraphicsSystem::GetDevice(), &samplerInfo, nullptr, &texture->textureSampler) != VK_SUCCESS)
+    if(vkCreateSampler(graphicsState.device, &samplerInfo, nullptr, &texture.textureSampler) != VK_SUCCESS)
         throw std::runtime_error("Failed to create texture sampler!");
 }
-void ResourceManager::CreateTextureCubeSampler(TextureCube* textureCube)
+void ResourceManager::CreateTextureCubeSampler(const GraphicsState& graphicsState, TextureCube& textureCube)
 {
     VkSamplerCreateInfo samplerInfo{};
     samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
@@ -502,7 +497,7 @@ void ResourceManager::CreateTextureCubeSampler(TextureCube* textureCube)
     samplerInfo.anisotropyEnable = VK_TRUE;
 
     VkPhysicalDeviceProperties properties{};
-    vkGetPhysicalDeviceProperties(GraphicsSystem::GetPhysicalDevice(), &properties);
+    vkGetPhysicalDeviceProperties(graphicsState.physicalDevice, &properties);
     samplerInfo.maxAnisotropy = properties.limits.maxSamplerAnisotropy;
 
     samplerInfo.unnormalizedCoordinates = VK_FALSE;
@@ -511,12 +506,12 @@ void ResourceManager::CreateTextureCubeSampler(TextureCube* textureCube)
     samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
     samplerInfo.mipLodBias = 0.0f;
     samplerInfo.minLod = 0;
-    samplerInfo.maxLod = static_cast<float>(textureCube->mipLevels);
+    samplerInfo.maxLod = static_cast<float>(textureCube.mipLevels);
 
-    if(vkCreateSampler(GraphicsSystem::GetDevice(), &samplerInfo, nullptr, &textureCube->sampler) != VK_SUCCESS)
+    if(vkCreateSampler(graphicsState.device, &samplerInfo, nullptr, &textureCube.sampler) != VK_SUCCESS)
         throw std::runtime_error("Failed to create texture cube sampler!");
 }
-VkImageView ResourceManager::CreateImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, uint32_t mipLevels, 
+VkImageView ResourceManager::CreateImageView(const GraphicsState& graphicsState, VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, uint32_t mipLevels,
     VkImageViewType viewType, uint32_t layerCount)
 {
     VkImageViewCreateInfo viewInfo{};
@@ -531,7 +526,7 @@ VkImageView ResourceManager::CreateImageView(VkImage image, VkFormat format, VkI
     viewInfo.subresourceRange.layerCount = layerCount;
 
     VkImageView imageView;
-    if(vkCreateImageView(GraphicsSystem::GetDevice(), &viewInfo, nullptr, &imageView) != VK_SUCCESS)
+    if(vkCreateImageView(graphicsState.device, &viewInfo, nullptr, &imageView) != VK_SUCCESS)
         throw std::runtime_error("Failed to create texture image view!");
 
     return imageView;

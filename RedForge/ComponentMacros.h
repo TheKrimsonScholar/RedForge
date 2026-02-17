@@ -12,6 +12,8 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
 
+class EntityManager;
+
 struct ComponentVariableInfo
 {
 	std::type_index variableType;
@@ -26,10 +28,11 @@ struct ComponentInfo
 	ComponentInfo(uint32_t componentID, std::string componentName, std::vector<std::type_index> dependencies, std::function<std::vector<std::pair<void*, ComponentVariableInfo>>(void*)> getVariables) :
 		componentID(componentID), componentName(componentName), dependencies(dependencies), getVariables(getVariables) {};
 
-	std::function<void()> registerComponent;
+	std::function<void(EntityManager&)> registerComponent;
 
 	uint32_t componentID;
 	std::string componentName;
+	size_t componentSize;
 	std::vector<std::type_index> dependencies;
 	std::vector<std::type_index> dependents;
 	std::function<std::vector<std::pair<void*, ComponentVariableInfo>>(void*)> getVariables;
@@ -40,6 +43,7 @@ REDFORGE_API std::unordered_map<std::type_index, ComponentInfo>& GetRegisteredCo
 
 #define GET_COMPONENT_ID(componentTypeID) ((uint32_t) GetRegisteredComponentInfoMap()[componentTypeID].componentID)
 #define GET_COMPONENT_NAME(componentTypeID) ((std::string) GetRegisteredComponentInfoMap()[componentTypeID].componentName)
+#define GET_COMPONENT_SIZE(componentTypeID) ((size_t) GetRegisteredComponentInfoMap()[componentTypeID].componentSize)
 #define GET_COMPONENT_DEPENDENCIES(componentTypeID) ((std::vector<std::type_index>) GetRegisteredComponentInfoMap()[componentTypeID].dependencies)
 #define GET_COMPONENT_DEPENDENTS(componentTypeID) ((std::vector<std::type_index>) GetRegisteredComponentInfoMap()[componentTypeID].dependents)
 // Returns a vector of void*-ComponentVariableInfo pairs indicating the location of variables and their type/name data

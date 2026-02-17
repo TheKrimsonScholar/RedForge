@@ -26,9 +26,10 @@ struct RegisterComponent_##Type																															\
 		GetRegisteredComponentsList().push_back(typeID);																								\
 																																						\
 		ComponentInfo& componentInfo = GetRegisteredComponentInfoMap()[typeID];																			\
-		componentInfo.registerComponent = []() { EntityManager::RegisterComponent<Type>(); };															\
+		componentInfo.registerComponent = [](EntityManager& entityManager) { entityManager.RegisterComponent<Type>(); };								\
 		componentInfo.componentID = GetRegisteredComponentInfoMap().size();																				\
-		componentInfo.componentName = #Type;
+		componentInfo.componentName = #Type;																											\
+		componentInfo.componentSize = sizeof(Type);
 #define COMPONENT_REQUIRES(componentType)																												\
 		componentInfo.dependencies.push_back(typeid(componentType));																					\
 		GetRegisteredComponentInfoMap()[typeid(componentType)].dependents.push_back(typeID);

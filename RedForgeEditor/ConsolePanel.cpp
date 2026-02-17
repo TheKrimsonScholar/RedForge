@@ -3,6 +3,7 @@
 #include <iostream>
 
 #include "DebugMacros.h"
+#include "DebugManager.h"
 
 #include <QLayout>
 #include <QTimer>
@@ -25,7 +26,7 @@ ConsolePanel::~ConsolePanel()
 
 void ConsolePanel::Initialize()
 {
-	for(const LogMessage& message : DebugManager::GetDebugLog())
+	for(const DebugLogEvent& message : DebugManager::GetDebugLog())
 		text->append(message.ToString().c_str());
 
 	DebugManager::GetOnLogMessagePrinted()->AddUnique(EventCallback(this, &ConsolePanel::OnLogMessagePrinted));
@@ -35,7 +36,7 @@ void ConsolePanel::Update()
 
 }
 
-void ConsolePanel::OnLogMessagePrinted(const LogMessage& message)
+void ConsolePanel::OnLogMessagePrinted(const DebugLogEvent& message)
 {
 	text->append(message.ToString().c_str());
 }

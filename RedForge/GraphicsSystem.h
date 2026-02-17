@@ -1,5 +1,7 @@
 #pragma once
 
+#include "System.h"
+
 #ifdef _WIN32
     #define VK_USE_PLATFORM_WIN32_KHR
 #else
@@ -11,6 +13,14 @@
 #include <optional>
 #include <fstream>
 #include <queue>
+
+#include "WindowSystem.h"
+
+#include "Window.h"
+#include "GraphicsState.h"
+#include "Cameras.h"
+#include "Assets.h"
+#include "TimeResource.h"
 
 #include "Vertex.h"
 #include "Mesh.h"
@@ -37,11 +47,6 @@
 
 const uint32_t WIDTH = 800;
 const uint32_t HEIGHT = 600;
-
-const int MAX_FRAMES_IN_FLIGHT = 1;
-
-const uint32_t MAX_INSTANCES = 256;
-const uint32_t MAX_LIGHTS = 256;
 
 const uint32_t MAX_TEXTURES = 256;
 const uint32_t MAX_MATERIALS = 256;
@@ -99,286 +104,103 @@ struct UniformBufferObject
     alignas(16) glm::mat4 proj;
 };
 
-struct MaterialData
-{
-    uint32_t albedoIndex;
-    uint32_t normalsIndex;
-    uint32_t roughnessIndex;
-    uint32_t metalnessIndex;
-};
-
-struct InstanceData
-{
-    // Stable index used for accessing all per-object data.
-    uint32_t rendererIndex;
-
-    //uint32_t transformIndex;
-    uint32_t meshIndex;
-    uint32_t materialIndex;
-};
-
-struct alignas(16) LightData
-{
-    glm::vec3 direction;
-    ELightType lightType;
-    glm::vec3 color;
-    float intensity;
-    glm::vec3 location;
-    float range;
-    float spotInnerAngle;
-    float spotOuterAngle;
-
-    float _PADDING[2];
-};
-struct LightBufferData
-{
-    uint32_t lightCount;
-    uint32_t _padding[3];
-    LightData lights[MAX_LIGHTS];
-};
-
-struct DrawBatch
-{
-    uint32_t meshIndex;
-    uint32_t instanceOffset;
-    uint32_t instanceCount;
-};
-
-class GraphicsSystem
+class GraphicsSystem : public System<Window, GraphicsState, const Cameras, const Assets, const Time, TransformComponent, MeshRendererComponent, const LightComponent, const CameraComponent>
 {
 private:
     static inline REDFORGE_API GraphicsSystem* Instance;
-
-    GLFWwindow* window;
-    GLFWInputLayer inputLayer;
-
-    VkInstance instance;
-    VkDebugUtilsMessengerEXT debugMessenger;
-    VkSurfaceKHR surface;
-    VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
-    VkDevice device;
-    VkQueue graphicsQueue;
-    VkQueue presentQueue;
-
-    VkSwapchainKHR swapChain;
-    std::vector<VkImage> swapChainImages;
-    VkFormat swapChainImageFormat;
-    VkExtent2D swapChainExtent;
-    std::vector<VkImageView> swapChainImageViews;
-
-    // Does the graphics system render to a surface managed externally instead of using its own?
-    bool isSurfaceOverridden = false;
-
-    VkRenderPass renderPass;
-    VkDescriptorSetLayout descriptorSetLayout;
-    VkPipelineLayout pipelineLayout;
-    VkPipelineLayout skyboxPipelineLayout;
-    VkPipelineLayout debugPipelineLayout;
-
-    VkPipeline graphicsPipeline;
-    VkPipeline skyboxGraphicsPipeline;
-    VkPipeline debugGraphicsPipeline;
-
-    std::vector<VkFramebuffer> swapChainFramebuffers;
-
-    VkCommandPool commandPool;
-    std::vector<VkCommandBuffer> commandBuffers;
-
-    std::vector<VkSemaphore> imageAvailableSemaphores;
-    std::vector<VkSemaphore> renderFinishedSemaphores;
-    std::vector<VkFence> inFlightFences;
-
-    bool framebufferResized = false;
-
-    uint32_t currentFrame = 0;
-
-    std::vector<VkBuffer> uniformBuffers;
-    std::vector<VkDeviceMemory> uniformBuffersMemory;
-    std::vector<void*> uniformBuffersMapped;
-
-    VkBuffer materialsBuffer[MAX_FRAMES_IN_FLIGHT];
-    VkDeviceMemory materialsBufferMemory[MAX_FRAMES_IN_FLIGHT];
-    void* materialsBufferMapped[MAX_FRAMES_IN_FLIGHT];
-
-    VkBuffer transformBuffer[MAX_FRAMES_IN_FLIGHT];
-    VkDeviceMemory transformBufferMemory[MAX_FRAMES_IN_FLIGHT];
-    void* transformBufferMapped[MAX_FRAMES_IN_FLIGHT];
-
-    VkBuffer instancesBuffer[MAX_FRAMES_IN_FLIGHT];
-    VkDeviceMemory instancesBufferMemory[MAX_FRAMES_IN_FLIGHT];
-    void* instancesBufferMapped[MAX_FRAMES_IN_FLIGHT];
-
-    VkBuffer cameraUBOs[MAX_FRAMES_IN_FLIGHT];
-    VkDeviceMemory cameraUBOsMemory[MAX_FRAMES_IN_FLIGHT];
-    void* cameraUBOsMapped[MAX_FRAMES_IN_FLIGHT];
-
-    VkBuffer lightsBuffer[MAX_FRAMES_IN_FLIGHT];
-    VkDeviceMemory lightsBufferMemory[MAX_FRAMES_IN_FLIGHT];
-    void* lightsBufferMapped[MAX_FRAMES_IN_FLIGHT];
-
-    VkDescriptorPool descriptorPool;
-    VkDescriptorPool imguiDescriptorPool;
-    //std::vector<VkDescriptorSet> descriptorSets;
-    VkDescriptorSet descriptorSets[MAX_FRAMES_IN_FLIGHT];
-
-    std::vector<VkDescriptorImageInfo> texturesBufferData;
-    std::vector<MaterialData> materialsBufferData;
-
-    VkImage depthImage;
-    VkDeviceMemory depthImageMemory;
-    VkImageView depthImageView;
-
-    VkSampleCountFlagBits msaaSamples = VK_SAMPLE_COUNT_1_BIT;
-
-    VkImage colorImage;
-    VkDeviceMemory colorImageMemory;
-    VkImageView colorImageView;
-
-    glm::mat4 modelMatrices[MAX_INSTANCES];
-
-    std::vector<InstanceData> instanceData;
-    std::vector<MeshRendererComponent*> renderers;
-    uint32_t rendererInstances[MAX_INSTANCES];
-    std::queue<uint32_t> renderersFreeList;
-    uint32_t renderersNextIndex = 0;
-
-    TextureCube* skyboxTextureCube;
-
-    std::vector<DrawBatch> drawBatches;
 
 public:
     GraphicsSystem() {};
     ~GraphicsSystem() {};
 
-    void CreateVulkanInstance_PreStartup();
-    void DestroyVulkanInstance_PostShutdown();
+    void CreateVulkanInstance_PreStartup(GraphicsState& graphicsState);
+    void DestroyVulkanInstance_PostShutdown(const GraphicsState& graphicsState);
 
-    void Startup(VkSurfaceKHR surfaceOverride);
-    void Shutdown(bool shouldDestroyVulkanInstance);
+    REDFORGE_API void Startup(const EngineStartupParams& params, World& world) override;
+    REDFORGE_API void PostStartup(const EngineStartupParams& params, World& world) override;
+    REDFORGE_API void Shutdown(const EngineShutdownParams& params, World& world) override;
 
-    REDFORGE_API void Update();
-    
-    static void CreateVertexBuffer(std::vector<Vertex> vertices, VkBuffer& vertexBuffer, VkDeviceMemory& vertexBufferMemory);
-    static void CreateIndexBuffer(std::vector<uint32_t> indices, VkBuffer& indexBuffer, VkDeviceMemory& indexBufferMemory);
-    
-    static void CreateBuffer(
-        VkDeviceSize size, 
-        VkBufferUsageFlags usage, 
-        VkMemoryPropertyFlags properties, 
-        VkBuffer& buffer, 
-        VkDeviceMemory& bufferMemory);
-    static void CreateImage(
-        uint32_t width, uint32_t height, uint32_t mipLevels, 
-        VkSampleCountFlagBits numSamples, 
-        VkFormat format, 
-        VkImageTiling tiling, 
-        VkImageUsageFlags usage, 
-        VkMemoryPropertyFlags properties, 
-        VkImage& image, 
-        VkDeviceMemory& imageMemory,
-        VkImageCreateFlags flags = 0, uint32_t arrayLayers = 1);
-    static void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
-    static void CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height, 
-        uint32_t layerCount = 1);
-    static void CopyImageToBuffer(VkImage image, VkFormat format, VkExtent2D extent, VkBuffer buffer, VkCommandPool commandPool, VkQueue queue);
-    
-    static void TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels, 
-        uint32_t layerCount = 1);
-    
-    static VkCommandBuffer BeginSingleTimeCommands();
-    static void EndSingleTimeCommands(VkCommandBuffer commandBuffer);
+    REDFORGE_API void Update(LocalSystemContext& ctx, float deltaTime) override;
 
 private:
-    static void FramebufferResizeCallback(GLFWwindow* window, int width, int height);
     static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData);
 
-    void InitWindow();
-    void InitVulkan();
-    void InitImGui();
+    void InitVulkan(Window& window, GraphicsState& graphicsState);
+    void InitImGui(const Window& window, GraphicsState& graphicsState);
 
-    void CreateVulkanInstance();
+    void CreateVulkanInstance(GraphicsState& graphicsState);
     bool CheckValidationLayerSupport();
     std::vector<const char*> GetRequiredExtensions();
 
-    void SetupDebugMessenger();
+    void SetupDebugMessenger(GraphicsState& graphicsState);
     void PopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
 
-    void CreateSurface();
+    void CreateSurface(const Window& window, GraphicsState& graphicsState);
 
-    void SelectPhysicalDevice();
-    int RateDeviceSuitability(VkPhysicalDevice device);
-    QueueFamilyIndices FindQueueFamilies(VkPhysicalDevice device);
+    void SelectPhysicalDevice(const Window& window, GraphicsState& graphicsState);
+    int RateDeviceSuitability(const Window& window, const GraphicsState& graphicsState, VkPhysicalDevice device);
+    QueueFamilyIndices FindQueueFamilies(const Window& window, const GraphicsState& graphicsState, VkPhysicalDevice device);
     bool CheckDeviceExtensionSupport(VkPhysicalDevice device);
-    SwapChainSupportDetails QuerySwapChainSupport(VkPhysicalDevice device);
-    VkSampleCountFlagBits GetMaxUsableSampleCount();
+    SwapChainSupportDetails QuerySwapChainSupport(const GraphicsState& graphicsState, VkPhysicalDevice device);
+    VkSampleCountFlagBits GetMaxUsableSampleCount(const GraphicsState& graphicsState);
 
-    void CreateLogicalDevice();
+    void CreateLogicalDevice(const Window& window, GraphicsState& graphicsState);
 
-    void CreateSwapChain();
+    void CreateSwapChain(Window& window, const GraphicsState& graphicsState);
     VkSurfaceFormatKHR ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
     VkPresentModeKHR ChooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);
-    VkExtent2D ChooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities);
+    VkExtent2D ChooseSwapExtent(const Window& window, const VkSurfaceCapabilitiesKHR& capabilities);
 
-    void CreateImageViews();
+    void CreateImageViews(Window& window, const GraphicsState& graphicsState);
 
-    void CreateRenderPass();
+    void CreateRenderPass(const Window& window, GraphicsState& graphicsState);
 
-    void CreateDescriptorSetLayout();
-    void CreateGraphicsPipeline();
-    void CreateSkyboxGraphicsPipeline();
-    void CreateDebugGraphicsPipeline();
-    VkShaderModule CreateShaderModule(const std::vector<char>& code);
+    void CreateDescriptorSetLayout(GraphicsState& graphicsState);
+    void CreateGraphicsPipeline(const Window& window, GraphicsState& graphicsState);
+    void CreateSkyboxGraphicsPipeline(const Window& window, GraphicsState& graphicsState);
+    void CreateDebugGraphicsPipeline(const Window& window, GraphicsState& graphicsState);
+    VkShaderModule CreateShaderModule(const GraphicsState& graphicsState, const std::vector<char>& code);
 
-    void CreateFramebuffers();
+    void CreateFramebuffers(Window& window, const GraphicsState& graphicsState);
 
-    void CreateCommandPool();
+    void CreateCommandPool(const Window& window, GraphicsState& graphicsState);
 
-    void CreateColorResources();
-    void CreateDepthResources();
-    VkFormat FindDepthFormat();
-    VkFormat FindSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
+    void CreateColorResources(const Window& window, GraphicsState& graphicsState);
+    void CreateDepthResources(const Window& window, GraphicsState& graphicsState);
+    VkFormat FindDepthFormat(const GraphicsState& graphicsState);
+    VkFormat FindSupportedFormat(const GraphicsState& graphicsState, const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
     bool HasStencilComponent(VkFormat format);
 
-    void CreateGlobalBuffers();
-    void CreateGlobalArrayDescriptorSets();
-    void UpdateMaterialsBuffer();
+    void CreateGlobalBuffers(GraphicsState& graphicsState);
+    void CreateGlobalArrayDescriptorSets(const Assets& assets, GraphicsState& graphicsState);
+    void UpdateMaterialsBuffer(const Assets& assets, GraphicsState& graphicsState);
     void UpdateGlobalArrays(uint32_t currentImage);
 
-    void CreateTextureImageView(Texture* texture);
+    void CreateTextureImageView(const GraphicsState& graphicsState, Texture* texture);
 
-    VkImageView CreateImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, uint32_t mipLevels, 
+    VkImageView CreateImageView(const GraphicsState& graphicsState, VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, uint32_t mipLevels,
         VkImageViewType viewType = VK_IMAGE_VIEW_TYPE_2D, uint32_t layerCount = 1);
 
-    void CreateUniformBuffers();
-    void CreateDescriptorPool();
-    void CreateImGuiDescriptorPool();
-    uint32_t FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
-    void CreateCommandBuffers();
+    void CreateUniformBuffers(GraphicsState& graphicsState);
+    void CreateDescriptorPool(GraphicsState& graphicsState);
+    void CreateImGuiDescriptorPool(GraphicsState& graphicsState);
+    uint32_t FindMemoryType(const GraphicsState& graphicsState, uint32_t typeFilter, VkMemoryPropertyFlags properties);
+    void CreateCommandBuffers(GraphicsState& graphicsState);
 
-    void CreateSyncObjects();
+    void CreateSyncObjects(GraphicsState& graphicsState);
 
-    void CleanupSwapChain();
+    void CleanupSwapChain(const Window& window, const GraphicsState& graphicsState);
 
-    void DestroyVulkanInstance();
+    void DestroyVulkanInstance(const GraphicsState& graphicsState);
 
 public:
-    REDFORGE_API static void RecreateSwapChain();
+    REDFORGE_API void RecreateSwapChain(Window& window, GraphicsState& graphicsState);
     
 private:
-    void RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
+    void RecordCommandBuffer(LocalSystemContext& ctx, VkCommandBuffer commandBuffer, uint32_t imageIndex);
 
-    void UpdateUniformBuffer(uint32_t currentImage);
-
-public:
-    REDFORGE_API static VkInstance GetVulkanInstance() { return Instance->instance; };
-    REDFORGE_API static GLFWwindow* GetWindow() { return Instance->window; };
-    static VkExtent2D GetRenderExtent() { return Instance->swapChainExtent; };
-    static uint32_t GetWindowWidth() { return GetRenderExtent().width; };
-    static uint32_t GetWindowHeight() { return GetRenderExtent().height; };
-    static VkFormat GetRenderFormat() { return Instance->swapChainImageFormat; };
-    REDFORGE_API static float GetAspectRatio() { return (float) GetWindowWidth() / (float) GetWindowHeight(); };
-    static VkPhysicalDevice GetPhysicalDevice() { return Instance->physicalDevice; };
-    static VkDevice GetDevice() { return Instance->device; };
-
-	static void SetSkyboxTextureCube(TextureCube* textureCube) { Instance->skyboxTextureCube = textureCube; };
+    void UpdateUniformBuffer(const GraphicsState& graphicsState, const Cameras& cameras, SystemContext<const TransformComponent, const CameraComponent> ctx, uint32_t currentImage);
 };
+REGISTER_SYSTEM_BEGIN(GraphicsSystem)
+SYSTEM_REQUIRES(WindowSystem)
+REGISTER_SYSTEM_END(GraphicsSystem)

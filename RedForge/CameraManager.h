@@ -1,39 +1,29 @@
 #pragma once
 
-#include "EntityManager.h"
+#include "System.h"
+
+#include "WindowSystem.h"
+
+#include "Cameras.h"
+#include "Window.h"
+
 #include "CameraComponent.h"
 
-#include <glm/glm.hpp>
-
-class CameraManager
+class CameraManager : public System<const Cameras, const Window, CameraComponent>
 {
 private:
 	static inline CameraManager* Instance;
-
-	float targetAspectRatio;
-
-	glm::mat4* viewMatrixOverride = nullptr;
-	glm::mat4* projectionMatrixOverride = nullptr;
-
-	Entity mainCameraEntity = {};
 
 public:
 	CameraManager() {};
 	~CameraManager() {};
 
-	void Startup();
-	void Shutdown();
+	void Startup(const EngineStartupParams& params, World& world) override;
+	void PostStartup(const EngineStartupParams& params, World& world) override;
+	void Shutdown(const EngineShutdownParams& params, World& world) override;
 
-	static glm::mat4 GetMainViewMatrix();
-	static glm::mat4 GetMainProjectionMatrix();
-	static glm::mat4 GetViewMatrix(Entity cameraEntity);
-
-	static Entity GetMainCamera() { return Instance->mainCameraEntity; };
-
-	static REDFORGE_API void SetViewMatrixOverride(glm::mat4* viewMatrix) { if(Instance) Instance->viewMatrixOverride = viewMatrix; };
-	static REDFORGE_API void SetProjectionMatrixOverride(glm::mat4* projectionMatrix) { if(Instance) Instance->projectionMatrixOverride = projectionMatrix; };
-
-	static REDFORGE_API void SetMainCamera(Entity cameraEntity);
-
-	static void SetTargetAspectRatio(float aspectRatio) { Instance->targetAspectRatio = aspectRatio; };
+	void Update(SystemContext<const Cameras, const Window, CameraComponent>& ctx, float deltaTime) override;
 };
+REGISTER_SYSTEM_BEGIN(CameraManager)
+SYSTEM_REQUIRES(WindowSystem)
+REGISTER_SYSTEM_END(CameraManager)

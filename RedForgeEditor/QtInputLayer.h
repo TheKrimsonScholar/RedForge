@@ -1,5 +1,7 @@
 #pragma once
 
+#include <queue>
+
 #include "InputLayer.h"
 
 #include <QWidget>
@@ -10,21 +12,26 @@ class QtInputLayer : public InputLayer, public QObject
 private:
 	QWindow* window;
 
+	std::queue<std::function<void(InputState&)>> inputEvents;
+
 public:
 	QtInputLayer(QWindow* window);
 	~QtInputLayer() override;
 
-	void PreUpdate() override;
-	void PostUpdate() override;
+	void Startup(const EngineStartupParams& params, InputState& inputState) override;
+	void Shutdown(const EngineShutdownParams& params, InputState& inputState) override;
+
+	void PreUpdate(InputState& inputState) override;
+	void PostUpdate(InputState& inputState) override;
 
 protected:
 	bool eventFilter(QObject* watched, QEvent* event) override;
 
-	void OnMouseMove(QMouseEvent* event);
+	void OnMouseMove(InputState& inputState, const QPointF& position);
 
-	void OnMouseButtonPressed(QMouseEvent* event);
-	void OnMouseButtonReleased(QMouseEvent* event);
+	void OnMouseButtonPressed(InputState& inputState, Qt::MouseButton button);
+	void OnMouseButtonReleased(InputState& inputState, Qt::MouseButton button);
 
-	bool OnKeyPressed(QKeyEvent* event);
-	void OnKeyReleased(QKeyEvent* event);
+	bool OnKeyPressed(InputState& inputState, int key);
+	void OnKeyReleased(InputState& inputState, int key);
 };

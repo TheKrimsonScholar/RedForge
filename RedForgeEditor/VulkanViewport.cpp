@@ -2,6 +2,12 @@
 
 #include "Engine.h"
 
+#include "Editor.h"
+
+#include "EntityManager.h"
+
+#include "GraphicsState.h"
+
 #define IMGUI_ENABLE_VIEWPORTS
 #include "include/imgui/imgui.h"
 #include "include/imgui/imgui_impl_vulkan.h"
@@ -9,10 +15,10 @@
 #include <QResizeEvent>
 #include <QTimer>
 
-VulkanViewport::VulkanViewport(QWidget* parent)
-	: engine(nullptr), vulkanInstance(new QVulkanInstance()), camera(new ViewportCamera())
+VulkanViewport::VulkanViewport(Engine* engine, QWidget* parent)
+	: engine(engine), vulkanInstance(new QVulkanInstance()), camera(new ViewportCamera())
 {
-	vulkanInstance->setVkInstance(GraphicsSystem::GetVulkanInstance());
+	vulkanInstance->setVkInstance(engine->GetWorld().GetResource<GraphicsState>().vulkanInstance);
 	vulkanInstance->create();
 
 	setSurfaceType(QSurface::VulkanSurface);
@@ -107,7 +113,7 @@ void VulkanViewport::OnFileDroppedIntoViewport(const std::filesystem::path& file
 	if(filePath.extension() == ".entity")
 	{
 		// Spawn the entity under the level root
-		LevelManager::LoadEntityFromPrefab(filePath, {});
+		Editor::GetEntityManager().LoadEntityFromPrefab(filePath, {});
 	}
 }
 

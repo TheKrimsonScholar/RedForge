@@ -14,6 +14,9 @@ public:
 	GLFWInputLayer(GLFWwindow* window);
 	REDFORGE_API ~GLFWInputLayer() override;
 
-	void PreUpdate() override;
-	void PostUpdate() override;
+	void Startup(const EngineStartupParams& params, InputState& inputState) override;
+	void Shutdown(const EngineShutdownParams& params, InputState& inputState) override;
+
+	void PreUpdate(InputState& inputState) override;
+	void PostUpdate(InputState& inputState) override;
 };

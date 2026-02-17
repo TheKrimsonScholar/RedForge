@@ -1,20 +1,20 @@
 #pragma once
 
+#include "System.h"
+
+#include "WindowSystem.h"
+
 #include "InputLayer.h"
 
 #include "Exports.h"
 
-#include <glm/glm.hpp>
-
-class InputSystem
+class InputSystem : public System<InputState>
 {
 private:
 	static const uint32_t NUM_BUTTONS = 512;
 
 private:
 	static inline InputSystem* Instance;
-
-	InputLayer* activeInputLayer = nullptr;
 
 	bool buttonsDown[NUM_BUTTONS] = {};
 	bool buttonsPressedThisFrame[NUM_BUTTONS] = {};
@@ -23,18 +23,12 @@ public:
 	InputSystem() {};
 	~InputSystem() {};
 
-	void Startup();
-	void Shutdown();
+	REDFORGE_API void Startup(const EngineStartupParams& params, World& world) override;
+	REDFORGE_API void PostStartup(const EngineStartupParams& params, World& world) override;
+	REDFORGE_API void Shutdown(const EngineShutdownParams& params, World& world) override;
 	
-	REDFORGE_API void Update();
-
-public:
-	REDFORGE_API static bool IsKeyDown(RFKeyCode key) { return Instance->activeInputLayer ? Instance->activeInputLayer->IsKeyDown(key) : false; };
-
-	REDFORGE_API static glm::dvec2 GetMousePosition() { return Instance->activeInputLayer ? Instance->activeInputLayer->GetMousePosition() : glm::dvec2(0, 0); };
-	REDFORGE_API static glm::dvec2 GetMouseDelta() { return Instance->activeInputLayer ? Instance->activeInputLayer->GetMouseDelta() : glm::dvec2(0, 0); };
-	
-	REDFORGE_API static bool IsMouseButtonDown(MouseButtonCode mouseButton) { return Instance->activeInputLayer ? Instance->activeInputLayer->IsMouseButtonDown(mouseButton) : false; };
-
-	REDFORGE_API static void SetActiveInputLayer(InputLayer* inputLayer) { Instance->activeInputLayer = inputLayer; };
+	REDFORGE_API void Update(LocalSystemContext& ctx, float deltaTime) override;
 };
+REGISTER_SYSTEM_BEGIN(InputSystem)
+SYSTEM_REQUIRES(WindowSystem)
+REGISTER_SYSTEM_END(InputSystem)

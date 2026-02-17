@@ -1,16 +1,8 @@
 #pragma once
 
-#include "TimeManager.h"
-#include "ResourceManager.h"
-#include "InputSystem.h"
-#include "GraphicsSystem.h"
-#include "EntityManager.h"
-#include "CameraManager.h"
-#include "DebugManager.h"
-#include "PhysicsSystem.h"
-#include "FileManager.h"
-#include "LevelManager.h"
-#include "NetworkSystem.h"
+#include "EngineParams.h"
+
+#include "Scheduler.h"
 
 #include "DebugMacros.h"
 
@@ -21,25 +13,19 @@
 REDFORGE_API class Engine
 {
 private:
-	TimeManager timeManager;
-	ResourceManager resourceManager;
-	InputSystem inputSystem;
-	GraphicsSystem graphics;
-	EntityManager entityManager;
-	CameraManager cameraManager;
-	DebugManager debugManager;
-	PhysicsSystem physicsSystem;
-	FileManager fileManager;
-	LevelManager levelManager;
-	NetworkSystem networkSystem;
+	World world;
+	Scheduler scheduler;
 
-	std::vector<System*> archetypes;
+	std::vector<SystemBase*> archetypes;
 
 	bool isRunning = false;
 
 public:
-	Engine() {};
-	~Engine() {};
+	REDFORGE_API Engine() {};
+	REDFORGE_API ~Engine() {};
+
+	REDFORGE_API EngineStartupParams CreateStartupParams() { return EngineStartupParams(); }
+	REDFORGE_API EngineShutdownParams CreateShutdownParams() { return EngineShutdownParams(); }
 
 	REDFORGE_API void Run();
 
@@ -47,10 +33,25 @@ public:
 	REDFORGE_API void CreateVulkanInstance();
 	REDFORGE_API void DestroyVulkanInstance();
 
-	REDFORGE_API void Startup(VkSurfaceKHR surfaceOverride = VK_NULL_HANDLE);
-	REDFORGE_API void Shutdown(bool shouldDestroyVulkanInstance = true);
+	REDFORGE_API void Startup(const EngineStartupParams& params = {});
+	REDFORGE_API void Shutdown(const EngineShutdownParams& params = {});
 
-	REDFORGE_API void Update();
+	REDFORGE_API void Update(float deltaTime);
 
 	REDFORGE_API bool IsRunning() { return isRunning; };
+
+	/*template<typename... Args, typename Callback>
+	REDFORGE_API void QueueExternalTask(Callback&& callback);*/
+
+	REDFORGE_API void QueueExternalTask(std::function<void(World&)> callback);
+
+	REDFORGE_API World& GetWorld() { return world; }
 };
+
+//#ifdef REDFORGE_EXPORTS
+//	template<typename... Args, typename Callback>
+//	void Engine::QueueExternalTask(Callback&& callback)
+//	{
+//		return scheduler.QueueExternalTask(callback);
+//	}
+//#endif

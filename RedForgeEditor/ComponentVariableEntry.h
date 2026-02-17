@@ -2,6 +2,8 @@
 
 #include <typeindex>
 
+#include "Editor.h"
+
 #include <QWidget>
 #include <QLabel>
 

@@ -1,6 +1,9 @@
 #include "ComponentVariableEntry_Material.h"
 
-#include "ResourceManager.h"
+#include "World.h"
+
+#include "Assets.h"
+
 #include "PathUtils.h"
 
 #include <QLayout>
@@ -10,14 +13,14 @@ ComponentVariableEntry_Material::ComponentVariableEntry_Material(const std::stri
 {
 	int initialMeshIndex = -1;
 	QStringList materialNames;
-	for(auto& material : ResourceManager::GetMaterialMap())
+	for(const Material* material : Editor::GetWorld().GetResource<Assets>().GetMaterials())
 	{
 		// If this is the initially selected material, remember the index
-		if(material.first == this->variablePtr->identifier)
+		if(material->identifier == this->variablePtr->identifier)
 			initialMeshIndex = materials.size();
 
-		materialNames << QString(WideToNarrow(material.first).c_str());
-		materials.emplace_back(material.first);
+		materialNames << QString(WideToNarrow(material->identifier).c_str());
+		materials.emplace_back(material->identifier);
 	}
 
 	searchField = new SearchField("Mesh", this);

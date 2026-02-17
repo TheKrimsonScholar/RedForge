@@ -2,8 +2,10 @@
 
 #include "ResourceManager.h"
 
-void MeshRendererComponent::UseMeshDefaults(const std::wstring& meshIdentifier)
+#include "Assets.h"
+
+void MeshRendererComponent::UseMeshDefaults(const Assets& assets, const std::wstring& meshIdentifier)
 {
 	mesh = MeshRef(meshIdentifier);
-	material = MaterialRef(ResourceManager::GetMesh(meshIdentifier)->defaultMaterial->identifier);
+	material = MaterialRef(assets.GetMesh(meshIdentifier).defaultMaterial->identifier);
 }

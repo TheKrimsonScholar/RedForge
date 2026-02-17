@@ -14,3 +14,12 @@ glm::mat4 CameraComponent::GetProjectionMatrix() const
 	
     return glm::mat4(1.0f);
 }
+
+glm::mat4 GetViewMatrix(Entity cameraEntity, SystemContext<const TransformComponent> ctx)
+{
+    assert(ctx.HasComponent<CameraComponent>(cameraEntity) && "Entity is not a camera.");
+
+    const TransformComponent& transform = ctx.GetComponent<const TransformComponent>(cameraEntity);
+
+    return glm::lookAt(transform.location, transform.location + transform.GetForward(), transform.GetUp());
+}

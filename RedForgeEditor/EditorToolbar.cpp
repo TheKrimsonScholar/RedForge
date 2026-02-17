@@ -1,6 +1,8 @@
 #include "EditorToolbar.h"
 
-#include "LevelManager.h"
+#include "Editor.h"
+
+#include "EntityManager.h"
 #include "PhysicsSystem.h"
 
 #include <QHBoxLayout>
@@ -31,10 +33,10 @@ EditorToolbar::~EditorToolbar()
 
 void EditorToolbar::SaveLevel()
 {
-	LevelManager::SaveLevel(L"Levels/Level.txt");
+	Editor::GetEntityManager().SaveLevel(L"Levels/Level.txt");
 }
 
 void EditorToolbar::Play()
 {
-	PhysicsSystem::Unpause();
+	//PhysicsSystem::Unpause();
 }

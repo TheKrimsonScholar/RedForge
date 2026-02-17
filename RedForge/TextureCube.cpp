@@ -6,12 +6,19 @@ TextureCube::TextureCube()
 {
 
 }
-TextureCube::~TextureCube()
+
+void TextureCube::Startup(const EngineStartupParams& params, World& world)
 {
-    vkDestroyImageView(GraphicsSystem::GetDevice(), textureImageView, nullptr);
 
-    vkDestroyImage(GraphicsSystem::GetDevice(), textureImage, nullptr);
-    vkFreeMemory(GraphicsSystem::GetDevice(), textureImageMemory, nullptr);
+}
+void TextureCube::Shutdown(const EngineShutdownParams& params, World& world)
+{
+    const GraphicsState& graphicsState = world.GetResource<GraphicsState>();
 
-    vkDestroySampler(GraphicsSystem::GetDevice(), sampler, nullptr);
+    vkDestroyImageView(graphicsState.device, textureImageView, nullptr);
+
+    vkDestroyImage(graphicsState.device, textureImage, nullptr);
+    vkFreeMemory(graphicsState.device, textureImageMemory, nullptr);
+
+    vkDestroySampler(graphicsState.device, sampler, nullptr);
 }

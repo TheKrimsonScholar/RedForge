@@ -1,5 +1,7 @@
 #include "EntityHierarchyItemModel.h"
 
+#include "Editor.h"
+
 #include "EditorPaths.h"
 
 QDataStream& operator<<(QDataStream& out, const Entity& data)
@@ -20,8 +22,8 @@ EntityHierarchyItemModel::EntityHierarchyItemModel(QObject* parent) : QStandardI
             std::string itemName = item->data(Qt::DisplayRole).value<QString>().toStdString();
             Entity entity = item->data(Qt::UserRole).value<Entity>();
             // Update entity name if it was changed
-            if(LevelManager::GetEntityName(entity) != itemName)
-                LevelManager::SetEntityName(entity, itemName);
+            if(Editor::GetEntityManager().GetEntityName(entity) != itemName)
+                Editor::GetEntityManager().SetEntityName(entity, itemName);
         });
 }
 EntityHierarchyItemModel::~EntityHierarchyItemModel()
@@ -34,7 +36,7 @@ void EntityHierarchyItemModel::InitializeHierarchy()
     clear();
 
     // Gather any existing entities in the level
-    LevelManager::ForEachEntity(
+    Editor::GetEntityManager().ForEachEntity(
         [this](const Entity& entity)
         {
             CreateEntityItem(entity);
@@ -99,7 +101,7 @@ bool EntityHierarchyItemModel::dropMimeData(const QMimeData* data, Qt::DropActio
                 
             if(roleDataMap[Qt::UserRole].isValid())
             {
-                Entity entity = LevelManager::LoadEntityFromPrefab(roleDataMap[Qt::UserRole].value<QString>().toStdString(), {});
+                Entity entity = Editor::GetEntityManager().LoadEntityFromPrefab(roleDataMap[Qt::UserRole].value<QString>().toStdString(), {});
 
                 draggedEntities.push_back(entity);
             }
@@ -121,32 +123,32 @@ bool EntityHierarchyItemModel::dropMimeData(const QMimeData* data, Qt::DropActio
     // Reparent
     if(row == -1)
         for(const Entity& entity : draggedEntities)
-            LevelManager::SetEntityParent(entity, newParent);
+            Editor::GetEntityManager().SetEntityParent(entity, newParent);
     // Reorder
     else
         // Move before (only necessary if set as first child)
         if(row == 0)
             for(const Entity& entity : draggedEntities)
-                LevelManager::MoveEntityBefore(entity, newNextSibling);
+                Editor::GetEntityManager().MoveEntityBefore(entity, newNextSibling);
         // Move after
         else
             // Reverse order when placing multiple entities to the position just after a sibling
             for(int i = draggedEntities.size() - 1; i >= 0; i--)
-                LevelManager::MoveEntityAfter(draggedEntities[i], newPreviousSibling);
+                Editor::GetEntityManager().MoveEntityAfter(draggedEntities[i], newPreviousSibling);
 
     return false;
 }
 
 void EntityHierarchyItemModel::CreateEntityItem(const Entity& entity)
 {
-    QIcon icon = LevelManager::GetEntityPrefabPath(entity).empty() ? QICON_FROM_PATH("Entity Hierarchy/Entity") : QICON_FROM_PATH("Entity Hierarchy/Prefab");
-    QStandardItem* item = new QStandardItem(icon, LevelManager::GetEntityName(entity).c_str());
+    QIcon icon = Editor::GetEntityManager().GetEntityPrefabPath(entity).empty() ? QICON_FROM_PATH("Entity Hierarchy/Entity") : QICON_FROM_PATH("Entity Hierarchy/Prefab");
+    QStandardItem* item = new QStandardItem(icon, Editor::GetEntityManager().GetEntityName(entity).c_str());
     item->setFlags(Qt::ItemIsSelectable | Qt::ItemIsDragEnabled | Qt::ItemIsDropEnabled | Qt::ItemIsEnabled | Qt::ItemIsEditable);
     item->setData(QVariant::fromValue(entity), Qt::UserRole);
 
     entityItems.emplace(entity, item);
 
-    Entity parent = LevelManager::GetEntityParent(entity);
+    Entity parent = Editor::GetEntityManager().GetEntityParent(entity);
     if(parent.IsValid())
         entityItems.at(parent)->appendRow(item);
     else
@@ -172,7 +174,7 @@ int EntityHierarchyItemModel::GetAbsoluteHierarchyIndex(const Entity& entity) co
 {
 	int absoluteIndex = -1;
     bool entityFound = false;
-	LevelManager::ForEachEntity(
+	Editor::GetEntityManager().ForEachEntity(
 		[entity, &absoluteIndex, &entityFound](const Entity& e)
 		{
             // Stop incrementing absolute index if we've already found the specified entity

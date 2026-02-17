@@ -1,6 +1,14 @@
 #include "Exports.h"
 
+#ifdef _WIN32
+    #define WIN32_LEAN_AND_MEAN
+    #define NOMINMAX
+    #include <windows.h>
+#endif
+
 #include "Engine.h"
+
+#include "FileManager.h"
 
 bool LoadGameLibrary(const std::filesystem::path& gamePath)
 {

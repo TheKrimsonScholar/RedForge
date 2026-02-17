@@ -2,7 +2,7 @@
 
 #include "EditorPanel.h"
 
-#include "LevelManager.h"
+#include "EntityManager.h"
 
 #include <QLabel>
 #include <QVBoxLayout>

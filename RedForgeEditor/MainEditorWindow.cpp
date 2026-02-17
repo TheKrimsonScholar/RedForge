@@ -1,6 +1,9 @@
 #include "MainEditorWindow.h"
 
+#include "Editor.h"
+
 #include "Engine.h"
+#include "DebugCameraState.h"
 
 #include <QTimer>
 
@@ -10,24 +13,29 @@ MainEditorWindow::MainEditorWindow(QWidget* parent) : QMainWindow(parent)
 {
 	Instance = this;
 
-	engine = new Engine();
-	engine->CreateVulkanInstance();
+	Engine* engine = Editor::CreateEngineInstance();
 
-	viewport = new VulkanViewport();
-	viewport->SetEngine(engine);
+	viewport = new VulkanViewport(engine);
 	viewport->onSurfaceInitialized = 
-		[this](VkSurfaceKHR surface)
+		[this, engine](VkSurfaceKHR surface)
 		{
-			engine->Startup(surface);
+			EngineStartupParams startupParams = engine->CreateStartupParams();
+			startupParams.surfaceOverride = surface;
+
+			engine->GetWorld().GetResource<InputState>().SetActiveInputLayer(startupParams, inputLayer);
+			engine->GetWorld().GetResource<DebugCameraState>().isActive = true;
+
+			engine->Startup(startupParams);
 			Initialize();
 
 			QTimer* updateTimer = new QTimer(this);
 			QObject::connect(updateTimer, &QTimer::timeout, this,
-				[this]()
+				[this, engine]()
 				{
-					engine->Update();
+					engine->Update(frameTimer.restart() / 1000.0f);
 					Update();
 				});
+			frameTimer.start();
 			updateTimer->start(0);
 		};
 
@@ -61,20 +69,14 @@ MainEditorWindow::MainEditorWindow(QWidget* parent) : QMainWindow(parent)
 }
 MainEditorWindow::~MainEditorWindow()
 {
-	engine->DestroyVulkanInstance();
+	Editor::DestroyEngineInstance();
 
 	delete inputLayer;
-	delete engine;
 }
 
 void MainEditorWindow::Initialize()
 {
-	InputSystem::SetActiveInputLayer(inputLayer);
-	
-	CameraManager::SetViewMatrixOverride(&viewport->GetCamera()->viewMatrix);
-	CameraManager::SetProjectionMatrixOverride(&viewport->GetCamera()->projectionMatrix);
-
-	LevelManager::LoadLevel(L"Levels/Level.txt");
+	Editor::GetEntityManager().LoadLevel(L"Levels/Level.txt");
 
 	viewport->Initialize();
 	hierarchyPanel->Initialize();
@@ -113,7 +115,10 @@ void MainEditorWindow::changeEvent(QEvent* event)
 
 void MainEditorWindow::closeEvent(QCloseEvent* event)
 {
-	engine->Shutdown(false);
+	EngineShutdownParams shutdownParams = Editor::GetEngine()->CreateShutdownParams();
+	shutdownParams.shouldDestroyVulkanInstance = false;
+	
+	Editor::GetEngine()->Shutdown(shutdownParams);
 }
 
 void MainEditorWindow::OnWindowMinimized()

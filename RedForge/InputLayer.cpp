@@ -5,21 +5,21 @@ InputLayer::~InputLayer()
 	
 }
 
-void InputLayer::PreUpdate()
+void InputLayer::PreUpdate(InputState& inputState)
 {
-	static glm::dvec2 previousMousePosition = mousePosition;
+	static glm::dvec2 previousMousePosition = inputState.mousePosition;
 
-	mouseDelta = mousePosition - previousMousePosition;
-	previousMousePosition = mousePosition;
+	inputState.mouseDelta = inputState.mousePosition - previousMousePosition;
+	previousMousePosition = inputState.mousePosition;
 }
-void InputLayer::PostUpdate()
+void InputLayer::PostUpdate(InputState& inputState)
 {
 	// Update single-frame states
 	for(uint32_t i = 0; i < (uint32_t) RFKeyCode::MAX; i++)
 	{
-		if(keysPressedThisFrame[i])
-			keysPressedThisFrame[i] = false;
-		if(keysReleasedThisFrame[i])
-			keysReleasedThisFrame[i] = false;
+		if(inputState.keysPressedThisFrame[i])
+			inputState.keysPressedThisFrame[i] = false;
+		if(inputState.keysReleasedThisFrame[i])
+			inputState.keysReleasedThisFrame[i] = false;
 	}
 }

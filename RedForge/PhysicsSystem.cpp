@@ -7,28 +7,48 @@
 #include "DebugManager.h"
 #include "LevelManager.h"
 
-void PhysicsSystem::Startup()
+REGISTER_SYSTEM(PhysicsSystem)
+
+PhysicsSystem::PhysicsSystem()
+{
+
+}
+PhysicsSystem::~PhysicsSystem()
+{
+
+}
+
+void PhysicsSystem::Startup(const EngineStartupParams& params, World& world)
 {
 	Instance = this;
 }
-void PhysicsSystem::Shutdown()
+void PhysicsSystem::PostStartup(const EngineStartupParams& params, World& world)
+{
+
+}
+void PhysicsSystem::Shutdown(const EngineShutdownParams& params, World& world)
 {
 
 }
 
-void PhysicsSystem::Update()
+void PhysicsSystem::Update(SystemContext<PhysicsComponent, const ColliderComponent, TransformComponent>& ctx, float deltaTime)
 {
 	static const float PHYSICS_TICK = 0.01f;
 
 	static float simulationTimeLeft = 0;
 
-	simulationTimeLeft += TimeManager::GetDeltaTime();
+	simulationTimeLeft += deltaTime;
 
-	EntityManager::ForEachComponentOfType<TransformComponent, ColliderComponent>(
-		[this](const Entity& entity, TransformComponent& transform, ColliderComponent& collider)
+	ctx.ForEachComponentOfType<const TransformComponent, const ColliderComponent>(
+		[this](const Entity& entity, const TransformComponent& transform, const ColliderComponent& collider)
 		{
 			DebugManager::DrawDebugBox(transform.location, transform.rotation, collider.halfSize, glm::vec4(0, 0, 0, 0));
 		});
+	/*EntityManager::ForEachComponentOfType<TransformComponent, ColliderComponent>(
+		[this](const Entity& entity, TransformComponent& transform, ColliderComponent& collider)
+		{
+			DebugManager::DrawDebugBox(transform.location, transform.rotation, collider.halfSize, glm::vec4(0, 0, 0, 0));
+		});*/
 
 	while(simulationTimeLeft >= PHYSICS_TICK)
 	{
@@ -36,13 +56,20 @@ void PhysicsSystem::Update()
 
 		/* Physics Update */
 
-		EntityManager::ForEachComponentOfType<TransformComponent, PhysicsComponent>(
+		ctx.ForEachComponentOfType<TransformComponent, PhysicsComponent>(
 			[this](const Entity& entity, TransformComponent& transform, PhysicsComponent& rb)
 			{
 				rb.ApplyGravity();
 
 				UpdatePhysics(transform, rb, tickPhysics ? PHYSICS_TICK : 0);
 			});
+		/*EntityManager::ForEachComponentOfType<TransformComponent, PhysicsComponent>(
+			[this](const Entity& entity, TransformComponent& transform, PhysicsComponent& rb)
+			{
+				rb.ApplyGravity();
+
+				UpdatePhysics(transform, rb, tickPhysics ? PHYSICS_TICK : 0);
+			});*/
 		/*LevelManager::ForEachEntity([this](const Entity& entity)
 			{
 				if(EntityManager::HasComponent<PhysicsComponent>(entity))
@@ -58,7 +85,29 @@ void PhysicsSystem::Update()
 
 		/* Collision Detection and Contact Generation */
 
-		EntityManager::ForEachComponentOfType<TransformComponent, PhysicsComponent, ColliderComponent>(
+		ctx.ForEachComponentOfType<const TransformComponent, const PhysicsComponent, const ColliderComponent>(
+			[&](const Entity& entityA, const TransformComponent& transformA, const PhysicsComponent& bodyA, const ColliderComponent& colliderA)
+			{
+				ctx.ForEachComponentOfType<const TransformComponent, const PhysicsComponent, const ColliderComponent>(
+					[&](const Entity& entityB, const TransformComponent& transformB, const PhysicsComponent& bodyB, const ColliderComponent& colliderB)
+					{
+						if(entityA == entityB)
+							return;
+
+						std::vector<ContactPoint> contactPoints;
+						if(GJK(transformA, colliderA, transformB, colliderB, contactPoints))
+						{
+							CollisionData collisionData{};
+							collisionData.entityA = entityA;
+							collisionData.entityB = entityB;
+							collisionData.colliderPair = CollisionPair(&colliderA, &colliderB);
+							collisionData.contacts = contactPoints;
+
+							collisions.push_back(collisionData);
+						}
+					});
+			});
+		/*EntityManager::ForEachComponentOfType<TransformComponent, PhysicsComponent, ColliderComponent>(
 			[&](const Entity& entityA, TransformComponent& transformA, PhysicsComponent& bodyA, ColliderComponent& colliderA)
 			{
 				EntityManager::ForEachComponentOfType<TransformComponent, PhysicsComponent, ColliderComponent>(
@@ -79,7 +128,7 @@ void PhysicsSystem::Update()
 							collisions.push_back(collisionData);
 						}
 					});
-			});
+			});*/
 		/*LevelManager::ForEachEntity([&](const Entity& entityA)
 			{
 				if(!EntityManager::HasComponent<PhysicsComponent>(entityA) || !EntityManager::HasComponent<ColliderComponent>(entityA))
@@ -119,12 +168,12 @@ void PhysicsSystem::Update()
 			Entity entityA = collisionData.entityA;
 			Entity entityB = collisionData.entityB;
 
-			PhysicsComponent& bodyA = EntityManager::GetComponent<PhysicsComponent>(entityA);
-			PhysicsComponent& bodyB = EntityManager::GetComponent<PhysicsComponent>(entityB);
+			PhysicsComponent& bodyA = ctx.GetComponent<PhysicsComponent>(entityA);
+			PhysicsComponent& bodyB = ctx.GetComponent<PhysicsComponent>(entityB);
 			const ColliderComponent& colliderA = *collisionData.colliderPair.GetFirst();
 			const ColliderComponent& colliderB = *collisionData.colliderPair.GetSecond();
-			TransformComponent& transformA = EntityManager::GetComponent<TransformComponent>(entityA);
-			TransformComponent& transformB = EntityManager::GetComponent<TransformComponent>(entityB);
+			TransformComponent& transformA = ctx.GetComponent<TransformComponent>(entityA);
+			TransformComponent& transformB = ctx.GetComponent<TransformComponent>(entityB);
 
 			glm::vec3 initialLocationA = transformA.LocalToWorld_Point(colliderA.center);
 			glm::vec3 initialLocationB = transformB.LocalToWorld_Point(colliderB.center);

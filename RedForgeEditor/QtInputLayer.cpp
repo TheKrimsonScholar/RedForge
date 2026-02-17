@@ -61,89 +61,136 @@ QtInputLayer::~QtInputLayer()
     
 }
 
-void QtInputLayer::PreUpdate()
+void QtInputLayer::Startup(const EngineStartupParams& params, InputState& inputState)
 {
-    InputLayer::PreUpdate();
+
 }
-void QtInputLayer::PostUpdate()
+void QtInputLayer::Shutdown(const EngineShutdownParams& params, InputState& inputState)
 {
-    InputLayer::PostUpdate();
+
+}
+
+void QtInputLayer::PreUpdate(InputState& inputState)
+{
+    InputLayer::PreUpdate(inputState);
+
+    // Call all input events that were queued since last frame
+    while(!inputEvents.empty())
+    {
+        inputEvents.front()(inputState);
+        inputEvents.pop();
+    }
+}
+void QtInputLayer::PostUpdate(InputState& inputState)
+{
+    InputLayer::PostUpdate(inputState);
 }
 
 bool QtInputLayer::eventFilter(QObject* watched, QEvent* event)
 {
+    QEvent::Type eType = event->type();
     switch(event->type())
     {
         case QEvent::MouseMove:
-            OnMouseMove(static_cast<QMouseEvent*>(event));
-            break;
+        {
+            QMouseEvent* mouseEvent = static_cast<QMouseEvent*>(event);
+            QPointF position = mouseEvent->position();
+
+            inputEvents.push([this, position](InputState& inputState)
+                {
+                    OnMouseMove(inputState, position);
+                });
+        }
+        break;
         case QEvent::MouseButtonPress:
-            OnMouseButtonPressed(static_cast<QMouseEvent*>(event));
-            break;
+        {
+            QMouseEvent* mouseEvent = static_cast<QMouseEvent*>(event);
+			Qt::MouseButton button = mouseEvent->button();
+
+            inputEvents.push([this, button](InputState& inputState)
+                {
+                    OnMouseButtonPressed(inputState, button);
+                });
+        }
+        break;
         case QEvent::MouseButtonRelease:
-            OnMouseButtonReleased(static_cast<QMouseEvent*>(event));
-            break;
+        {
+            QMouseEvent* mouseEvent = static_cast<QMouseEvent*>(event);
+			Qt::MouseButton button = mouseEvent->button();
+
+            inputEvents.push([this, button](InputState& inputState)
+                {
+                    OnMouseButtonReleased(inputState, button);
+                });
+        }
+        break;
         case QEvent::KeyPress:
-            OnKeyPressed(static_cast<QKeyEvent*>(event));
-            break;
+        {
+            QKeyEvent* keyEvent = static_cast<QKeyEvent*>(event);
+            int key = keyEvent->key();
+            
+            inputEvents.push([this, key](InputState& inputState)
+                {
+                    OnKeyPressed(inputState, key);
+                });
+        }
+        break;
         case QEvent::KeyRelease:
-            OnKeyReleased(static_cast<QKeyEvent*>(event));
-            break;
+        {
+            QKeyEvent* keyEvent = static_cast<QKeyEvent*>(event);
+            int key = keyEvent->key();
+            
+            inputEvents.push([this, key](InputState& inputState)
+                {
+                    OnKeyReleased(inputState, key);
+                });
+        }
+        break;
         default: break;
     }
 
     return false;
 }
 
-void QtInputLayer::OnMouseMove(QMouseEvent* event)
+void QtInputLayer::OnMouseMove(InputState& inputState, const QPointF& position)
 {
-    //std::cout << "MOUSE MOVE " << event->position().x() << ", " << event->position().y() << std::endl;
-
     // Convert from device-independent pixel coordinates to physical pixel coordinates
-    mousePosition = { event->position().x() * window->devicePixelRatio(), event->position().y() * window->devicePixelRatio() };
+    inputState.mousePosition = { position.x() * window->devicePixelRatio(), position.y() * window->devicePixelRatio() };
 }
 
-void QtInputLayer::OnMouseButtonPressed(QMouseEvent* event)
+void QtInputLayer::OnMouseButtonPressed(InputState& inputState, Qt::MouseButton button)
 {
-    //std::cout << "MOUSE BUTTON PRESSED " << event->button() << std::endl;
-
     // Manually grab focus for the viewport whenever a mouse button is pressed
     //widget->grab_focus();
 
-    assert(QT_INPUT_MOUSE_BUTTON_MAP.find(event->button()) != QT_INPUT_MOUSE_BUTTON_MAP.end() && "Qt mouse button isn't registered with the engine.");
+    assert(QT_INPUT_MOUSE_BUTTON_MAP.find(button) != QT_INPUT_MOUSE_BUTTON_MAP.end() && "Qt mouse button isn't registered with the engine.");
 
-    MouseButtonCode mouseButton = QT_INPUT_MOUSE_BUTTON_MAP[event->button()];
-    mouseButtonsDown[(size_t) mouseButton] = true;
+    MouseButtonCode mouseButton = QT_INPUT_MOUSE_BUTTON_MAP[button];
+    inputState.mouseButtonsDown[(size_t) mouseButton] = true;
 }
-void QtInputLayer::OnMouseButtonReleased(QMouseEvent* event)
+void QtInputLayer::OnMouseButtonReleased(InputState& inputState, Qt::MouseButton button)
 {
-    //std::cout << "MOUSE BUTTON RELEASED " << event->button() << std::endl;
+    assert(QT_INPUT_MOUSE_BUTTON_MAP.find(button) != QT_INPUT_MOUSE_BUTTON_MAP.end() && "Qt mouse button isn't registered with the engine.");
 
-    assert(QT_INPUT_MOUSE_BUTTON_MAP.find(event->button()) != QT_INPUT_MOUSE_BUTTON_MAP.end() && "Qt mouse button isn't registered with the engine.");
-
-    MouseButtonCode mouseButton = QT_INPUT_MOUSE_BUTTON_MAP[event->button()];
-    mouseButtonsDown[(size_t) mouseButton] = false;
+    MouseButtonCode mouseButton = QT_INPUT_MOUSE_BUTTON_MAP[button];
+    inputState.mouseButtonsDown[(size_t) mouseButton] = false;
 }
 
-bool QtInputLayer::OnKeyPressed(QKeyEvent* event)
+bool QtInputLayer::OnKeyPressed(InputState& inputState, int key)
 {
-    //std::cout << "KEY PRESSED " << event->key() << std::endl;
+    assert(QT_INPUT_KEY_MAP.find(key) != QT_INPUT_KEY_MAP.end() && "Qt key isn't registered with the engine.");
 
-    assert(QT_INPUT_KEY_MAP.find(event->key()) != QT_INPUT_KEY_MAP.end() && "Qt key isn't registered with the engine.");
-
-    RFKeyCode key = QT_INPUT_KEY_MAP[event->key()];
-    keysDown[(size_t) key] = true;
-    keysPressedThisFrame[(size_t) key] = true;
+    RFKeyCode keyPressed = QT_INPUT_KEY_MAP[key];
+    inputState.keysDown[(size_t) keyPressed] = true;
+    inputState.keysPressedThisFrame[(size_t)keyPressed] = true;
 
     return true;
 }
-void QtInputLayer::OnKeyReleased(QKeyEvent* event)
+void QtInputLayer::OnKeyReleased(InputState& inputState, int key)
 {
-    //std::cout << "KEY RELEASED " << event->key() << std::endl;
+    assert(QT_INPUT_KEY_MAP.find(key) != QT_INPUT_KEY_MAP.end() && "Qt key isn't registered with the engine.");
 
-    assert(QT_INPUT_KEY_MAP.find(event->key()) != QT_INPUT_KEY_MAP.end() && "Qt key isn't registered with the engine.");
-
-    RFKeyCode key = QT_INPUT_KEY_MAP[event->key()];
-    keysDown[(size_t) key] = false;
-    keysReleasedThisFrame[(size_t) key] = true;
+    RFKeyCode keyReleased = QT_INPUT_KEY_MAP[key];
+    inputState.keysDown[(size_t) keyReleased] = false;
+    inputState.keysReleasedThisFrame[(size_t) keyReleased] = true;
 }

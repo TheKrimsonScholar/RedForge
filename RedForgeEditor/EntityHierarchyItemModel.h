@@ -2,7 +2,7 @@
 
 #include <QStandardItemModel>
 
-#include "LevelManager.h"
+#include "EntityManager.h"
 
 #include <QApplication>
 #include <QTreeView>

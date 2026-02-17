@@ -37,12 +37,12 @@ void InspectorPanel::Update()
 
 void InspectorPanel::SetTarget(const Entity& entity)
 {
-	label->setText(LevelManager::GetEntityName(entity).c_str());
+	label->setText(Editor::GetEntityManager().GetEntityName(entity).c_str());
 	
 	// Clear any existing component entries
 	clearLayout(componentEntriesBox);
 	
-	std::unordered_map<void*, std::type_index> components = EntityManager::GetAllComponents(entity);
+	std::unordered_map<void*, std::type_index> components = Editor::GetEntityManager().GetAllComponents(entity);
 	std::vector<std::type_index> registeredComponentTypes = GetRegisteredComponentsList();
 	// List this entity's components in order by type
 	for(std::type_index componentType : registeredComponentTypes)
@@ -84,7 +84,7 @@ void InspectorPanel::SetTarget(const Entity& entity)
 	QObject::connect(addComponentField, &SearchField::OnSelectionChanged,
 		[this, entity, addComponentField](int index)
 		{
-			EntityManager::AddComponentOfType(entity, GetRegisteredComponentsList()[index]);
+			Editor::GetEntityManager().AddComponentOfType(entity, GetRegisteredComponentsList()[index]);
 			
 			// Refresh the inspector
 			SetTarget(entity);

@@ -1,7 +1,9 @@
 #include "FileItemModel.h"
 
+#include "Editor.h"
+
 #include "FileManager.h"
-#include "LevelManager.h"
+#include "EntityManager.h"
 
 #include <QMimeData>
 #include <QDropEvent>
@@ -21,7 +23,7 @@ void FileItemModel::SetCurrentDirectory(const std::filesystem::path& currentDire
 
 	clear();
 
-    for(const std::filesystem::path& file : FileManager::GetAllTopLevelItemsInDirectory(currentDirectory))
+    for(const std::filesystem::path& file : File::GetAllTopLevelItemsInDirectory(currentDirectory))
     {
         std::filesystem::path absolutePath = currentDirectory;
         absolutePath.append(file.string());
@@ -71,11 +73,11 @@ bool FileItemModel::dropMimeData(const QMimeData* data, Qt::DropAction action, i
 			stream >> r >> c >> roleDataMap;
 
 			Entity entity = roleDataMap[Qt::UserRole].value<Entity>();
-			qDebug() << "Dropped Item Data:" << r << c << roleDataMap[Qt::DisplayRole] << LevelManager::GetEntityName(entity);
+			qDebug() << "Dropped Item Data:" << r << c << roleDataMap[Qt::DisplayRole] << Editor::GetEntityManager().GetEntityName(entity);
 
 			std::filesystem::path prefabPath = currentDirectory;
-			prefabPath.append(LevelManager::GetEntityName(entity)).replace_extension(".entity");
-			LevelManager::SaveEntityAsPrefab(entity, prefabPath);
+			prefabPath.append(Editor::GetEntityManager().GetEntityName(entity)).replace_extension(".entity");
+            Editor::GetEntityManager().SaveEntityAsPrefab(entity, prefabPath);
 
 			// Refresh view
 			SetCurrentDirectory(GetCurrentDirectory());

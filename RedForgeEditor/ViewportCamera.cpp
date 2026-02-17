@@ -21,7 +21,7 @@ ViewportCamera::~ViewportCamera()
 
 void ViewportCamera::Update()
 {
-	static const float LOOK_SPEED = 10.0f;
+	/*static const float LOOK_SPEED = 10.0f;
 	static const float MOVE_SPEED = 5.0f;
 
 	if(InputSystem::IsMouseButtonDown(MouseButtonCode::Left))
@@ -45,7 +45,7 @@ void ViewportCamera::Update()
 		location += glm::vec3(0, 1, 0) * TimeManager::GetDeltaTime() * MOVE_SPEED;
 
 	viewMatrix = glm::lookAt(location, location + GetForward(), GetUp());
-	projectionMatrix = glm::perspective(glm::radians(fov), GraphicsSystem::GetAspectRatio(), nearClipPlaneDistance, farClipPlaneDistance);
+	projectionMatrix = glm::perspective(glm::radians(fov), GraphicsSystem::GetAspectRatio(), nearClipPlaneDistance, farClipPlaneDistance);*/
 }
 
 glm::vec3 ViewportCamera::GetRight()

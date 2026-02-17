@@ -12,10 +12,10 @@ HierarchyPanel::HierarchyPanel(QWidget* parent) : EditorPanel("Hierarchy", paren
     QObject::connect(newEntityButton, &QPushButton::clicked, this, 
         [this]()
         {
-            const Entity& newEntity = LevelManager::CreateEntity();
+            const Entity& newEntity = Editor::GetEntityManager().CreateEntity();
             
             if(!treeView->GetSelectedEntities().empty())
-                LevelManager::SetEntityParent(newEntity, treeView->GetSelectedEntities()[0]);
+                Editor::GetEntityManager().SetEntityParent(newEntity, treeView->GetSelectedEntities()[0]);
         });
 
     treeView = new EntityHierarchyTreeView(this);

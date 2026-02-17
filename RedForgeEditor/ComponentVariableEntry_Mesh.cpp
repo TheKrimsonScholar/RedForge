@@ -1,6 +1,9 @@
 #include "ComponentVariableEntry_Mesh.h"
 
-#include "ResourceManager.h"
+#include "World.h"
+
+#include "Assets.h"
+
 #include "PathUtils.h"
 
 #include <QLayout>
@@ -10,14 +13,14 @@ ComponentVariableEntry_Mesh::ComponentVariableEntry_Mesh(const std::string& labe
 {
 	int initialMeshIndex = -1;
 	QStringList meshNames;
-	for(auto& mesh : ResourceManager::GetMeshMap())
+	for(const Mesh* mesh : Editor::GetWorld().GetResource<Assets>().GetMeshes())
 	{
 		// If this is the initially selected mesh, remember the index
-		if(mesh.first == this->variablePtr->identifier)
+		if(mesh->identifier == this->variablePtr->identifier)
 			initialMeshIndex = meshes.size();
 
-		meshNames << QString(WideToNarrow(mesh.first).c_str());
-		meshes.emplace_back(mesh.first);
+		meshNames << QString(WideToNarrow(mesh->identifier).c_str());
+		meshes.emplace_back(mesh->identifier);
 	}
 
 	searchField = new SearchField("Mesh", this);

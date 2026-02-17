@@ -64,17 +64,27 @@ GLFWInputLayer::~GLFWInputLayer()
     
 }
 
-void GLFWInputLayer::PreUpdate()
+void GLFWInputLayer::Startup(const EngineStartupParams& params, InputState& inputState)
 {
-	InputLayer::PreUpdate();
 
-	static glm::dvec2 previousMousePosition = mousePosition;
+}
+void GLFWInputLayer::Shutdown(const EngineShutdownParams& params, InputState& inputState)
+{
 
-	glfwGetCursorPos(window, &mousePosition.x, &mousePosition.y);
+}
+
+void GLFWInputLayer::PreUpdate(InputState& inputState)
+{
+	InputLayer::PreUpdate(inputState);
+
+	static bool isFirstFrame = true;
+	static glm::dvec2 previousMousePosition = inputState.mousePosition;
+
+	glfwGetCursorPos(window, &inputState.mousePosition.x, &inputState.mousePosition.y);
 	// Ignore mouse delta on first frame
-	if(TimeManager::GetCurrentFrame() > 0)
-		mouseDelta = mousePosition - previousMousePosition;
-	previousMousePosition = mousePosition;
+	if(!isFirstFrame)
+        inputState.mouseDelta = inputState.mousePosition - previousMousePosition;
+	previousMousePosition = inputState.mousePosition;
 
 	if(glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
 		glfwSetWindowShouldClose(window, true);
@@ -84,23 +94,25 @@ void GLFWInputLayer::PreUpdate()
         int mouseButton = GLFW_INPUT_MOUSE_BUTTON_MAP[(MouseButtonCode) i];
 
 		// This button was just pressed this frame if it was not pressed last frame and is pressed this frame
-		mouseButtonsPressedThisFrame[i] =
-			!mouseButtonsDown[i] && glfwGetMouseButton(window, mouseButton) == GLFW_PRESS;
+        inputState.mouseButtonsPressedThisFrame[i] =
+			!inputState.mouseButtonsDown[i] && glfwGetMouseButton(window, mouseButton) == GLFW_PRESS;
 		// Update stored button state
-		mouseButtonsDown[i] = glfwGetMouseButton(window, mouseButton) == GLFW_PRESS;
+        inputState.mouseButtonsDown[i] = glfwGetMouseButton(window, mouseButton) == GLFW_PRESS;
 	}
 	for(uint32_t i = 0; i < (uint32_t) RFKeyCode::MAX; i++)
 	{
         int key = GLFW_INPUT_KEY_MAP[(RFKeyCode) i];
 
 		// This key was just pressed this frame if it was not pressed last frame and is pressed this frame
-		keysPressedThisFrame[i] =
-			!keysDown[i] && glfwGetKey(window, key) == GLFW_PRESS;
+        inputState.keysPressedThisFrame[i] =
+			!inputState.keysDown[i] && glfwGetKey(window, key) == GLFW_PRESS;
 		// Update stored button state
-		keysDown[i] = glfwGetKey(window, key) == GLFW_PRESS;
+        inputState.keysDown[i] = glfwGetKey(window, key) == GLFW_PRESS;
 	}
+
+	isFirstFrame = false;
 }
-void GLFWInputLayer::PostUpdate()
+void GLFWInputLayer::PostUpdate(InputState& inputState)
 {
-	InputLayer::PostUpdate();
+	InputLayer::PostUpdate(inputState);
 }

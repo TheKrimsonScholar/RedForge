@@ -4,6 +4,9 @@
 
 #include "ComponentRegistrationMacros.h"
 
+#include "SystemContext.h"
+#include "TransformComponent.h"
+
 enum class ECameraProjectionType
 {
 	Perspective,
@@ -37,3 +40,5 @@ REGISTER_COMPONENT_BEGIN(CameraComponent)
 COMPONENT_VARS_BEGIN
 COMPONENT_VARS_END
 REGISTER_COMPONENT_END(CameraComponent)
+
+glm::mat4 GetViewMatrix(Entity cameraEntity, SystemContext<const TransformComponent> ctx);

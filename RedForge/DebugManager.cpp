@@ -5,36 +5,21 @@
 #include "ResourceManager.h"
 #include "TimeManager.h"
 
+#include "DebugLogEvent.h"
+
+#include "SystemRegistrationMacros.h"
+
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
 #define DEBUG_NEW new(_NORMAL_BLOCK, __FILE__, __LINE__)
 #define new DEBUG_NEW
 
-std::string LogMessage::ToString() const
-{
-	std::string logTypeString = "UNKNOWN";
-	switch(logType)
-	{
-		case LogType::Cout:
-			logTypeString = "COUT";
-			break;
-		case LogType::Engine:
-			logTypeString = "ENGINE";
-			break;
-		case LogType::Editor:
-			logTypeString = "EDITOR";
-			break;
-		case LogType::Game:
-			logTypeString = "GAME";
-			break;
-		default: break;
-	}
+REGISTER_SYSTEM_BEGIN(DebugManager)
+SYSTEM_REQUIRES(ResourceManager)
+REGISTER_SYSTEM_END(DebugManager)
 
-	return std::format("[{}] {}", logTypeString, text);
-}
-
-void DebugManager::Startup()
+void DebugManager::Startup(const EngineStartupParams& params, World& world)
 {
 	Instance = this;
 
@@ -43,27 +28,28 @@ void DebugManager::Startup()
 	// Redirect cout to the custom stream
 	std::cout.rdbuf(coutStream.rdbuf());
 
-	SetDebugMaterial(ResourceManager::GetMaterial(L"default"));
+	Assets& assets = world.GetResource<Assets>();
 
-	SetDebugBoxMesh(ResourceManager::GetMesh(L"primitives\\cube.obj"));
-	SetDebugSphereMesh(ResourceManager::GetMesh(L"primitives\\sphere.obj"));
+	SetDebugMaterial(&assets.GetMaterial(L"default"));
+
+	SetDebugBoxMesh(&assets.GetMesh(L"primitives\\cube.obj"));
+	SetDebugSphereMesh(&assets.GetMesh(L"primitives\\sphere.obj"));
 }
-void DebugManager::Shutdown()
+void DebugManager::PostStartup(const EngineStartupParams& params, World& world)
+{
+
+}
+void DebugManager::Shutdown(const EngineShutdownParams& params, World& world)
 {
 	// Restore original cout buffer
 	std::cout.rdbuf(coutBuffer);
 }
 
-void DebugManager::PrintLogMessage(LogType logType, const std::string& text)
+void DebugManager::PrintLogMessage(const DebugLogEvent& logEvent)
 {
-	LogMessage message;
-	message.timestamp = TimeManager::GetCurrentTime();
-	message.logType = logType;
-	message.text = text;
+	Instance->debugLog.push_back(logEvent);
 
-	Instance->debugLog.push_back(message);
-
-	Instance->onLogMessagePrinted.Broadcast(message);
+	Instance->onLogMessagePrinted.Broadcast(logEvent);
 }
 
 void DebugManager::DrawDebugBox(glm::vec3 location, glm::quat rotation, glm::vec3 scale, glm::vec4 color, float duration)
@@ -83,7 +69,7 @@ void DebugManager::DrawDebugSphere(glm::vec3 location, glm::quat rotation, glm::
 	Instance->debugEntities.emplace(debugEntity, duration);
 }
 
-void DebugManager::Update()
+void DebugManager::Update(LocalSystemContext& ctx, float deltaTime)
 {
 	coutStream.clear(); // Clear edit-only flags
 	coutStream.seekg(lastCoutReadPosition); // Skip to last complete line read; read forward from here
@@ -94,20 +80,28 @@ void DebugManager::Update()
 		// If the line is complete (returns before end-of-file), add line to log
 		if(!coutStream.eof())
 		{
-			PrintLogMessage(LogType::Cout, line);
+			DebugLogEvent logEvent;
+			logEvent.logType = ELogType::Cout;
+			logEvent.text = line;
+
+			PrintLogMessage(logEvent);
 			lastCoutReadPosition = coutStream.tellg();
 		}
 	}
+
+	const std::vector<DebugLogEvent>& logEvents = ctx.PollEvents<DebugLogEvent>();
+	for(const DebugLogEvent& logEvent : logEvents)
+		PrintLogMessage(logEvent);
 }
 
-void DebugManager::UpdateAllWireframes()
+void DebugManager::UpdateAllWireframes(float deltaTime)
 {
 	std::vector<DebugEntity> expiredEntities;
 
 	// Decrement all lifetimes and remove expired entities
 	for(auto& debugEntity : Instance->debugEntities)
 	{
-		debugEntity.second -= TimeManager::GetDeltaTime();
+		debugEntity.second -= deltaTime;
 		if(debugEntity.second <= 0.0f)
 			expiredEntities.push_back(debugEntity.first);
 	}

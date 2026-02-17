@@ -3,6 +3,8 @@
 #include <QDockWidget>
 #include <QScrollArea>
 
+#include "Editor.h"
+
 class EditorPanel : public QDockWidget
 {
     Q_OBJECT

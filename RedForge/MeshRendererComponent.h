@@ -11,6 +11,8 @@
 
 #include "Exports.h"
 
+struct Assets;
+
 REDFORGE_API struct MeshRendererComponent
 {
 	MeshRef mesh;
@@ -19,7 +21,7 @@ REDFORGE_API struct MeshRendererComponent
 	uint32_t rendererIndex;
 
 public:
-	REDFORGE_API void UseMeshDefaults(const std::wstring& meshIdentifier);
+	REDFORGE_API void UseMeshDefaults(const Assets& assets, const std::wstring& meshIdentifier);
 };
 
 REGISTER_COMPONENT_BEGIN(MeshRendererComponent)

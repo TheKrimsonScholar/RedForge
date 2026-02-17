@@ -1,5 +1,7 @@
 #pragma once
 
+#include "System.h"
+
 #include <unordered_map>
 #include <vector>
 
@@ -82,7 +84,7 @@ struct CollisionData
 	std::vector<ContactPoint> contacts;
 };
 
-class PhysicsSystem
+class PhysicsSystem : public System<PhysicsComponent, const ColliderComponent, TransformComponent>
 {
 private:
 	static inline PhysicsSystem* Instance;
@@ -92,13 +94,14 @@ private:
 	bool tickPhysics = false;
 
 public:
-	PhysicsSystem() {};
-	~PhysicsSystem() {};
+	PhysicsSystem();
+	~PhysicsSystem();
 
-	void Startup();
-	void Shutdown();
+	void Startup(const EngineStartupParams& params, World& world) override;
+	void PostStartup(const EngineStartupParams& params, World& world) override;
+	void Shutdown(const EngineShutdownParams& params, World& world) override;
 
-	REDFORGE_API void Update();
+	REDFORGE_API void Update(SystemContext<PhysicsComponent, const ColliderComponent, TransformComponent>& ctx, float deltaTime) override;
 
 	REDFORGE_API static void Pause() { Instance->tickPhysics = false; }
 	REDFORGE_API static void Unpause() { Instance->tickPhysics = true; }

@@ -1,5 +1,7 @@
 #include "EntityHierarchyTreeView.h"
 
+#include "Engine.h"
+
 #include <QKeyEvent>
 #include <QTimer>
 
@@ -41,11 +43,15 @@ EntityHierarchyTreeView::EntityHierarchyTreeView(QWidget* parent) : QTreeView(pa
 			QTimer::singleShot(0, this, 
 				[this]()
 				{
-					if(InspectorPanel* inspector = MainEditorWindow::Get()->GetInspectorPanel())
-						if(!selectedEntities.empty())
-							inspector->SetTarget(selectedEntities[0]);
-						else
-							inspector->ResetTarget();
+					Editor::GetEngine()->QueueExternalTask(
+						[this](World& world)
+						{
+							if(InspectorPanel* inspector = MainEditorWindow::Get()->GetInspectorPanel())
+								if(!selectedEntities.empty())
+									inspector->SetTarget(selectedEntities[0]);
+								else
+									inspector->ResetTarget();
+						});
 				});
 		});
 }
@@ -59,16 +65,16 @@ void EntityHierarchyTreeView::InitializeHierarchy()
 	model->InitializeHierarchy();
 
 	// Bind events for when entities are created and destroyed
-	LevelManager::GetOnEntityCreated()->AddUnique(EventCallback(this, &EntityHierarchyTreeView::OnEntityCreated));
-	LevelManager::GetOnEntityDestroyed()->AddUnique(EventCallback(this, &EntityHierarchyTreeView::OnEntityDestroyed));
+	Editor::GetEntityManager().GetOnEntityCreated().AddUnique(EventCallback(this, &EntityHierarchyTreeView::OnEntityCreated));
+	Editor::GetEntityManager().GetOnEntityDestroyed().AddUnique(EventCallback(this, &EntityHierarchyTreeView::OnEntityDestroyed));
 
 	// Bind event for when level data is modified
-	LevelManager::GetOnEntityLevelDataModified()->AddUnique(EventCallback(this, &EntityHierarchyTreeView::OnEntityLevelDataModified));
+	Editor::GetEntityManager().GetOnEntityLevelDataModified().AddUnique(EventCallback(this, &EntityHierarchyTreeView::OnEntityLevelDataModified));
 
 	// Bind events for move operations
-	LevelManager::GetOnEntityReparented()->AddUnique(EventCallback(this, &EntityHierarchyTreeView::OnEntityReparented));
-	LevelManager::GetOnEntityMovedBefore()->AddUnique(EventCallback(this, &EntityHierarchyTreeView::OnEntityMovedBefore));
-	LevelManager::GetOnEntityMovedAfter()->AddUnique(EventCallback(this, &EntityHierarchyTreeView::OnEntityMovedAfter));
+	Editor::GetEntityManager().GetOnEntityReparented().AddUnique(EventCallback(this, &EntityHierarchyTreeView::OnEntityReparented));
+	Editor::GetEntityManager().GetOnEntityMovedBefore().AddUnique(EventCallback(this, &EntityHierarchyTreeView::OnEntityMovedBefore));
+	Editor::GetEntityManager().GetOnEntityMovedAfter().AddUnique(EventCallback(this, &EntityHierarchyTreeView::OnEntityMovedAfter));
 }
 
 void EntityHierarchyTreeView::keyPressEvent(QKeyEvent* event)
@@ -77,7 +83,7 @@ void EntityHierarchyTreeView::keyPressEvent(QKeyEvent* event)
 	{
 		// Destroy all selected entities (the view will be updated automatically via the event bindings)
 		for(const Entity& entity : selectedEntities)
-			LevelManager::DestroyEntity(entity);
+			Editor::GetEntityManager().DestroyEntity(entity);
 	}
 }
 
@@ -88,7 +94,7 @@ void EntityHierarchyTreeView::OnEntityCreated(const Entity& entity)
 void EntityHierarchyTreeView::OnEntityDestroyed(const Entity& entity)
 {
 	// Attempt to destroy all children first
-	LevelManager::ForEachEntity_Reversed(
+	Editor::GetEntityManager().ForEachEntity_Reversed(
 		[this](const Entity& entity)
 		{
 			if(model->GetEntityItem(entity))
@@ -100,14 +106,14 @@ void EntityHierarchyTreeView::OnEntityLevelDataModified(const Entity& entity)
 {
 	if(QStandardItem* entityItem = model->GetEntityItem(entity))
 	{
-		QIcon icon = LevelManager::GetEntityPrefabPath(entity).empty() ? QICON_FROM_PATH("Entity Hierarchy/Entity") : QICON_FROM_PATH("Entity Hierarchy/Prefab");
+		QIcon icon = Editor::GetEntityManager().GetEntityPrefabPath(entity).empty() ? QICON_FROM_PATH("Entity Hierarchy/Entity") : QICON_FROM_PATH("Entity Hierarchy/Prefab");
 		entityItem->setIcon(icon);
 	}
 }
 
 void EntityHierarchyTreeView::OnEntityReparented(const Entity& entity, const Entity& newParent)
 {
-	Entity oldParent = LevelManager::GetEntityParent(entity);
+	Entity oldParent = Editor::GetEntityManager().GetEntityParent(entity);
 	QStandardItem* oldParentItem = oldParent.IsValid() ? model->GetEntityItem(oldParent) : model->invisibleRootItem();
 	int oldRow = model->GetEntityItem(entity)->row();
 
@@ -118,13 +124,13 @@ void EntityHierarchyTreeView::OnEntityReparented(const Entity& entity, const Ent
 }
 void EntityHierarchyTreeView::OnEntityMovedBefore(const Entity& entity, const Entity& newNext)
 {
-	Entity oldParent = LevelManager::GetEntityParent(entity);
+	Entity oldParent = Editor::GetEntityManager().GetEntityParent(entity);
 	QStandardItem* oldParentItem = oldParent.IsValid() ? model->GetEntityItem(oldParent) : model->invisibleRootItem();
 	int oldRow = model->GetEntityItem(entity)->row();
 
 	QList<QStandardItem*> itemsToMove = oldParentItem->takeRow(oldRow);
 
-	Entity newParent = LevelManager::GetEntityParent(newNext);
+	Entity newParent = Editor::GetEntityManager().GetEntityParent(newNext);
 	QStandardItem* newParentItem = newParent.IsValid() ? model->GetEntityItem(newParent) : model->invisibleRootItem();
 	
 	int newRow = model->GetEntityItem(newNext)->row();
@@ -132,13 +138,13 @@ void EntityHierarchyTreeView::OnEntityMovedBefore(const Entity& entity, const En
 }
 void EntityHierarchyTreeView::OnEntityMovedAfter(const Entity& entity, const Entity& newPrevious)
 {
-	Entity oldParent = LevelManager::GetEntityParent(entity);
+	Entity oldParent = Editor::GetEntityManager().GetEntityParent(entity);
 	QStandardItem* oldParentItem = oldParent.IsValid() ? model->GetEntityItem(oldParent) : model->invisibleRootItem();
 	int oldRow = model->GetEntityItem(entity)->row();
 
 	QList<QStandardItem*> itemsToMove = oldParentItem->takeRow(oldRow);
 
-	Entity newParent = LevelManager::GetEntityParent(newPrevious);
+	Entity newParent = Editor::GetEntityManager().GetEntityParent(newPrevious);
 	QStandardItem* newParentItem = newParent.IsValid() ? model->GetEntityItem(newParent) : model->invisibleRootItem();
 	
 	int newRow = model->GetEntityItem(newPrevious)->row() + 1;

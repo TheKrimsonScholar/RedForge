@@ -1,17 +1,26 @@
 #include "Texture.h"
 
-#include "GraphicsSystem.h"
+#include "World.h"
+
+#include "GraphicsState.h"
 
 Texture::Texture()
 {
 
 }
-Texture::~Texture()
+
+void Texture::Startup(const EngineStartupParams& params, World& world)
 {
-    vkDestroyImageView(GraphicsSystem::GetDevice(), textureImageView, nullptr);
 
-    vkDestroyImage(GraphicsSystem::GetDevice(), textureImage, nullptr);
-    vkFreeMemory(GraphicsSystem::GetDevice(), textureImageMemory, nullptr);
+}
+void Texture::Shutdown(const EngineShutdownParams& params, World& world)
+{
+    const GraphicsState& graphicsState = world.GetResource<GraphicsState>();
 
-    vkDestroySampler(GraphicsSystem::GetDevice(), textureSampler, nullptr);
+    vkDestroyImageView(graphicsState.device, textureImageView, nullptr);
+
+    vkDestroyImage(graphicsState.device, textureImage, nullptr);
+    vkFreeMemory(graphicsState.device, textureImageMemory, nullptr);
+
+    vkDestroySampler(graphicsState.device, textureSampler, nullptr);
 }

@@ -59,50 +59,63 @@ static std::unordered_map<RFKeyCode, ImGuiKey> IMGUI_INPUT_KEY_MAP =
     { RFKeyCode::RALT, ImGuiKey_RightAlt }
 };
 
-void InputSystem::Startup()
+void InputSystem::Startup(const EngineStartupParams& params, World& world)
 {
 	Instance = this;
-}
-void InputSystem::Shutdown()
-{
 
+    InputState& inputState = world.GetResource<InputState>();
+
+    inputState.GetActiveInputLayer()->Startup(params, inputState);
+}
+void InputSystem::PostStartup(const EngineStartupParams& params, World& world)
+{
+    
+}
+void InputSystem::Shutdown(const EngineShutdownParams& params, World& world)
+{
+    InputState& inputState = world.GetResource<InputState>();
+    
+    inputState.GetActiveInputLayer()->Shutdown(params, inputState);
 }
 
-void InputSystem::Update()
+void InputSystem::Update(LocalSystemContext& ctx, float deltaTime)
 {
-	if(!activeInputLayer)
+    InputState& inputState = ctx.GetResource<InputState>();
+	
+	InputLayer* activeInputLayer = inputState.GetActiveInputLayer();
+    if(!activeInputLayer)
 		return;
 
-	activeInputLayer->PreUpdate();
+    activeInputLayer->PreUpdate(inputState);
 
 #ifdef _DEBUG
 	/* Pass input to ImGui for debug builds */
 
 	ImGuiIO& io = ImGui::GetIO();
-    io.AddMousePosEvent(GetMousePosition().x, GetMousePosition().y);
+    io.AddMousePosEvent(inputState.mousePosition.x, inputState.mousePosition.y);
     for(uint32_t i = 0; i < (uint32_t) MouseButtonCode::MAX; i++)
-	    io.AddMouseButtonEvent(IMGUI_INPUT_MOUSE_BUTTON_MAP[(MouseButtonCode) i], IsMouseButtonDown((MouseButtonCode) i));
+	    io.AddMouseButtonEvent(IMGUI_INPUT_MOUSE_BUTTON_MAP[(MouseButtonCode) i], inputState.IsMouseButtonDown((MouseButtonCode) i));
     for(uint32_t i = 0; i < (uint32_t) RFKeyCode::MAX; i++)
-	    io.AddKeyEvent(IMGUI_INPUT_KEY_MAP[(RFKeyCode) i], IsKeyDown((RFKeyCode) i));
+	    io.AddKeyEvent(IMGUI_INPUT_KEY_MAP[(RFKeyCode) i], inputState.IsKeyDown((RFKeyCode) i));
 #endif
 
-	/* Update all active input components */
+	///* Update all active input components */
 
-    EntityManager::ForEachComponentOfType<InputComponent>(
-        [this](const Entity& entity, InputComponent& input)
-		{
-			for(auto& mouseCallback : input.mouseDownCallbacks)
-			{
-				if(InputSystem::IsMouseButtonDown((MouseButtonCode) mouseCallback.first))
-					mouseCallback.second(entity);
-			}
-			
-			for(auto& keyCallback : input.keyDownCallbacks)
-			{
-				if(InputSystem::IsKeyDown((RFKeyCode) keyCallback.first))
-					keyCallback.second(entity);
-			}
-		});
+ //   ctx.ForEachComponentOfType<InputComponent>(
+ //       [this, &inputState](const Entity& entity, InputComponent& input)
+	//	{
+	//		for(auto& mouseCallback : input.mouseDownCallbacks)
+	//		{
+	//			if(inputState.IsMouseButtonDown((MouseButtonCode) mouseCallback.first))
+	//				mouseCallback.second(entity);
+	//		}
+	//		
+	//		for(auto& keyCallback : input.keyDownCallbacks)
+	//		{
+	//			if(inputState.IsKeyDown((RFKeyCode) keyCallback.first))
+	//				keyCallback.second(entity);
+	//		}
+	//	});
 
-	activeInputLayer->PostUpdate();
+	activeInputLayer->PostUpdate(inputState);
 }

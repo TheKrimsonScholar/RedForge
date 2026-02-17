@@ -7,16 +7,24 @@
 #include <iostream>
 
 #include "ComponentMacros.h"
+#include "Event.h"
+#include "FileManager.h"
 
 #include "Exports.h"
 
+typedef size_t LevelID;
+
 static const uint32_t INVALID_ENTITY = 0xFFFFFFFF;
 static const uint32_t MAX_ENTITIES = 256;
+
+static const LevelID INVALID_LEVEL = -1;
 
 struct Entity
 {
 public:
 	uint32_t index = INVALID_ENTITY;
+	// The generation of this entity, used to determine whether the entity is out-of-date.
+	// If 0, the entity is transient, i.e. it is owned by a non-authoritative source (like a command buffer) and will be added to the entity manager as a new entity with a different permanent ID in the future.
 	uint32_t generation = INVALID_ENTITY;
 
 	// Entity data should only be managed by EntityManager and LevelManager
@@ -62,14 +70,14 @@ class IComponentArray
 public:
 	virtual ~IComponentArray() = default;
 
-	virtual void* Add(uint32_t entity) = 0;
+	virtual void Add(uint32_t entity, const void* component = nullptr) = 0;
 	virtual void Remove(uint32_t entity) = 0;
 	virtual bool Has(uint32_t entity) = 0;
 
 	virtual void Resize(size_t size) = 0;
 
 	virtual uint32_t GetComponentIndex(uint32_t entity) = 0;
-	virtual void* GetRaw(size_t stride, uint32_t entity) = 0;
+	virtual void* GetRaw(uint32_t entity) = 0;
 
 	virtual void* GetRawArray() = 0;
 	virtual uint32_t* GetEntitiesArray() = 0;
@@ -81,7 +89,7 @@ class ComponentArray : public IComponentArray
 {
 private:
 	// A contiguous array of all active components of this type.
-	std::vector<T> components;
+	std::vector<std::remove_const_t<T>> components;
 	// The entity index corresponding to each active component.
 	std::vector<uint32_t> entityIndices;
 
@@ -92,8 +100,8 @@ public:
 	ComponentArray();
 	~ComponentArray() override;
 
-	T* Add(uint32_t entity, T component);
-	void* Add(uint32_t entity) override;
+	void Add(uint32_t entity, T component);
+	void Add(uint32_t entity, const void* component = nullptr) override;
 	void Remove(uint32_t entity) override;
 	bool Has(uint32_t entity) override;
 	T& GetByEntityIndex(uint32_t entity);
@@ -102,7 +110,7 @@ public:
 	void Resize(size_t size) override;
 
 	uint32_t GetComponentIndex(uint32_t entity) override;
-	void* GetRaw(size_t stride, uint32_t entity) override;
+	void* GetRaw(uint32_t entity) override;
 
 	void* GetRawArray() override;
 	uint32_t* GetEntitiesArray() override;
@@ -122,7 +130,7 @@ inline ComponentArray<T>::~ComponentArray()
 }
 
 template<typename T>
-T* ComponentArray<T>::Add(uint32_t entity, T component)
+void ComponentArray<T>::Add(uint32_t entity, T component)
 {
 	// If entity already has a component of this type, just replace its data with the new data
 	if(Has(entity))
@@ -131,7 +139,7 @@ T* ComponentArray<T>::Add(uint32_t entity, T component)
 		
 		components[componentIndex] = component;
 
-		return &components[componentIndex];
+		return;
 	}
 
 	/* Add the new component to the end of the components list */
@@ -139,13 +147,16 @@ T* ComponentArray<T>::Add(uint32_t entity, T component)
 	components.push_back(component);
 	entityIndices.push_back(entity);
 	entityToComponentIndex[entity] = components.size() - 1;
-
-	return &components[components.size() - 1];
 }
 template<typename T>
-inline void* ComponentArray<T>::Add(uint32_t entity)
+inline void ComponentArray<T>::Add(uint32_t entity, const void* component)
 {
-	return Add(entity, T()); // Default construct the component
+	// If using an initializer pointer, cast and copy it
+	if(component)
+		Add(entity, *reinterpret_cast<const T*>(component));
+	// Otherwise default construct the component
+	else
+		Add(entity, T());
 }
 template<typename T>
 void ComponentArray<T>::Remove(uint32_t entity)
@@ -197,12 +208,12 @@ inline uint32_t ComponentArray<T>::GetComponentIndex(uint32_t entity)
 	return entityToComponentIndex[entity];
 }
 template<typename T>
-void* ComponentArray<T>::GetRaw(size_t stride, uint32_t entity)
+void* ComponentArray<T>::GetRaw(uint32_t entity)
 {
 	assert(entityToComponentIndex[entity] != -1 && "Entity has no component of this type.");
 
-	// Cast the relevant component array to a plain byte array and manually calculate this component's offset using custom stride
-	return static_cast<void*>(reinterpret_cast<std::byte*>(components.data()) + entityToComponentIndex[entity] * stride);
+	// Cast the relevant component array to a plain byte array and manually calculate this component's offset
+	return static_cast<void*>(reinterpret_cast<std::byte*>(components.data()) + entityToComponentIndex[entity] * sizeof(T));
 }
 
 template<typename T>
@@ -222,97 +233,302 @@ inline uint32_t ComponentArray<T>::GetSize()
 	return components.size();
 }
 
+class World;
+
+struct LevelData
+{
+	std::string name = "";
+	LevelID parent = INVALID_LEVEL;
+	LevelID firstChild = INVALID_LEVEL;
+	LevelID nextSibling = INVALID_LEVEL;
+	LevelID lastSibling = INVALID_LEVEL;
+	Entity first = {};
+	// Depth-first list of all entities in the level.
+	std::vector<Entity> entities = {};
+};
+struct EntityData
+{
+	bool valid = false;
+	bool active = true;
+	size_t generationCount = 0;
+	std::string name = "";
+	LevelID level = INVALID_LEVEL;
+	std::filesystem::path prefabPath = {};
+	Entity parent = {};
+	Entity firstChild = {};
+	Entity nextSibling = {};
+	Entity lastSibling = {};
+	size_t depth = 0;
+};
 class EntityManager
 {
 private:
-	REDFORGE_API static inline EntityManager* Instance;
+	World* world;
 
-	uint32_t lastEntity = 0;
-	std::vector<bool> entityStates;
-	std::vector<uint32_t> generationCounts;
-	// Queue of free entity indices less than lastEntity, sorted by index
+	Event<const Entity&> onEntityCreated;
+	Event<const Entity&> onEntityDestroyed;
+	Event<const Entity&> onEntityLevelDataModified;
+	Event<const Entity&, const Entity&> onEntityReparented;
+	Event<const Entity&, const Entity&> onEntityMovedBefore;
+	Event<const Entity&, const Entity&> onEntityMovedAfter;
+
+	// The smallest entity index that is greater than all currently valid entity indices.
+	size_t nextEntity = 0;
+
+	std::unordered_map<LevelID, LevelData> levelData;
+	std::vector<EntityData> entityData;
+	
+	// Queue of free entity indices less than nextEntity, sorted by index.
 	std::priority_queue<uint32_t> freeQueue;
 
 	std::unordered_map<std::type_index, IComponentArray*> componentArrays;
 
-	std::unordered_map<std::type_index, size_t> registeredComponentSizes;
-
 public:
-	EntityManager() {};
+	EntityManager(World* world) : world(world) {};
 	~EntityManager() {};
 
 	void Startup();
 	void Shutdown();
 
-	static inline uint32_t GetLastEntity() { return Instance->lastEntity; };
+	template<typename... Components>
+	Entity CreateEntity(const std::string& name = "New Entity", LevelID level = INVALID_LEVEL, const std::filesystem::path& prefabPath = {});
+	template<typename... Components>
+	Entity CreateEntity(const Entity& parent, const std::string& name = "New Entity", const std::filesystem::path& prefabPath = {});
+	REDFORGE_API void DestroyEntity(Entity entity);
+
+	REDFORGE_API bool SetEntityParent(Entity entity, Entity newParent);
+	REDFORGE_API bool MoveEntityBefore(Entity entity, Entity next);
+	REDFORGE_API bool MoveEntityAfter(Entity entity, Entity previous);
+
+	uint32_t GetLastEntity() { return nextEntity; };
 
 	template<typename T>
-	static inline void RegisterComponent();
+	void RegisterComponent();
 	template<typename T>
-	static inline void AddComponent(Entity entity, T component);
+	void AddComponent(Entity entity, T component);
 	template<typename T>
-	static inline void RemoveComponent(Entity entity);
+	void RemoveComponent(Entity entity);
 	template<typename T>
-	static inline bool HasComponent(Entity entity);
+	bool HasComponent(Entity entity);
 	template<typename... Args>
-	static inline bool HasComponents(Entity entity);
+	bool HasComponents(Entity entity);
 	template<typename T>
-	static inline T& GetComponent(Entity entity);
+	T& GetComponent(Entity entity);
 
-	REDFORGE_API static void* AddComponentOfType(Entity entity, std::type_index componentType);
-	REDFORGE_API static void RemoveComponentOfType(Entity entity, std::type_index componentType);
-	REDFORGE_API static bool HasComponentOfType(Entity entity, std::type_index componentType);
+	REDFORGE_API void AddComponentOfType(Entity entity, std::type_index componentType, const void* component = nullptr);
+	REDFORGE_API void RemoveComponentOfType(Entity entity, std::type_index componentType);
+	REDFORGE_API bool HasComponentOfType(Entity entity, std::type_index componentType);
+	REDFORGE_API void* GetComponentOfType(Entity entity, std::type_index componentType);
+
+	// Recursively traverses the level's entity hierarchy, performing the callback on each valid entity.
+	REDFORGE_API void ForEachEntity(std::function<void(const Entity&)> callback, Entity root = {});
+	// Recursively traverses the level's entity hierarchy, performing the callback on each valid entity in reverse order, ensuring all children are processed before their parents.
+	REDFORGE_API void ForEachEntity_Reversed(std::function<void(const Entity&)> callback, Entity root = {});
 
 	template<typename T>
 	// Efficiently iterates through all active components of the specified type, triggering the given callback for each.
-	REDFORGE_API static inline void ForEachComponentOfType(std::function<void(const Entity&, T&)> callback);
+	void ForEachComponentOfType(std::function<void(const Entity&, T&)> callback);
 	template<typename... Args, typename Callback>
 	// Efficiently iterates through all active entities which have all of the specified component types. Triggers the callback for each, providing the entity along with each of its relevant components by reference.
-	REDFORGE_API static inline void ForEachComponentOfType(Callback&& callback);
+	void ForEachComponentOfType(Callback&& callback);
 
-	REDFORGE_API static std::unordered_map<void*, std::type_index> GetAllComponents(Entity entity);
+	REDFORGE_API std::unordered_map<void*, std::type_index> GetAllComponents(Entity entity);
 
-	REDFORGE_API static bool IsEntityValid(Entity entity);
-	REDFORGE_API static bool IsComponentValid(Entity entity, std::type_index componentType);
+	REDFORGE_API bool IsEntityValid(Entity entity);
+	REDFORGE_API bool IsComponentValid(Entity entity, std::type_index componentType);
+
+	REDFORGE_API bool IsEntityChildOf(Entity parent, Entity child);
+
+	REDFORGE_API bool IsEntityActive(Entity entity);
+	REDFORGE_API std::string GetEntityName(Entity entity);
+	REDFORGE_API LevelID GetEntityLevel(Entity entity);
+	REDFORGE_API std::filesystem::path GetEntityPrefabPath(Entity entity);
+	REDFORGE_API Entity GetEntityParent(Entity entity);
+	REDFORGE_API Entity GetEntityFirstChild(Entity entity);
+	REDFORGE_API Entity GetEntityNextSibling(Entity entity);
+	REDFORGE_API Entity GetEntityLastSibling(Entity entity);
+	REDFORGE_API uint32_t GetEntityDepth(Entity entity);
+
+	REDFORGE_API void SetEntityName(const Entity& entity, const std::string& name);
+
+	REDFORGE_API void SaveEntityAsPrefab(const Entity& entity, const std::filesystem::path& prefabPath);
+	REDFORGE_API Entity LoadEntityFromPrefab(const std::filesystem::path& prefabPath, const Entity& parent);
+
+	REDFORGE_API void SaveLevel(const std::filesystem::path& levelPath);
+	REDFORGE_API void LoadLevel(const std::filesystem::path& levelPath);
+
+	Event<const Entity&>& GetOnEntityCreated() { return onEntityCreated; }
+	Event<const Entity&>& GetOnEntityDestroyed() { return onEntityDestroyed; }
+	Event<const Entity&>& GetOnEntityLevelDataModified() { return onEntityLevelDataModified; }
+	Event<const Entity&, const Entity&>& GetOnEntityReparented() { return onEntityReparented; }
+	Event<const Entity&, const Entity&>& GetOnEntityMovedBefore() { return onEntityMovedBefore; }
+	Event<const Entity&, const Entity&>& GetOnEntityMovedAfter() { return onEntityMovedAfter; }
 
 private:
-	template<typename... Components>
-	static inline Entity CreateEntity();
-	static void DestroyEntity(Entity entity);
+	SerializedObject SaveEntity(Entity entity);
+	Entity LoadEntity(const SerializedObject& entityObject, Entity parent);
 
-	REDFORGE_API static Entity GetEntityByIndex(uint32_t index);
+	EntityData& GetEntityData(const Entity& entity);
+
+	REDFORGE_API Entity GetEntityByIndex(uint32_t index);
 
 	friend class LevelManager;
 };
 
+template<typename... Components>
+inline Entity EntityManager::CreateEntity(const std::string& name, LevelID level, const std::filesystem::path& prefabPath)
+{
+	/* Insert the new entity as parent's last child */
+	
+	Entity lastSibling = levelData[level].first;
+	// Find the last child of the parent
+	while(GetEntityNextSibling(lastSibling).IsValid())
+		lastSibling = GetEntityNextSibling(lastSibling);
+	
+	/* Determine next entity index */
+
+	Entity newEntity = {};
+	if(!freeQueue.empty())
+	{
+		newEntity.index = freeQueue.top();
+		freeQueue.pop();
+	}
+	else
+	{
+		newEntity.index = nextEntity++;
+		entityData.resize(nextEntity);
+		// Resize all component array index maps to fit the new entity
+		for(const std::pair<std::type_index, IComponentArray*>& componentArray : componentArrays)
+			componentArray.second->Resize(nextEntity);
+	}
+
+	entityData[newEntity.index].valid = true;
+	newEntity.generation = ++entityData[newEntity.index].generationCount;
+
+	// Add all default components
+	(AddComponent<Components>(newEntity, {}), ...);
+
+	/* Put entity in the level */
+
+	EntityData data = {};
+	data.valid = true;
+	data.active = true;
+	data.generationCount = newEntity.generation;
+	data.name = name;
+	data.level = level;
+	data.prefabPath = prefabPath;
+	data.parent = {};
+	data.firstChild = {};
+	data.nextSibling = {};
+	data.lastSibling = lastSibling;
+	data.depth = 1;
+
+	// If parent is invalid, this is a top-level entity; if the level is empty, add this as the first entity
+	if(!levelData[level].first.IsValid())
+		levelData[level].first = newEntity;
+	// If there is a sibling before this entity, update it
+	if(lastSibling.IsValid())
+		entityData[lastSibling.index].nextSibling = newEntity;
+
+	entityData[newEntity.index] = data;
+
+	onEntityCreated.Broadcast(newEntity);
+
+	return newEntity;
+}
+template<typename... Components>
+inline Entity EntityManager::CreateEntity(const Entity& parent, const std::string& name, const std::filesystem::path& prefabPath)
+{
+	// If parent is invalid, create entity under the root of the persistent level
+	if(!IsEntityValid(parent))
+		return CreateEntity<Components...>(name, INVALID_LEVEL, prefabPath);
+
+	/* Insert the new entity as parent's last child */
+
+	Entity lastSibling = GetEntityFirstChild(parent);
+	// Find the last child of the parent
+	while(GetEntityNextSibling(lastSibling).IsValid())
+		lastSibling = GetEntityNextSibling(lastSibling);
+	
+	/* Determine next entity index */
+
+	Entity newEntity = {};
+	if(!freeQueue.empty())
+	{
+		newEntity.index = freeQueue.top();
+		freeQueue.pop();
+	}
+	else
+	{
+		newEntity.index = nextEntity++;
+		entityData.resize(nextEntity);
+		// Resize all component array index maps to fit the new entity
+		for(const std::pair<std::type_index, IComponentArray*>& componentArray : componentArrays)
+			componentArray.second->Resize(nextEntity);
+	}
+
+	entityData[newEntity.index].valid = true;
+	newEntity.generation = ++entityData[newEntity.index].generationCount;
+
+	// Add all default components
+	(AddComponent<Components>(newEntity, {}), ...);
+
+	/* Put entity in the level */
+
+	EntityData data = {};
+	data.valid = true;
+	data.active = true;
+	data.generationCount = newEntity.generation;
+	data.name = name;
+	data.level = GetEntityLevel(parent);
+	data.prefabPath = prefabPath;
+	data.parent = parent;
+	data.firstChild = {};
+	data.nextSibling = {};
+	data.lastSibling = lastSibling;
+	data.depth = GetEntityDepth(parent) + 1;
+
+	// If parent doesn't have any children yet, this is the first child
+	if(!GetEntityFirstChild(parent).IsValid())
+		entityData[parent.index].firstChild = newEntity;
+	// If there is a sibling before this entity, update it
+	if(lastSibling.IsValid())
+		entityData[lastSibling.index].nextSibling = newEntity;
+
+	entityData[newEntity.index] = data;
+
+	onEntityCreated.Broadcast(newEntity);
+
+	return newEntity;
+}
+
 template<typename T>
 inline void EntityManager::RegisterComponent()
 {
-	Instance->componentArrays[typeid(T)] = new ComponentArray<T>();
-	Instance->registeredComponentSizes[typeid(T)] = sizeof(T);
+	componentArrays[typeid(T)] = new ComponentArray<T>();
 }
 template<typename T>
 inline void EntityManager::AddComponent(Entity entity, T component)
 {
 	assert(IsEntityValid(entity) && "Attempting to modify invalid entity.");
 
-	assert(Instance->componentArrays.find(typeid(T)) != Instance->componentArrays.end() && "Component has not been registered.");
+	assert(componentArrays.find(typeid(T)) != componentArrays.end() && "Component has not been registered.");
 
 	// First add all components that the given component depends on
 	for(std::type_index dependencyID : GET_COMPONENT_DEPENDENCIES(typeid(T)))
 		if(!HasComponentOfType(entity, dependencyID))
 			AddComponentOfType(entity, dependencyID);
 
-	static_cast<ComponentArray<T>*>(Instance->componentArrays[typeid(T)])->Add(entity.index, component);
+	static_cast<ComponentArray<T>*>(componentArrays[typeid(T)])->Add(entity.index, component);
 }
 template<typename T>
 inline void EntityManager::RemoveComponent(Entity entity)
 {
 	assert(IsEntityValid(entity) && "Attempting to modify invalid entity.");
 
-	assert(Instance->componentArrays.find(typeid(T)) != Instance->componentArrays.end() && "Component has not been registered.");
+	assert(componentArrays.find(typeid(T)) != componentArrays.end() && "Component has not been registered.");
 
-	static_cast<ComponentArray<T>*>(Instance->componentArrays[typeid(T)])->Remove(entity.index);
+	static_cast<ComponentArray<T>*>(componentArrays[typeid(T)])->Remove(entity.index);
 
 	// After removing the component, also remove all components that depend on it
 	for(std::type_index dependent : GET_COMPONENT_DEPENDENTS(typeid(T)))
@@ -324,9 +540,9 @@ inline bool EntityManager::HasComponent(Entity entity)
 {
 	assert(IsEntityValid(entity) && "Attempting to access invalid entity.");
 
-	assert(Instance->componentArrays.find(typeid(T)) != Instance->componentArrays.end() && "Component has not been registered.");
+	assert(componentArrays.find(typeid(T)) != componentArrays.end() && "Component has not been registered.");
 
-	return static_cast<ComponentArray<T>*>(Instance->componentArrays[typeid(T)])->Has(entity.index);
+	return static_cast<ComponentArray<T>*>(componentArrays[typeid(T)])->Has(entity.index);
 }
 template<typename... Args>
 inline bool EntityManager::HasComponents(Entity entity)
@@ -338,45 +554,15 @@ inline T& EntityManager::GetComponent(Entity entity)
 {
 	assert(IsEntityValid(entity) && "Attempting to access invalid entity.");
 
-	assert(Instance->componentArrays.find(typeid(T)) != Instance->componentArrays.end() && "Component has not been registered.");
+	assert(componentArrays.find(typeid(T)) != componentArrays.end() && "Component has not been registered.");
 
-	return static_cast<ComponentArray<T>*>(Instance->componentArrays[typeid(T)])->GetByEntityIndex(entity.index);
-}
-
-template<typename... Components>
-inline Entity EntityManager::CreateEntity()
-{
-	/* Determine next entity index */
-
-	Entity entity = {};
-	if(!Instance->freeQueue.empty())
-	{
-		entity.index = Instance->freeQueue.top();
-		Instance->freeQueue.pop();
-	}
-	else
-	{
-		entity.index = Instance->lastEntity++;
-		Instance->entityStates.resize(Instance->lastEntity);
-		Instance->generationCounts.resize(Instance->lastEntity);
-		// Resize all component array index maps to fit the new entity
-		for(const std::pair<std::type_index, IComponentArray*>& componentArray : Instance->componentArrays)
-			componentArray.second->Resize(Instance->lastEntity);
-	}
-
-	Instance->entityStates[entity.index] = true;
-	entity.generation = ++Instance->generationCounts[entity.index];
-
-	// Add all default components
-	(AddComponent<Components>(entity, {}), ...);
-
-	return entity;
+	return static_cast<ComponentArray<T>*>(componentArrays[typeid(T)])->GetByEntityIndex(entity.index);
 }
 
 template<typename T>
-inline void EntityManager::ForEachComponentOfType(std::function<void(const Entity&, T&)> callback)
+void EntityManager::ForEachComponentOfType(std::function<void(const Entity&, T&)> callback)
 {
-	IComponentArray* componentArray = Instance->componentArrays[typeid(T)];
+	IComponentArray* componentArray = componentArrays[typeid(T)];
 
 	T* components = reinterpret_cast<T*>(componentArray->GetRawArray());
 	uint32_t* entities = componentArray->GetEntitiesArray();
@@ -387,7 +573,7 @@ inline void EntityManager::ForEachComponentOfType(std::function<void(const Entit
 		callback(GetEntityByIndex(entities[i]), components[i]);
 }
 template<typename... Args, typename Callback>
-inline void EntityManager::ForEachComponentOfType(Callback&& callback)
+void EntityManager::ForEachComponentOfType(Callback&& callback)
 {
 	std::vector<std::type_index> componentTypes = { (std::type_index(typeid(Args)))... };
 
@@ -396,7 +582,7 @@ inline void EntityManager::ForEachComponentOfType(Callback&& callback)
 	// Determine the smallest component array
 	for(const std::type_index& type : componentTypes)
 	{
-		IComponentArray* componentArray = Instance->componentArrays[type];
+		IComponentArray* componentArray = componentArrays[type];
 		if(componentArray->GetSize() < smallestArraySize)
 		{
 			smallestArray = componentArray;
@@ -411,7 +597,11 @@ inline void EntityManager::ForEachComponentOfType(Callback&& callback)
 		uint32_t entityIndex = entitiesArray[i];
 		const Entity& entity = GetEntityByIndex(entityIndex);
 
-		std::tuple<ComponentArray<Args>*...> componentArrays = std::make_tuple(static_cast<ComponentArray<Args>*>(Instance->componentArrays[typeid(Args)])...);
+		// TEMP
+		//std::tuple<const int*> componentArrays = std::make_tuple(new int());
+		//std::tuple<ComponentArray<Args>*...> componentArrays = std::make_tuple((new ComponentArray<Args>())...);
+		
+		std::tuple<ComponentArray<Args>*...> componentArraysTuple = std::make_tuple(static_cast<ComponentArray<Args>*>(componentArrays[typeid(Args)])...);
 		std::tuple<Args*...> componentPtrs;
 		// Use index sequence to check for the other component types
 		bool hasRequiredComponents = [&]<size_t... I>(std::index_sequence<I...>) -> bool
@@ -421,7 +611,7 @@ inline void EntityManager::ForEachComponentOfType(Callback&& callback)
 				(
 					[&]() -> bool
 					{
-						auto* componentArray = std::get<I>(componentArrays);
+						auto* componentArray = std::get<I>(componentArraysTuple);
 						// If componentArray is the smallest array (the one being iterated through), then we know the component exists for this entity
 						if(componentArray == smallestArray)
 						{
@@ -453,83 +643,5 @@ inline void EntityManager::ForEachComponentOfType(Callback&& callback)
 				},
 				componentPtrs);
 		}
-
-
-
-
-
-		//// Use index sequence and fold expression for O(1) checks/access
-		//[&]<size_t... I>(std::index_sequence<I...>)
-		//{
-		//	// If hasRequiredComponents is set to false (we find a component that doesn't exist on the entity), stop iteration and skip entity
-		//	(hasRequiredComponents && [&]
-		//	{
-		//		auto* componentArray = std::get<I>(componentArrays);
-		//		// If componentArray is the smallest array (the one being iterated through), then we know the component exists for this entity
-		//		if(componentArray == smallestArray)
-		//		{
-		//			// Set the component pointer at this index
-		//			std::get<I>(componentPtrs) = &componentArray->GetByComponentIndex(i);
-		//		}
-		//		else
-		//		{
-		//			uint32_t otherComponentIndex = componentArray->GetComponentIndex(entityIndex);
-		//			// If the entity doesn't have this component, stop
-		//			if(otherComponentIndex == -1)
-		//				hasRequiredComponents = false;
-
-		//			// Set the component pointer at this index
-		//			std::get<I>(componentPtrs) = &componentArray->GetByComponentIndex(otherComponentIndex);
-		//		}
-		//	}(), ...);
-		//}(std::make_index_sequence<sizeof...(Args)>{});
-
-		/*[&]()
-		{
-			[&] <size_t... I>(std::index_sequence<I...>)
-			{
-				(
-					(hasRequiredComponents &&
-						[&, I]
-						{
-							int k = (int) I;
-							return k >= 0;
-						}())
-				, ...);
-
-			}(std::make_index_sequence<sizeof...(Args)>{});
-		}();*/
-
-
-
-
-
-
-		//// This lambda will store the retrieved component references
-		//auto componentRefPack =	
-		//	[&hasRequiredComponents, entityID, i, &componentArrays, &entity](auto&&... refs)
-		//	{
-		//		// Use an index sequence to iterate over the pack and access the tuples
-		//		([&] <size_t I> (auto& ref)
-		//		{
-		//			auto* componentArray = std::get<I>(componentArrays);
-		//			componentArray->GetByComponentIndex(otherComponentIndex.second);
-		//		}(refs), ...);
-
-		//	};
-		
-		
-		
-		
-		//// If the entity has all required components, trigger the callback, passing relevant components as parameters
-		//if(HasComponents<Args...>(entity))
-		//{
-		//	std::tuple<Args&...> componentsTuple = std::make_tuple(std::ref(GetComponent<Args>(entity))...);
-		//	std::apply(
-		//		[&](Args&... components)
-		//		{
-		//			callback(entity, components...);
-		//		}, componentsTuple);
-		//}
 	}
 }

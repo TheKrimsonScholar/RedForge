@@ -23,12 +23,10 @@ private:
     std::function<void(VkSurfaceKHR)> onSurfaceInitialized;
 
 public:
-    VulkanViewport(QWidget* parent = nullptr);
+    VulkanViewport(Engine* engine, QWidget* parent = nullptr);
     ~VulkanViewport();
 
     ViewportCamera* GetCamera() const { return camera; }
-
-    void SetEngine(Engine* engine) { this->engine = engine; }
 
 protected:
     void Initialize();

@@ -2,7 +2,7 @@
 
 #include "EditorPanel.h"
 
-#include "DebugManager.h"
+#include "DebugLogEvent.h"
 
 #include <QTextBrowser>
 #include <QLineEdit>
@@ -27,7 +27,7 @@ protected:
 	void Initialize() override;
 	void Update() override;
 
-	void OnLogMessagePrinted(const LogMessage& message);
+	void OnLogMessagePrinted(const DebugLogEvent& message);
 
 	friend class MainEditorWindow;
 };

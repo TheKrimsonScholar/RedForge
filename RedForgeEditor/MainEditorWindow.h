@@ -18,7 +18,6 @@ class MainEditorWindow : public QMainWindow
 private:
     static inline MainEditorWindow* Instance;
 
-    Engine* engine;
     EditorToolbar* toolbar;
     VulkanViewport* viewport;
     HierarchyPanel* hierarchyPanel;
@@ -27,6 +26,8 @@ private:
     ConsolePanel* consolePanel;
 
     QtInputLayer* inputLayer;
+
+    QElapsedTimer frameTimer;
 
 public:
     MainEditorWindow(QWidget* parent = nullptr);
