@@ -9,13 +9,13 @@ Phase::~Phase()
 	
 }
 
-void Phase::AddSystem(World* world, std::type_index systemType)
+void Phase::AddSystem(World* world, std::type_index systemType, SystemBase* system)
 {
 	//CommandBuffer& commandBuffer = commandBuffers.emplace_back();
 	CommandBuffer* commandBuffer = new CommandBuffer();
 	commandBuffers.push_back(commandBuffer);
-	systems.push_back(GET_SYSTEM_INSTANCE(systemType));
-	systemContexts.push_back(GET_SYSTEM_INSTANCE(systemType)->CreateContext(world, commandBuffer));
+	systems.push_back(system);
+	systemContexts.push_back(system->CreateContext(world, commandBuffer));
 
 	std::vector<std::type_index> systemWriteList = GET_SYSTEM_WRITELIST(systemType);
 	std::vector<std::type_index> systemReadList = GET_SYSTEM_READLIST(systemType);

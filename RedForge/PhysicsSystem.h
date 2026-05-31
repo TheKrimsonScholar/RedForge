@@ -1,6 +1,7 @@
 #pragma once
 
 #include "System.h"
+#include "SystemRegistrationMacros.h"
 
 #include <unordered_map>
 #include <vector>

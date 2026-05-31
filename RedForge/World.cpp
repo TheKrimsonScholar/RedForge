@@ -6,10 +6,10 @@ World::World()
 	// Sort resource order by dependencies
 	/* Sort all systems in dependent order */
 
-	std::vector<std::type_index> resources = GetRegisteredResourcesList();
+	std::vector<std::type_index> resourceTypesList = GetRegisteredResourcesList();
 	std::unordered_map<std::type_index, size_t> resourceInDegrees;
 	std::queue<std::type_index> zeroInDegreeResources;
-	for (std::type_index resource : resources)
+	for (std::type_index resource : resourceTypesList)
 	{
 		resourceInDegrees[resource] = GET_RESOURCE_DEPENDENCIES(resource).size();
 		if (resourceInDegrees[resource] == 0)
@@ -49,18 +49,18 @@ World::~World()
 void World::Startup(const EngineStartupParams& params)
 {
 	// Startup all resources
-	for(const std::pair<std::type_index, IResource*> resource : resources)
-		resource.second->Startup(params, *this);
+	for(const std::type_index& resourceType : resourceTypes)
+		resources[resourceType]->Startup(params, *this);
 
 	entityManager.Startup();
 }
 void World::Shutdown(const EngineShutdownParams& params)
 {
 	// Shutdown and delete all resources
-	for(std::pair<const std::type_index, IResource*>& resource : resources)
+	for(const std::type_index& resourceType : resourceTypes)
 	{
-		resource.second->Shutdown(params, *this);
-		delete resource.second;
+		resources[resourceType]->Shutdown(params, *this);
+		delete resources[resourceType];
 	}
 	resources.clear();
 

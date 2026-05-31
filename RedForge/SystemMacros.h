@@ -5,9 +5,12 @@
 #include <string>
 
 #include "Exports.h"
+#include "System.h"
 
 struct SystemInfo
 {
+	std::function<SystemBase*()> createSystem;
+
 	size_t systemID;
 	std::string systemName;
 	std::vector<std::type_index> dependencies;

@@ -6,7 +6,7 @@
 #include "SystemContext.h"
 #include "EngineParams.h"
 
-#include "SystemRegistrationMacros.h"
+//#include "SystemRegistrationMacros.h"
 
 class SystemBase
 {

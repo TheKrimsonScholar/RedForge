@@ -20,6 +20,7 @@ struct RegisterSystem_##Type																															\
 		GetRegisteredSystemsList().push_back(typeID);																								\
 																																						\
 		SystemInfo& systemInfo = GetRegisteredSystemInfoMap()[typeID];																			\
+		systemInfo.createSystem = []() { return new Type(); };																					\
 		systemInfo.systemID = GetRegisteredSystemInfoMap().size();																				\
 		systemInfo.systemName = #Type;
 #define SYSTEM_REQUIRES(systemType)																												\
@@ -27,7 +28,6 @@ struct RegisterSystem_##Type																															\
 		GetRegisteredSystemInfoMap()[typeid(systemType)].dependents.push_back(typeID);
 #define REGISTER_SYSTEM_END(Type)																													\
 		Type::GetComponentLists(systemInfo.writeList, systemInfo.readList);																				\
-		systemInfo.instance = new Type();																												\
 	}																																					\
 };																																						\
 static inline RegisterSystem_##Type registerSystem_##Type;

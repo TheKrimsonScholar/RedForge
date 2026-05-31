@@ -9,10 +9,10 @@ Scheduler::Scheduler()
 {
 	/* Sort all systems in dependent order */
 
-	std::vector<std::type_index> systems = GetRegisteredSystemsList();
+	std::vector<std::type_index> systemTypesList = GetRegisteredSystemsList();
 	std::unordered_map<std::type_index, size_t> systemInDegrees;
 	std::queue<std::type_index> zeroInDegreeSystems;
-	for(std::type_index system : systems)
+	for(std::type_index system : systemTypesList)
 	{
 		systemInDegrees[system] = GET_SYSTEM_DEPENDENCIES(system).size();
 		if(systemInDegrees[system] == 0)
@@ -60,8 +60,6 @@ void Scheduler::Startup(const EngineStartupParams& params, World& world)
 }
 void Scheduler::Shutdown(const EngineShutdownParams& params, World& world)
 {
-	world.Shutdown(params);
-
 	// Shutdown and delete all systems
 	for(size_t i = systemTypes.size() - 1; i < systemTypes.size(); i--)
 	{
@@ -75,6 +73,8 @@ void Scheduler::Shutdown(const EngineShutdownParams& params, World& world)
 	for(Phase& phase : phases)
 		phase.ClearSystems();
 	phases.clear();
+
+	world.Shutdown(params);
 }	
 
 void Scheduler::GeneratePhases()
@@ -98,7 +98,7 @@ void Scheduler::GeneratePhases()
 		{
 			if(IsSystemCompatibleWithPhase(system, phases[phaseIndex]))
 			{
-				phases[phaseIndex].AddSystem(world, system);
+				phases[phaseIndex].AddSystem(world, system, systems[system]);
 				GetRegisteredSystemInfoMap()[system].phaseIndex = phaseIndex;
 				placedInPhase = true;
 				break;
@@ -108,7 +108,7 @@ void Scheduler::GeneratePhases()
 		if(GET_SYSTEM_PHASEINDEX(system) == -1)
 		{
 			Phase& newPhase = phases.emplace_back();
-			newPhase.AddSystem(world, system);
+			newPhase.AddSystem(world, system, systems[system]);
 		}
 	}
 }
