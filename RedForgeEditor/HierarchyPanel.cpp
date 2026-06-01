@@ -6,6 +6,9 @@
 
 #include "EditorPaths.h"
 
+#define DEBUG_NEW new(_NORMAL_BLOCK, __FILE__, __LINE__)
+#define new DEBUG_NEW
+
 HierarchyPanel::HierarchyPanel(QWidget* parent) : EditorPanel("Hierarchy", parent)
 {
     newEntityButton = new QPushButton(QICON_FROM_PATH("Basic/Plus"), "New Entity", this);

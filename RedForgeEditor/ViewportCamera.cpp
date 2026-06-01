@@ -9,6 +9,9 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/quaternion.hpp>
 
+#define DEBUG_NEW new(_NORMAL_BLOCK, __FILE__, __LINE__)
+#define new DEBUG_NEW
+
 ViewportCamera::ViewportCamera() : 
 	viewMatrix(1.0f), projectionMatrix(1.0f), location(0, 0, 0), pitchYaw(0, 0)
 {

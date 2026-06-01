@@ -1,38 +1,15 @@
 #include "Assets.h"
 
+#define DEBUG_NEW new(_NORMAL_BLOCK, __FILE__, __LINE__)
+#define new DEBUG_NEW
+
 void Assets::Startup(const EngineStartupParams& params, World& world)
 {
 
 }
 void Assets::Shutdown(const EngineShutdownParams& params, World& world)
 {
-    for(Texture* texture : textures)
-    {
-		texture->Shutdown(params, world);
-		delete texture;
-    }
-    textures.clear();
-
-	for(TextureCube* textureCube : textureCubes)
-    {
-		textureCube->Shutdown(params, world);
-		delete textureCube;
-    }
-	textureCubes.clear();
-
-    for(Material* material : materials)
-    {
-		material->Shutdown(params, world);
-		delete material;
-    }
-    materials.clear();
-
-	for(Mesh* mesh : meshes)
-    {
-		mesh->Shutdown(params, world);
-		delete mesh;
-    }
-	meshes.clear();
+    
 }
 
 Texture& Assets::CreateTexture(const std::wstring& identifier)
@@ -76,6 +53,41 @@ Mesh& Assets::CreateMesh(const std::wstring& identifier)
 	mesh->identifier = identifier;
 
     return *mesh;
+}
+
+void Assets::ShutdownAllAssets(const EngineShutdownParams& params, World& world)
+{
+    for(Texture* texture : textures)
+    {
+		texture->Shutdown(params, world);
+		delete texture;
+    }
+    textures.clear();
+    textureMap.clear();
+
+	for(TextureCube* textureCube : textureCubes)
+    {
+		textureCube->Shutdown(params, world);
+		delete textureCube;
+    }
+	textureCubes.clear();
+	textureCubeMap.clear();
+
+    for(Material* material : materials)
+    {
+		material->Shutdown(params, world);
+		delete material;
+    }
+    materials.clear();
+    materialMap.clear();
+
+	for(Mesh* mesh : meshes)
+    {
+		mesh->Shutdown(params, world);
+		delete mesh;
+    }
+	meshes.clear();
+	meshMap.clear();
 }
 
 std::vector<Texture*> Assets::GetTextures() const

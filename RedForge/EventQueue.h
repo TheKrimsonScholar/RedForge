@@ -7,6 +7,8 @@
 class IEventQueue
 {
 public:
+	virtual ~IEventQueue() = default;
+
 	virtual void PushEvent(const void* event) = 0;
 
 private:

@@ -4,6 +4,9 @@
 
 #include <QLayout>
 
+#define DEBUG_NEW new(_NORMAL_BLOCK, __FILE__, __LINE__)
+#define new DEBUG_NEW
+
 ComponentVariableEntry_Vector3::ComponentVariableEntry_Vector3(const std::string& label, void* variablePtr, QWidget* parent) : ComponentVariableEntry(label, variablePtr, parent),
 	variablePtr(static_cast<glm::vec3*>(variablePtr))
 {

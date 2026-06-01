@@ -9,6 +9,9 @@
 
 #include "EditorPaths.h"
 
+#define DEBUG_NEW new(_NORMAL_BLOCK, __FILE__, __LINE__)
+#define new DEBUG_NEW
+
 EntityHierarchyTreeView::EntityHierarchyTreeView(QWidget* parent) : QTreeView(parent)
 {
 	model = new EntityHierarchyItemModel(this);

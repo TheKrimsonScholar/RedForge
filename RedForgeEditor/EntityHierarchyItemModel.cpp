@@ -4,6 +4,9 @@
 
 #include "EditorPaths.h"
 
+#define DEBUG_NEW new(_NORMAL_BLOCK, __FILE__, __LINE__)
+#define new DEBUG_NEW
+
 QDataStream& operator<<(QDataStream& out, const Entity& data)
 {
     return out << data.index << data.generation;

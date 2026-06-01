@@ -30,6 +30,8 @@ public:
 	Material& CreateMaterial(const std::wstring& identifier);
 	Mesh& CreateMesh(const std::wstring& identifier);
 
+	void ShutdownAllAssets(const EngineShutdownParams& params, World& world);
+
 	Texture& GetTexture(const std::wstring& identifier) { return *textureMap.at(identifier); };
 	const Texture& GetTexture(const std::wstring& identifier) const { return *textureMap.at(identifier); };
 	

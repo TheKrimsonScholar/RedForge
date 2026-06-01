@@ -3,6 +3,9 @@
 #include <QLayout>
 #include <QLineEdit>
 
+#define DEBUG_NEW new(_NORMAL_BLOCK, __FILE__, __LINE__)
+#define new DEBUG_NEW
+
 ComponentVariableEntry_Float::ComponentVariableEntry_Float(const std::string& label, void* variablePtr, QWidget* parent) : ComponentVariableEntry(label, variablePtr, parent),
 	variablePtr(static_cast<float*>(variablePtr))
 {

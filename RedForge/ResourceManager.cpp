@@ -11,6 +11,9 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image/stb_image.h"
 
+#define DEBUG_NEW new(_NORMAL_BLOCK, __FILE__, __LINE__)
+#define new DEBUG_NEW
+
 std::filesystem::path GetEngineTexturesPath()
 {
     return GetEngineAssetsPath().append(L"textures/");
@@ -57,7 +60,9 @@ void ResourceManager::PostStartup(const EngineStartupParams& params, World& worl
 }
 void ResourceManager::Shutdown(const EngineShutdownParams& params, World& world)
 {
-    
+	Assets& assets = world.GetResource<Assets>();
+
+    assets.ShutdownAllAssets(params, world);
 }
 
 void ResourceManager::Update(SystemContext<>& ctx, float deltaTime)

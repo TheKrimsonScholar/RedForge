@@ -1,5 +1,8 @@
 #include "SearchField.h"
 
+#define DEBUG_NEW new(_NORMAL_BLOCK, __FILE__, __LINE__)
+#define new DEBUG_NEW
+
 SearchField::SearchField(const QString& placeholderText, QWidget* parent) : QComboBox(parent)
 {
     setEditable(true);

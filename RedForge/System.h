@@ -10,6 +10,9 @@
 
 class SystemBase
 {
+public:
+	virtual ~SystemBase() = default;
+
 protected:
 	virtual void Startup(const EngineStartupParams& params, World& world) = 0;
 	virtual void PostStartup(const EngineStartupParams& params, World& world) = 0;

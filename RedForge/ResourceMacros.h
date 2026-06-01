@@ -15,6 +15,9 @@ class World;
 
 struct IResource
 {
+public:
+	virtual ~IResource() = default;
+
 protected:
 	virtual void Startup(const EngineStartupParams& params, World& world) = 0;
 	virtual void Shutdown(const EngineShutdownParams& params, World& world) = 0;

@@ -128,11 +128,11 @@ void Engine::Run()
 
 void Engine::CreateVulkanInstance()
 {
-    static_cast<GraphicsSystem*>(GET_SYSTEM_INSTANCE(typeid(GraphicsSystem)))->CreateVulkanInstance_PreStartup(world.GetResource<GraphicsState>());
+    static_cast<GraphicsSystem*>(scheduler.systems[typeid(GraphicsSystem)])->CreateVulkanInstance_PreStartup(world.GetResource<GraphicsState>());
 }
 void Engine::DestroyVulkanInstance()
 {
-    static_cast<GraphicsSystem*>(GET_SYSTEM_INSTANCE(typeid(GraphicsSystem)))->DestroyVulkanInstance_PostShutdown(world.GetResource<GraphicsState>());
+    static_cast<GraphicsSystem*>(scheduler.systems[typeid(GraphicsSystem)])->DestroyVulkanInstance_PostShutdown(world.GetResource<GraphicsState>());
 }
 
 void Engine::Startup(const EngineStartupParams& params)

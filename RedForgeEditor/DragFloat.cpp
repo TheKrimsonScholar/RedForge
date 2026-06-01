@@ -2,6 +2,9 @@
 
 #include <QDoubleValidator>
 
+#define DEBUG_NEW new(_NORMAL_BLOCK, __FILE__, __LINE__)
+#define new DEBUG_NEW
+
 DragFloat::DragFloat(float initialValue, QWidget* parent) : QLineEdit(parent)
 {
     // Handle focus manually

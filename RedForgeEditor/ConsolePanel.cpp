@@ -8,6 +8,9 @@
 #include <QLayout>
 #include <QTimer>
 
+#define DEBUG_NEW new(_NORMAL_BLOCK, __FILE__, __LINE__)
+#define new DEBUG_NEW
+
 ConsolePanel::ConsolePanel(QWidget* parent) : EditorPanel("Console", parent), 
 	consoleStream()
 {

@@ -1,5 +1,8 @@
 #include "World.h"
 
+#define DEBUG_NEW new(_NORMAL_BLOCK, __FILE__, __LINE__)
+#define new DEBUG_NEW
+
 World::World() 
 	: entityManager(this)
 {
@@ -9,24 +12,24 @@ World::World()
 	std::vector<std::type_index> resourceTypesList = GetRegisteredResourcesList();
 	std::unordered_map<std::type_index, size_t> resourceInDegrees;
 	std::queue<std::type_index> zeroInDegreeResources;
-	for (std::type_index resource : resourceTypesList)
+	for(std::type_index resource : resourceTypesList)
 	{
 		resourceInDegrees[resource] = GET_RESOURCE_DEPENDENCIES(resource).size();
-		if (resourceInDegrees[resource] == 0)
+		if(resourceInDegrees[resource] == 0)
 			zeroInDegreeResources.push(resource);
 	}
 
 	std::vector<std::type_index> sortedResources;
-	while (!zeroInDegreeResources.empty())
+	while(!zeroInDegreeResources.empty())
 	{
 		std::type_index resource = zeroInDegreeResources.front();
 		zeroInDegreeResources.pop();
 
 		sortedResources.push_back(resource);
-		for (std::type_index dependent : GET_RESOURCE_DEPENDENTS(resource))
+		for(std::type_index dependent : GET_RESOURCE_DEPENDENTS(resource))
 		{
 			resourceInDegrees[dependent]--;
-			if (resourceInDegrees[dependent] == 0)
+			if(resourceInDegrees[dependent] == 0)
 				zeroInDegreeResources.push(dependent);
 		}
 	}
@@ -43,7 +46,10 @@ World::World()
 }
 World::~World()
 {
-
+	// Destroy all resources
+	for(const std::type_index& resourceType : resourceTypes)
+		delete resources[resourceType];
+	resources.clear();
 }
 
 void World::Startup(const EngineStartupParams& params)
@@ -56,13 +62,11 @@ void World::Startup(const EngineStartupParams& params)
 }
 void World::Shutdown(const EngineShutdownParams& params)
 {
-	// Shutdown and delete all resources
+	entityManager.Shutdown();
+
+	// Shutdown all resources
 	for(const std::type_index& resourceType : resourceTypes)
-	{
 		resources[resourceType]->Shutdown(params, *this);
-		delete resources[resourceType];
-	}
-	resources.clear();
 
 	// Delete all event queues
 	for(std::pair<const std::type_index, IEventQueue*>& eventQueue : eventQueues)

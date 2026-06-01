@@ -15,6 +15,9 @@
 #include <QResizeEvent>
 #include <QTimer>
 
+#define DEBUG_NEW new(_NORMAL_BLOCK, __FILE__, __LINE__)
+#define new DEBUG_NEW
+
 VulkanViewport::VulkanViewport(Engine* engine, QWidget* parent)
 	: engine(engine), vulkanInstance(new QVulkanInstance()), camera(new ViewportCamera())
 {

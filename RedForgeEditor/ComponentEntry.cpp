@@ -15,6 +15,9 @@
 
 #include "MainEditorWindow.h"
 
+#define DEBUG_NEW new(_NORMAL_BLOCK, __FILE__, __LINE__)
+#define new DEBUG_NEW
+
 ComponentEntry::ComponentEntry(const Entity& entity, std::type_index componentTypeID, void* componentPtr, QWidget* parent) : QWidget(parent),
     entity(entity), componentTypeID(componentTypeID)
 {

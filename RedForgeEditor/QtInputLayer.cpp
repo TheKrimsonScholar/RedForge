@@ -6,6 +6,9 @@
 #include <QMouseEvent>
 #include <QKeyEvent>
 
+#define DEBUG_NEW new(_NORMAL_BLOCK, __FILE__, __LINE__)
+#define new DEBUG_NEW
+
 static std::unordered_map<Qt::MouseButton, MouseButtonCode> QT_INPUT_MOUSE_BUTTON_MAP =
 {
     { Qt::LeftButton, MouseButtonCode::Left },

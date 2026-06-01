@@ -7,6 +7,9 @@
 #include <QHBoxLayout>
 #include <QVBoxLayout>
 
+#define DEBUG_NEW new(_NORMAL_BLOCK, __FILE__, __LINE__)
+#define new DEBUG_NEW
+
 FileBrowserPanel::FileBrowserPanel(QWidget* parent) : EditorPanel("File Browser", parent)
 {
     static const QIcon UP_ICON = QIcon(GetEditorAssetsPath().append("Icons/Basic/Up.png").string().c_str());
