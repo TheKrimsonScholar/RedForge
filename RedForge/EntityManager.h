@@ -238,13 +238,7 @@ class World;
 struct LevelData
 {
 	std::string name = "";
-	LevelID parent = INVALID_LEVEL;
-	LevelID firstChild = INVALID_LEVEL;
-	LevelID nextSibling = INVALID_LEVEL;
-	LevelID lastSibling = INVALID_LEVEL;
 	Entity first = {};
-	// Depth-first list of all entities in the level.
-	std::vector<Entity> entities = {};
 };
 struct EntityData
 {
@@ -296,7 +290,7 @@ public:
 	Entity CreateEntity(const Entity& parent, const std::string& name = "New Entity", const std::filesystem::path& prefabPath = {});
 	REDFORGE_API void DestroyEntity(Entity entity);
 
-	REDFORGE_API bool SetEntityParent(Entity entity, Entity newParent);
+	REDFORGE_API bool ReparentEntity(Entity entity, Entity newParent);
 	REDFORGE_API bool MoveEntityBefore(Entity entity, Entity next);
 	REDFORGE_API bool MoveEntityAfter(Entity entity, Entity previous);
 
@@ -320,10 +314,18 @@ public:
 	REDFORGE_API bool HasComponentOfType(Entity entity, std::type_index componentType);
 	REDFORGE_API void* GetComponentOfType(Entity entity, std::type_index componentType);
 
-	// Recursively traverses the level's entity hierarchy, performing the callback on each valid entity.
-	REDFORGE_API void ForEachEntity(std::function<void(const Entity&)> callback, Entity root = {});
-	// Recursively traverses the level's entity hierarchy, performing the callback on each valid entity in reverse order, ensuring all children are processed before their parents.
-	REDFORGE_API void ForEachEntity_Reversed(std::function<void(const Entity&)> callback, Entity root = {});
+	// Recursively traverses the entity hierarchy of every active level, performing the callback on each valid entity.
+	REDFORGE_API void ForEachEntity(std::function<void(const Entity&)> callback) const;
+	// Recursively traverses level's entity hierarchy, performing the callback on each valid entity.
+	REDFORGE_API void ForEachEntity(std::function<void(const Entity&)> callback, LevelID level) const;
+	// Recursively traverses the sub-hierarchy below root (including root), performing the callback on each valid entity.
+	REDFORGE_API void ForEachEntity(std::function<void(const Entity&)> callback, Entity root) const;
+	// Recursively traverses the entity hierarchy of every active level, performing the callback on each valid entity in reverse order, ensuring all children are processed before their parents.
+	REDFORGE_API void ForEachEntity_Reversed(std::function<void(const Entity&)> callback) const;
+	// Recursively traverses level's entity hierarchy, performing the callback on each valid entity in reverse order, ensuring all children are processed before their parents.
+	REDFORGE_API void ForEachEntity_Reversed(std::function<void(const Entity&)> callback, LevelID level) const;
+	// Recursively traverses the sub-hierarchy below root (including root), performing the callback on each valid entity in reverse order, ensuring all children are processed before their parents.
+	REDFORGE_API void ForEachEntity_Reversed(std::function<void(const Entity&)> callback, Entity root) const;
 
 	template<typename T>
 	// Efficiently iterates through all active components of the specified type, triggering the given callback for each.
@@ -334,20 +336,20 @@ public:
 
 	REDFORGE_API std::unordered_map<void*, std::type_index> GetAllComponents(Entity entity);
 
-	REDFORGE_API bool IsEntityValid(Entity entity);
-	REDFORGE_API bool IsComponentValid(Entity entity, std::type_index componentType);
+	REDFORGE_API bool IsEntityValid(Entity entity) const;
+	REDFORGE_API bool IsComponentValid(Entity entity, std::type_index componentType) const;
 
-	REDFORGE_API bool IsEntityChildOf(Entity parent, Entity child);
+	REDFORGE_API bool IsEntityChildOf(Entity parent, Entity child) const;
 
-	REDFORGE_API bool IsEntityActive(Entity entity);
-	REDFORGE_API std::string GetEntityName(Entity entity);
-	REDFORGE_API LevelID GetEntityLevel(Entity entity);
-	REDFORGE_API std::filesystem::path GetEntityPrefabPath(Entity entity);
-	REDFORGE_API Entity GetEntityParent(Entity entity);
-	REDFORGE_API Entity GetEntityFirstChild(Entity entity);
-	REDFORGE_API Entity GetEntityNextSibling(Entity entity);
-	REDFORGE_API Entity GetEntityLastSibling(Entity entity);
-	REDFORGE_API uint32_t GetEntityDepth(Entity entity);
+	REDFORGE_API bool IsEntityActive(Entity entity) const;
+	REDFORGE_API std::string GetEntityName(Entity entity) const;
+	REDFORGE_API LevelID GetEntityLevel(Entity entity) const;
+	REDFORGE_API std::filesystem::path GetEntityPrefabPath(Entity entity) const;
+	REDFORGE_API Entity GetEntityParent(Entity entity) const;
+	REDFORGE_API Entity GetEntityFirstChild(Entity entity) const;
+	REDFORGE_API Entity GetEntityNextSibling(Entity entity) const;
+	REDFORGE_API Entity GetEntityLastSibling(Entity entity) const;
+	REDFORGE_API uint32_t GetEntityDepth(Entity entity) const;
 
 	REDFORGE_API void SetEntityName(const Entity& entity, const std::string& name);
 
@@ -371,6 +373,11 @@ private:
 	EntityData& GetEntityData(const Entity& entity);
 
 	REDFORGE_API Entity GetEntityByIndex(uint32_t index);
+
+	void SetEntityParent(Entity entity, Entity parent);
+	void SetEntityFirstChild(Entity entity, Entity firstChild);
+	void SetEntityNextSibling(Entity entity, Entity nextSibling);
+	void SetEntityLastSibling(Entity entity, Entity lastSibling);
 
 	friend class LevelManager;
 };
@@ -423,7 +430,7 @@ inline Entity EntityManager::CreateEntity(const std::string& name, LevelID level
 	data.lastSibling = lastSibling;
 	data.depth = 1;
 
-	// If parent is invalid, this is a top-level entity; if the level is empty, add this as the first entity
+	// If the level is empty, add this as the first entity
 	if(!levelData[level].first.IsValid())
 		levelData[level].first = newEntity;
 	// If there is a sibling before this entity, update it

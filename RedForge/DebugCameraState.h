@@ -10,8 +10,8 @@ struct DebugCameraState : public IResource
 	float nearClipPlaneDistance = 0.001f;
 	float farClipPlaneDistance = 10000.0f;
 
-	float moveSpeed = 5.0f;
-	float lookSpeed = 10.0f;
+	float moveSpeed = 20.0f;
+	float lookSpeed = 20.0f;
 
 	bool isActive;
 

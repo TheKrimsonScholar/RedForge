@@ -60,14 +60,12 @@ void EntityManager::DestroyEntity(Entity entity)
 	Entity nextSibling = GetEntityNextSibling(entity);
 	
 	// If this entity is the first child, set its next sibling as first child
-	if(entityData[parent.index].firstChild == entity)
-		entityData[parent.index].firstChild = nextSibling;
+	if(GetEntityFirstChild(parent) == entity)
+		SetEntityFirstChild(parent, nextSibling);
 	// If the last sibling exists, set its next sibling to the sibling after this entity
-	if(lastSibling.IsValid())
-		entityData[lastSibling.index].nextSibling = entityData[entity.index].nextSibling;
+	SetEntityNextSibling(lastSibling, GetEntityNextSibling(entity));
 	// If the next sibling exists, set its last sibling to the sibling before this entity
-	if(nextSibling.IsValid())
-		entityData[nextSibling.index].lastSibling = entityData[entity.index].lastSibling;
+	SetEntityLastSibling(nextSibling, GetEntityLastSibling(entity));
 
 	// Destroy entity
 	// If the entity has the highest index of all valid entities, "shrink" the valid range
@@ -92,7 +90,7 @@ void EntityManager::DestroyEntity(Entity entity)
 	entityData[entity.index].valid = false;
 }
 
-bool EntityManager::SetEntityParent(Entity entity, Entity newParent)
+bool EntityManager::ReparentEntity(Entity entity, Entity newParent)
 {
 	assert(entity.IsValid() && "Invalid entity.");
 
@@ -104,20 +102,21 @@ bool EntityManager::SetEntityParent(Entity entity, Entity newParent)
 
     /* Update entity level data to set entity as the last child of newParent */
 
-    // Update parent's firstChild if this is the first child
-    if(entityData[entityData[entity.index].parent.index].firstChild == entity)
-		entityData[entityData[entity.index].parent.index].firstChild = entityData[entity.index].nextSibling;
+	// Update level's first entity if this is the first entity in the level
+    if(levelData[entityData[entity.index].level].first == entity)
+		levelData[entityData[entity.index].level].first = entityData[entity.index].nextSibling;
+	// Update parent's firstChild if this is the first child
+	if(GetEntityFirstChild(GetEntityParent(entity)) == entity)
+		SetEntityFirstChild(GetEntityParent(entity), GetEntityNextSibling(entity));
     // Update last sibling's nextSibling if last sibling is valid
-    if(entityData[entity.index].lastSibling.IsValid())
-		entityData[entityData[entity.index].lastSibling.index].nextSibling = entityData[entity.index].nextSibling;
+	SetEntityNextSibling(GetEntityLastSibling(entity), GetEntityNextSibling(entity));
     // Update next sibling's lastSibling if next sibling is valid
-    if(entityData[entity.index].nextSibling.IsValid())
-		entityData[entityData[entity.index].nextSibling.index].lastSibling = entityData[entity.index].lastSibling;
+	SetEntityLastSibling(GetEntityNextSibling(entity), GetEntityLastSibling(entity));
 
-    Entity lastSibling = entityData[newParent.index].firstChild;
+	Entity lastSibling = GetEntityFirstChild(newParent);
     // Find last child of newParent
-    while(entityData[lastSibling.index].nextSibling.IsValid())
-        lastSibling = entityData[lastSibling.index].nextSibling;
+    while(GetEntityNextSibling(lastSibling).IsValid())
+        lastSibling = GetEntityNextSibling(lastSibling);
 
     // If lastSibling is valid, set entity as the next child after it
 	if(lastSibling.IsValid())
@@ -130,6 +129,7 @@ bool EntityManager::SetEntityParent(Entity entity, Entity newParent)
 		entityData[newParent.index].firstChild = entity;
 
     // Update entity's level data
+    entityData[entity.index].level = entityData[newParent.index].level;
     entityData[entity.index].parent = newParent;
     entityData[entity.index].nextSibling = {};
     entityData[entity.index].lastSibling = lastSibling;
@@ -151,15 +151,16 @@ bool EntityManager::MoveEntityBefore(Entity entity, Entity next)
 
     /* Update entity level data to set entity as the last sibling before next */
 
+	// Update level's first entity if this is the first entity in the level
+    if(levelData[entityData[next.index].level].first == next)
+		levelData[entityData[next.index].level].first = entity;
     // Update parent's firstChild if this is the first child
-    if(entityData[entityData[entity.index].parent.index].firstChild == entity)
-		entityData[entityData[entity.index].parent.index].firstChild = entityData[entity.index].nextSibling;
+    if(GetEntityFirstChild(GetEntityParent(entity)) == entity)
+		SetEntityFirstChild(GetEntityParent(entity), GetEntityNextSibling(entity));
     // Update last sibling's nextSibling if last sibling is valid
-    if(entityData[entity.index].lastSibling.IsValid())
-		entityData[entityData[entity.index].lastSibling.index].nextSibling = entityData[entity.index].nextSibling;
+	SetEntityNextSibling(GetEntityLastSibling(entity), GetEntityNextSibling(entity));
     // Update next sibling's lastSibling if next sibling is valid
-    if(entityData[entity.index].nextSibling.IsValid())
-		entityData[entityData[entity.index].nextSibling.index].lastSibling = entityData[entity.index].lastSibling;
+	SetEntityLastSibling(GetEntityNextSibling(entity), GetEntityLastSibling(entity));
 
     Entity parent = entityData[next.index].parent;
     Entity previous = entityData[next.index].lastSibling;
@@ -180,6 +181,7 @@ bool EntityManager::MoveEntityBefore(Entity entity, Entity next)
 	onEntityLevelDataModified.Broadcast(next);
 
     // Update entity's level data
+    entityData[entity.index].level = entityData[next.index].level;
     entityData[entity.index].parent = parent;
     entityData[entity.index].nextSibling = next;
     entityData[entity.index].lastSibling = previous;
@@ -202,14 +204,12 @@ bool EntityManager::MoveEntityAfter(Entity entity, Entity previous)
     /* Update entity level data to set entity as the next sibling after previous */
 
     // Update parent's firstChild if this is the first child
-    if(entityData[entityData[entity.index].parent.index].firstChild == entity)
-		entityData[entityData[entity.index].parent.index].firstChild = entityData[entity.index].nextSibling;
+    if(GetEntityFirstChild(GetEntityParent(entity)) == entity)
+		SetEntityFirstChild(GetEntityParent(entity), GetEntityNextSibling(entity));
     // Update last sibling's nextSibling if last sibling is valid
-    if(entityData[entity.index].lastSibling.IsValid())
-		entityData[entityData[entity.index].lastSibling.index].nextSibling = entityData[entity.index].nextSibling;
+	SetEntityNextSibling(GetEntityLastSibling(entity), GetEntityNextSibling(entity));
     // Update next sibling's lastSibling if next sibling is valid
-    if(entityData[entity.index].nextSibling.IsValid())
-		entityData[entityData[entity.index].nextSibling.index].lastSibling = entityData[entity.index].lastSibling;
+	SetEntityLastSibling(GetEntityNextSibling(entity), GetEntityLastSibling(entity));
 
     Entity parent = entityData[previous.index].parent;
     Entity next = entityData[previous.index].nextSibling;
@@ -224,6 +224,7 @@ bool EntityManager::MoveEntityAfter(Entity entity, Entity previous)
 	onEntityLevelDataModified.Broadcast(previous);
 
     // Update entity's level data
+    entityData[entity.index].level = entityData[previous.index].level;
     entityData[entity.index].parent = parent;
     entityData[entity.index].nextSibling = next;
     entityData[entity.index].lastSibling = previous;
@@ -277,10 +278,30 @@ void* EntityManager::GetComponentOfType(Entity entity, std::type_index component
 	return componentArrays[componentType]->GetRaw(entity.index);
 }
 
-void EntityManager::ForEachEntity(std::function<void(const Entity&)> callback, Entity root)
+void EntityManager::ForEachEntity(std::function<void(const Entity&)> callback) const
 {
-	if(IsEntityValid(root))
-		callback(root);
+	for(const std::pair<LevelID, LevelData>& level : levelData)
+		ForEachEntity(callback, level.first);
+}
+void EntityManager::ForEachEntity(std::function<void(const Entity&)> callback, LevelID level) const
+{
+	/* Depth-first recursive traversal; check for first child then next sibling */
+
+	Entity child = levelData.at(level).first;
+	while(child.IsValid())
+	{
+		ForEachEntity(callback, child);
+
+		// Next child
+		child = GetEntityNextSibling(child);
+	}
+}
+void EntityManager::ForEachEntity(std::function<void(const Entity&)> callback, Entity root) const
+{
+	if(!IsEntityValid(root))
+		return;
+
+	callback(root);
 
 	/* Depth-first recursive traversal; check for first child then next sibling */
 
@@ -293,7 +314,45 @@ void EntityManager::ForEachEntity(std::function<void(const Entity&)> callback, E
 		child = GetEntityNextSibling(child);
 	}
 }
-void EntityManager::ForEachEntity_Reversed(std::function<void(const Entity&)> callback, Entity root)
+void EntityManager::ForEachEntity_Reversed(std::function<void(const Entity&)> callback) const
+{
+	std::vector<Entity> allEntities;
+	// Gather all entities in order of normal iteration
+	EntityManager::ForEachEntity(
+		[&allEntities](const Entity& entity)
+		{
+			allEntities.push_back(entity);
+		});
+
+	// Process in reverse order
+	for (int i = allEntities.size() - 1; i >= 0; i--)
+	{
+		const Entity& entity = allEntities[i];
+
+		if (IsEntityValid(entity))
+			callback(entity);
+	}
+}
+void EntityManager::ForEachEntity_Reversed(std::function<void(const Entity&)> callback, LevelID level) const
+{
+	std::vector<Entity> allEntities;
+	// Gather all entities in order of normal iteration
+	EntityManager::ForEachEntity(
+		[&allEntities](const Entity& entity)
+		{
+			allEntities.push_back(entity);
+		}, level);
+
+	// Process in reverse order
+	for(int i = allEntities.size() - 1; i >= 0; i--)
+	{
+		const Entity& entity = allEntities[i];
+
+		if(IsEntityValid(entity))
+			callback(entity);
+	}
+}
+void EntityManager::ForEachEntity_Reversed(std::function<void(const Entity&)> callback, Entity root) const
 {
 	std::vector<Entity> allEntities;
 	// Gather all entities in order of normal iteration
@@ -332,12 +391,12 @@ std::unordered_map<void*, std::type_index> EntityManager::GetAllComponents(Entit
 	return components;
 }
 
-bool EntityManager::IsEntityValid(Entity entity)
+bool EntityManager::IsEntityValid(Entity entity) const
 {
 	// Entity index must be valid and of the same generation
 	return entity.index < nextEntity && entityData[entity.index].valid && entityData[entity.index].generationCount == entity.generation;
 }
-bool EntityManager::IsComponentValid(Entity entity, std::type_index componentType)
+bool EntityManager::IsComponentValid(Entity entity, std::type_index componentType) const
 {
 	if(!EntityManager::IsEntityValid(entity))
 		return false;
@@ -348,10 +407,10 @@ bool EntityManager::IsComponentValid(Entity entity, std::type_index componentTyp
 	if(componentArrays.find(componentType) == componentArrays.end())
 		return false;
 
-	return componentArrays[componentType]->Has(entity.index);
+	return componentArrays.at(componentType)->Has(entity.index);
 }
 
-bool EntityManager::IsEntityChildOf(Entity parent, Entity child)
+bool EntityManager::IsEntityChildOf(Entity parent, Entity child) const
 {
 	bool isChild = false;
     // Look for the entity in parent's children
@@ -367,35 +426,35 @@ bool EntityManager::IsEntityChildOf(Entity parent, Entity child)
     return isChild;
 }
 
-std::string EntityManager::GetEntityName(Entity entity)
+std::string EntityManager::GetEntityName(Entity entity) const
 {
 	return (IsEntityValid(entity) ? entityData[entity.index] : EntityData()).name;
 }
-LevelID EntityManager::GetEntityLevel(Entity entity)
+LevelID EntityManager::GetEntityLevel(Entity entity) const
 {
 	return (IsEntityValid(entity) ? entityData[entity.index] : EntityData()).level;
 }
-std::filesystem::path EntityManager::GetEntityPrefabPath(Entity entity)
+std::filesystem::path EntityManager::GetEntityPrefabPath(Entity entity) const
 {
 	return (IsEntityValid(entity) ? entityData[entity.index] : EntityData()).prefabPath;
 }
-Entity EntityManager::GetEntityParent(Entity entity)
+Entity EntityManager::GetEntityParent(Entity entity) const
 {
 	return (IsEntityValid(entity) ? entityData[entity.index] : EntityData()).parent;
 }
-Entity EntityManager::GetEntityFirstChild(Entity entity)
+Entity EntityManager::GetEntityFirstChild(Entity entity) const
 {
 	return (IsEntityValid(entity) ? entityData[entity.index] : EntityData()).firstChild;
 }
-Entity EntityManager::GetEntityNextSibling(Entity entity)
+Entity EntityManager::GetEntityNextSibling(Entity entity) const
 {
 	return (IsEntityValid(entity) ? entityData[entity.index] : EntityData()).nextSibling;
 }
-Entity EntityManager::GetEntityLastSibling(Entity entity)
+Entity EntityManager::GetEntityLastSibling(Entity entity) const
 {
 	return (IsEntityValid(entity) ? entityData[entity.index] : EntityData()).lastSibling;
 }
-uint32_t EntityManager::GetEntityDepth(Entity entity)
+uint32_t EntityManager::GetEntityDepth(Entity entity) const
 {
 	return (IsEntityValid(entity) ? entityData[entity.index] : EntityData()).depth;
 }
@@ -587,4 +646,25 @@ Entity EntityManager::GetEntityByIndex(uint32_t index)
 	entity.generation = index == INVALID_ENTITY ? INVALID_ENTITY : entityData[index].generationCount;
 
 	return entity;
+}
+
+void EntityManager::SetEntityParent(Entity entity, Entity parent)
+{
+	if(IsEntityValid(entity))
+		entityData[entity.index].parent = parent;
+}
+void EntityManager::SetEntityFirstChild(Entity entity, Entity firstChild)
+{
+	if(IsEntityValid(entity))
+		entityData[entity.index].firstChild = firstChild;
+}
+void EntityManager::SetEntityNextSibling(Entity entity, Entity nextSibling)
+{
+	if(IsEntityValid(entity))
+		entityData[entity.index].nextSibling = nextSibling;
+}
+void EntityManager::SetEntityLastSibling(Entity entity, Entity lastSibling)
+{
+	if(IsEntityValid(entity))
+		entityData[entity.index].lastSibling = lastSibling;
 }

@@ -1997,7 +1997,7 @@ void GraphicsSystem::RecordCommandBuffer(LocalSystemContext& ctx, VkCommandBuffe
     graphicsState.instanceData.clear();
     std::unordered_map<Entity, uint32_t> entityInstanceIndices;
     std::vector<LightData> lightsData;
-    ctx.ForEachEntityInLevel([this, &ctx, &graphicsState, &assets, &entityInstanceIndices, &lightsData](const Entity& entity)
+    ctx.ForEachEntity([this, &ctx, &graphicsState, &assets, &entityInstanceIndices, &lightsData](const Entity& entity)
         {
             if(ctx.HasComponent<MeshRendererComponent>(entity) && ctx.HasComponent<TransformComponent>(entity))
             {
@@ -2258,7 +2258,7 @@ void GraphicsSystem::RecordCommandBuffer(LocalSystemContext& ctx, VkCommandBuffe
     ImGui::Begin("Entities");
     if(ImGui::TreeNode("Entities"))
     {
-        ctx.ForEachEntityInLevel([this, &ctx, &assets](const Entity& entity)
+        ctx.ForEachEntity([this, &ctx, &assets](const Entity& entity)
             {
                 if(ctx.HasComponent<TransformComponent>(entity))
                     if(ImGui::TreeNode(std::format("Entity {}", entity).c_str()))

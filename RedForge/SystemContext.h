@@ -66,7 +66,9 @@ public:
 	template<typename... Args, typename Callback>
 	// Efficiently iterates through all active entities which have all of the specified component types. Triggers the callback for each, providing the entity along with each of its relevant components by reference.
 	void ForEachComponentOfType(Callback&& callback);
-	void ForEachEntityInLevel(std::function<void(const Entity&)> callback, const Entity& root = {});
+	void ForEachEntity(std::function<void(const Entity&)> callback);
+	void ForEachEntity(std::function<void(const Entity&)> callback, LevelID level);
+	void ForEachEntity(std::function<void(const Entity&)> callback, const Entity& root);
 
 	template<typename T>
 	void QueueEvent(const T& event);
@@ -176,7 +178,17 @@ inline void SystemContext<Components...>::ForEachComponentOfType(Callback&& call
 	world->GetEntityManager().ForEachComponentOfType<Args...>(std::forward<Callback>(callback));
 }
 template<typename ...Components>
-inline void SystemContext<Components...>::ForEachEntityInLevel(std::function<void(const Entity&)> callback, const Entity& root)
+inline void SystemContext<Components...>::ForEachEntity(std::function<void(const Entity&)> callback)
+{
+	world->GetEntityManager().ForEachEntity(callback);
+}
+template<typename ...Components>
+inline void SystemContext<Components...>::ForEachEntity(std::function<void(const Entity&)> callback, LevelID level)
+{
+	world->GetEntityManager().ForEachEntity(callback, level);
+}
+template<typename ...Components>
+inline void SystemContext<Components...>::ForEachEntity(std::function<void(const Entity&)> callback, const Entity& root)
 {
 	world->GetEntityManager().ForEachEntity(callback, root);
 }

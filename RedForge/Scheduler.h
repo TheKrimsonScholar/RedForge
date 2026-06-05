@@ -10,8 +10,6 @@ class Scheduler
 private:
 	World* world;
 
-	CommandBuffer commandBuffer;
-
 	std::vector<std::type_index> systemTypes;
 	std::unordered_map<std::type_index, SystemBase*> systems;
 

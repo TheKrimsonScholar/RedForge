@@ -12,7 +12,7 @@ Phase::~Phase()
 void Phase::AddSystem(World* world, std::type_index systemType, SystemBase* system)
 {
 	//CommandBuffer& commandBuffer = commandBuffers.emplace_back();
-	CommandBuffer* commandBuffer = new CommandBuffer();
+	CommandBuffer* commandBuffer = new CommandBuffer(world);
 	commandBuffers.push_back(commandBuffer);
 	systems.push_back(system);
 	systemContexts.push_back(system->CreateContext(world, commandBuffer));

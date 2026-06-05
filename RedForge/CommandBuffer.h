@@ -81,10 +81,12 @@ private:
 	std::vector<Entity> createdEntities;
 
 public:
+	CommandBuffer(World* world) : world(world) {}
+
 	Entity Command_CreateEntity(const std::string& name, const Entity& parent, const std::filesystem::path& prefabPath)
 	{
 		CreateEntityCommand command = { name, parent, prefabPath };
-		//WriteCommand(ECommandType::CreateEntity, &command);
+		WriteCommand(ECommandType::CreateEntity, &command);
 
 		Entity tempEntity;
 		tempEntity.index = entitiesCreated++;
@@ -95,46 +97,46 @@ public:
 	void Command_DestroyEntity(const Entity& entity)
 	{
 		DestroyEntityCommand command = { entity };
-		//WriteCommand(ECommandType::DestroyEntity, &command);
+		WriteCommand(ECommandType::DestroyEntity, &command);
 	}
 	void Command_RenameEntity(const Entity& entity, const std::string& name)
 	{
 		RenameEntityCommand command = { entity, name };
-		//WriteCommand(ECommandType::RenameEntity, &command);
+		WriteCommand(ECommandType::RenameEntity, &command);
 	}
 	void Command_ReparentEntity(const Entity& entity, const Entity& parent)
 	{
 		ReparentEntityCommand command = { entity, parent };
-		//WriteCommand(ECommandType::ReparentEntity, &command);
+		WriteCommand(ECommandType::ReparentEntity, &command);
 	}
 	void Command_MoveEntityBefore(const Entity& entity, const Entity& next)
 	{
 		MoveEntityBeforeCommand command = { entity, next };
-		//WriteCommand(ECommandType::MoveEntityBefore, &command);
+		WriteCommand(ECommandType::MoveEntityBefore, &command);
 	}
 	void Command_MoveEntityAfter(const Entity& entity, const Entity& previous)
 	{
 		MoveEntityAfterCommand command = { entity, previous };
-		//WriteCommand(ECommandType::MoveEntityAfter, &command);
+		WriteCommand(ECommandType::MoveEntityAfter, &command);
 	}
 	void Command_AddComponent(const Entity& entity, std::type_index componentType, void* component)
 	{
 		AddComponentCommand command = { entity, componentType };
 
 		// Write command with the component as extra data
-		//WriteCommand(ECommandType::AddComponent, &command, GET_COMPONENT_SIZE(componentType), component);
+		WriteCommand(ECommandType::AddComponent, &command, GET_COMPONENT_SIZE(componentType), component);
 	}
 	void Command_RemoveComponent(const Entity& entity, std::type_index componentType)
 	{
 		RemoveComponentCommand command = { entity, componentType };
-		//WriteCommand(ECommandType::RemoveComponent, &command);
+		WriteCommand(ECommandType::RemoveComponent, &command);
 	}
-	void Command_QueueEvent(std::type_index eventType, void* event)
+	void Command_QueueEvent(std::type_index eventType, const void* event)
 	{
 		QueueEventCommand command = { eventType };
 
 		// Write command with the event as extra data
-		//WriteCommand(ECommandType::QueueEvent, &command, GET_EVENT_SIZE(eventType), event);
+		WriteCommand(ECommandType::QueueEvent, &command, GET_EVENT_SIZE(eventType), event);
 	}
 
 	void Flush()
@@ -173,7 +175,7 @@ public:
 				{
 					ReparentEntityCommand* command = reinterpret_cast<ReparentEntityCommand*>(data);
 					
-					world->GetEntityManager().SetEntityParent(
+					world->GetEntityManager().ReparentEntity(
 						ResolveTransientEntity(command->entity), 
 						ResolveTransientEntity(command->parent));
 				}

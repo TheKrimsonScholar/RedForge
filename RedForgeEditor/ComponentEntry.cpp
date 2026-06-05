@@ -12,6 +12,7 @@
 #include "ComponentVariableEntry_Material.h"
 
 #include "EditorPaths.h"
+#include "Engine.h"
 
 #include "MainEditorWindow.h"
 
@@ -76,7 +77,7 @@ ComponentEntry::ComponentEntry(const Entity& entity, std::type_index componentTy
     QObject::connect(timer, &QTimer::timeout, this,
         [this]()
         {
-            if(Editor::GetEntityManager().IsComponentValid(this->entity, this->componentTypeID))
+            if(Editor::GetEngine()->IsRunning() && Editor::GetEntityManager().IsComponentValid(this->entity, this->componentTypeID))
     		    UpdateDisplayedVariables();
         });
     timer->start();

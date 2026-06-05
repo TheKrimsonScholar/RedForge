@@ -126,7 +126,7 @@ bool EntityHierarchyItemModel::dropMimeData(const QMimeData* data, Qt::DropActio
     // Reparent
     if(row == -1)
         for(const Entity& entity : draggedEntities)
-            Editor::GetEntityManager().SetEntityParent(entity, newParent);
+            Editor::GetEntityManager().ReparentEntity(entity, newParent);
     // Reorder
     else
         // Move before (only necessary if set as first child)

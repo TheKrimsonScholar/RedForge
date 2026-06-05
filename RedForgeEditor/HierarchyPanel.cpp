@@ -18,7 +18,7 @@ HierarchyPanel::HierarchyPanel(QWidget* parent) : EditorPanel("Hierarchy", paren
             const Entity& newEntity = Editor::GetEntityManager().CreateEntity();
             
             if(!treeView->GetSelectedEntities().empty())
-                Editor::GetEntityManager().SetEntityParent(newEntity, treeView->GetSelectedEntities()[0]);
+                Editor::GetEntityManager().ReparentEntity(newEntity, treeView->GetSelectedEntities()[0]);
         });
 
     treeView = new EntityHierarchyTreeView(this);

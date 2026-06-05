@@ -35,7 +35,10 @@ MainEditorWindow::MainEditorWindow(QWidget* parent) : QMainWindow(parent)
 			QObject::connect(updateTimer, &QTimer::timeout, this,
 				[this, engine]()
 				{
-					engine->Update(frameTimer.restart() / 1000.0f);
+					float deltaTime = frameTimer.nsecsElapsed() / 1000000000.0f;
+					frameTimer.restart();
+
+					engine->Update(deltaTime);
 					Update();
 				});
 			frameTimer.start();

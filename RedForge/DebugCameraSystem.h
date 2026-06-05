@@ -4,6 +4,7 @@
 #include "SystemRegistrationMacros.h"
 
 #include "WindowSystem.h"
+#include "InputSystem.h"
 
 #include "DebugCameraState.h"
 #include "Cameras.h"
@@ -20,4 +21,5 @@ class DebugCameraSystem : public System<DebugCameraState, Cameras, const InputSt
 };
 REGISTER_SYSTEM_BEGIN(DebugCameraSystem)
 SYSTEM_REQUIRES(WindowSystem)
+SYSTEM_REQUIRES(InputSystem)
 REGISTER_SYSTEM_END(DebugCameraSystem)

@@ -75,14 +75,14 @@ void QtInputLayer::Shutdown(const EngineShutdownParams& params, InputState& inpu
 
 void QtInputLayer::PreUpdate(InputState& inputState)
 {
-    InputLayer::PreUpdate(inputState);
-
     // Call all input events that were queued since last frame
     while(!inputEvents.empty())
     {
         inputEvents.front()(inputState);
         inputEvents.pop();
     }
+
+    InputLayer::PreUpdate(inputState);
 }
 void QtInputLayer::PostUpdate(InputState& inputState)
 {
