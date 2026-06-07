@@ -125,8 +125,13 @@ bool EntityHierarchyItemModel::dropMimeData(const QMimeData* data, Qt::DropActio
     // Call LevelManager logic based on whether it was a reparent operation or a reorder operation (view automatically updated via event bindings)
     // Reparent
     if(row == -1)
-        for(const Entity& entity : draggedEntities)
-            Editor::GetEntityManager().ReparentEntity(entity, newParent);
+		// If new parent is invalid, entities are being moved to the root, otherwise they're being moved under a new parent
+        if(!newParent.IsValid())
+            for(const Entity& entity : draggedEntities)
+                Editor::GetEntityManager().MoveEntityToLevel(entity, INVALID_LEVEL);
+        else
+            for(const Entity& entity : draggedEntities)
+                Editor::GetEntityManager().ReparentEntity(entity, newParent);
     // Reorder
     else
         // Move before (only necessary if set as first child)

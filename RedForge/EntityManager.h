@@ -262,6 +262,7 @@ private:
 	Event<const Entity&> onEntityCreated;
 	Event<const Entity&> onEntityDestroyed;
 	Event<const Entity&> onEntityLevelDataModified;
+	Event<const Entity&, LevelID> onEntityLevelChanged;
 	Event<const Entity&, const Entity&> onEntityReparented;
 	Event<const Entity&, const Entity&> onEntityMovedBefore;
 	Event<const Entity&, const Entity&> onEntityMovedAfter;
@@ -290,6 +291,7 @@ public:
 	Entity CreateEntity(const Entity& parent, const std::string& name = "New Entity", const std::filesystem::path& prefabPath = {});
 	REDFORGE_API void DestroyEntity(Entity entity);
 
+	REDFORGE_API bool MoveEntityToLevel(Entity entity, LevelID level);
 	REDFORGE_API bool ReparentEntity(Entity entity, Entity newParent);
 	REDFORGE_API bool MoveEntityBefore(Entity entity, Entity next);
 	REDFORGE_API bool MoveEntityAfter(Entity entity, Entity previous);
@@ -336,10 +338,14 @@ public:
 
 	REDFORGE_API std::unordered_map<void*, std::type_index> GetAllComponents(Entity entity);
 
+	REDFORGE_API bool IsLevelValid(LevelID level) const;
 	REDFORGE_API bool IsEntityValid(Entity entity) const;
 	REDFORGE_API bool IsComponentValid(Entity entity, std::type_index componentType) const;
 
 	REDFORGE_API bool IsEntityChildOf(Entity parent, Entity child) const;
+
+	REDFORGE_API std::string GetLevelName(LevelID level) const;
+	REDFORGE_API Entity GetLevelFirstEntity(LevelID level) const;
 
 	REDFORGE_API bool IsEntityActive(Entity entity) const;
 	REDFORGE_API std::string GetEntityName(Entity entity) const;
@@ -362,6 +368,7 @@ public:
 	Event<const Entity&>& GetOnEntityCreated() { return onEntityCreated; }
 	Event<const Entity&>& GetOnEntityDestroyed() { return onEntityDestroyed; }
 	Event<const Entity&>& GetOnEntityLevelDataModified() { return onEntityLevelDataModified; }
+	Event<const Entity&, LevelID>& GetOnEntityLevelChanged() { return onEntityLevelChanged; }
 	Event<const Entity&, const Entity&>& GetOnEntityReparented() { return onEntityReparented; }
 	Event<const Entity&, const Entity&>& GetOnEntityMovedBefore() { return onEntityMovedBefore; }
 	Event<const Entity&, const Entity&>& GetOnEntityMovedAfter() { return onEntityMovedAfter; }
@@ -373,6 +380,8 @@ private:
 	EntityData& GetEntityData(const Entity& entity);
 
 	REDFORGE_API Entity GetEntityByIndex(uint32_t index);
+
+	void SetLevelFirstEntity(LevelID level, Entity entity);
 
 	void SetEntityParent(Entity entity, Entity parent);
 	void SetEntityFirstChild(Entity entity, Entity firstChild);

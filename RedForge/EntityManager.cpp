@@ -59,6 +59,9 @@ void EntityManager::DestroyEntity(Entity entity)
 	Entity lastSibling = GetEntityLastSibling(entity);
 	Entity nextSibling = GetEntityNextSibling(entity);
 	
+	// Update level's first entity if this is the first entity in the level
+    if(GetLevelFirstEntity(GetEntityLevel(entity)) == entity)
+		SetLevelFirstEntity(GetEntityLevel(entity), GetEntityNextSibling(entity));
 	// If this entity is the first child, set its next sibling as first child
 	if(GetEntityFirstChild(parent) == entity)
 		SetEntityFirstChild(parent, nextSibling);
@@ -90,6 +93,51 @@ void EntityManager::DestroyEntity(Entity entity)
 	entityData[entity.index].valid = false;
 }
 
+bool EntityManager::MoveEntityToLevel(Entity entity, LevelID level)
+{
+	assert(entity.IsValid() && "Invalid entity.");
+
+	onEntityLevelChanged.Broadcast(entity, level);
+
+    /* Update entity level data to set entity as the last child of newParent */
+
+	// Update level's first entity if this is the first entity in the level
+    if(GetLevelFirstEntity(GetEntityLevel(entity)) == entity)
+		SetLevelFirstEntity(GetEntityLevel(entity), GetEntityNextSibling(entity));
+	// Update parent's firstChild if this is the first child
+	if(GetEntityFirstChild(GetEntityParent(entity)) == entity)
+		SetEntityFirstChild(GetEntityParent(entity), GetEntityNextSibling(entity));
+    // Update last sibling's nextSibling if last sibling is valid
+	SetEntityNextSibling(GetEntityLastSibling(entity), GetEntityNextSibling(entity));
+    // Update next sibling's lastSibling if next sibling is valid
+	SetEntityLastSibling(GetEntityNextSibling(entity), GetEntityLastSibling(entity));
+
+	Entity lastRootEntity = levelData[level].first;
+	// Find last root entity of the level
+    while(GetEntityNextSibling(lastRootEntity).IsValid())
+		lastRootEntity = GetEntityNextSibling(lastRootEntity);
+
+    // If lastRootEntity is valid, set entity as the next child after it
+	if(lastRootEntity.IsValid())
+	{
+		SetEntityNextSibling(lastRootEntity, entity);
+		onEntityLevelDataModified.Broadcast(lastRootEntity);
+	}
+    // Otherwise level is empty, so set entity as first in level
+    else
+		levelData[level].first = entity;
+
+    // Update entity's level data
+    entityData[entity.index].level = level;
+	entityData[entity.index].parent = {};
+    entityData[entity.index].nextSibling = {};
+    entityData[entity.index].lastSibling = lastRootEntity;
+    entityData[entity.index].depth = 0;
+
+	onEntityLevelDataModified.Broadcast(entity);
+
+    return true;
+}
 bool EntityManager::ReparentEntity(Entity entity, Entity newParent)
 {
 	assert(entity.IsValid() && "Invalid entity.");
@@ -103,8 +151,8 @@ bool EntityManager::ReparentEntity(Entity entity, Entity newParent)
     /* Update entity level data to set entity as the last child of newParent */
 
 	// Update level's first entity if this is the first entity in the level
-    if(levelData[entityData[entity.index].level].first == entity)
-		levelData[entityData[entity.index].level].first = entityData[entity.index].nextSibling;
+    if(GetLevelFirstEntity(GetEntityLevel(entity)) == entity)
+		SetLevelFirstEntity(GetEntityLevel(entity), GetEntityNextSibling(entity));
 	// Update parent's firstChild if this is the first child
 	if(GetEntityFirstChild(GetEntityParent(entity)) == entity)
 		SetEntityFirstChild(GetEntityParent(entity), GetEntityNextSibling(entity));
@@ -121,12 +169,12 @@ bool EntityManager::ReparentEntity(Entity entity, Entity newParent)
     // If lastSibling is valid, set entity as the next child after it
 	if(lastSibling.IsValid())
 	{
-		entityData[lastSibling.index].nextSibling = entity;
+		SetEntityNextSibling(lastSibling, entity);
 		onEntityLevelDataModified.Broadcast(lastSibling);
 	}
     // Otherwise newParent has no children, so set entity as firstChild instead
     else
-		entityData[newParent.index].firstChild = entity;
+		SetEntityFirstChild(newParent, entity);
 
     // Update entity's level data
     entityData[entity.index].level = entityData[newParent.index].level;
@@ -152,8 +200,8 @@ bool EntityManager::MoveEntityBefore(Entity entity, Entity next)
     /* Update entity level data to set entity as the last sibling before next */
 
 	// Update level's first entity if this is the first entity in the level
-    if(levelData[entityData[next.index].level].first == next)
-		levelData[entityData[next.index].level].first = entity;
+	if(GetLevelFirstEntity(GetEntityLevel(entity)) == entity)
+		SetLevelFirstEntity(GetEntityLevel(entity), GetEntityNextSibling(entity));
     // Update parent's firstChild if this is the first child
     if(GetEntityFirstChild(GetEntityParent(entity)) == entity)
 		SetEntityFirstChild(GetEntityParent(entity), GetEntityNextSibling(entity));
@@ -165,19 +213,22 @@ bool EntityManager::MoveEntityBefore(Entity entity, Entity next)
     Entity parent = entityData[next.index].parent;
     Entity previous = entityData[next.index].lastSibling;
 
+    // If next was the first entity of the level, entity will now be the first instead
+    if(GetLevelFirstEntity(GetEntityLevel(next)) == next)
+		SetLevelFirstEntity(GetEntityLevel(next), entity);
     // If next was the first child of its parent, entity will now be the first child instead
-	if(entityData[parent.index].firstChild == next)
+	if(GetEntityFirstChild(parent) == next)
 	{
-		entityData[parent.index].firstChild = entity;
+		SetEntityFirstChild(parent, entity);
 		onEntityLevelDataModified.Broadcast(parent);
 	}
     // Set entity as the last sibling before next
 	if(previous.IsValid())
 	{
-		entityData[previous.index].nextSibling = entity;
+		SetEntityNextSibling(previous, entity);
 		onEntityLevelDataModified.Broadcast(previous);
 	}
-	entityData[next.index].lastSibling = entity;
+	SetEntityLastSibling(next, entity);
 	onEntityLevelDataModified.Broadcast(next);
 
     // Update entity's level data
@@ -203,6 +254,9 @@ bool EntityManager::MoveEntityAfter(Entity entity, Entity previous)
 
     /* Update entity level data to set entity as the next sibling after previous */
 
+	// Update level's first entity if this is the first entity in the level
+	if(GetLevelFirstEntity(GetEntityLevel(entity)) == entity)
+		SetLevelFirstEntity(GetEntityLevel(entity), GetEntityNextSibling(entity));
     // Update parent's firstChild if this is the first child
     if(GetEntityFirstChild(GetEntityParent(entity)) == entity)
 		SetEntityFirstChild(GetEntityParent(entity), GetEntityNextSibling(entity));
@@ -217,10 +271,10 @@ bool EntityManager::MoveEntityAfter(Entity entity, Entity previous)
     // Set entity as the next sibling after previous
 	if(next.IsValid())
 	{
-		entityData[next.index].lastSibling = entity;
+		SetEntityLastSibling(next, entity);
 		onEntityLevelDataModified.Broadcast(next);
 	}
-	entityData[previous.index].nextSibling = entity;
+	SetEntityNextSibling(previous, entity);
 	onEntityLevelDataModified.Broadcast(previous);
 
     // Update entity's level data
@@ -391,6 +445,10 @@ std::unordered_map<void*, std::type_index> EntityManager::GetAllComponents(Entit
 	return components;
 }
 
+bool EntityManager::IsLevelValid(LevelID level) const
+{
+	return levelData.contains(level);
+}
 bool EntityManager::IsEntityValid(Entity entity) const
 {
 	// Entity index must be valid and of the same generation
@@ -424,6 +482,15 @@ bool EntityManager::IsEntityChildOf(Entity parent, Entity child) const
         }, parent);
 
     return isChild;
+}
+
+std::string EntityManager::GetLevelName(LevelID level) const
+{
+	return (IsLevelValid(level) ? levelData.at(level) : LevelData()).name;
+}
+Entity EntityManager::GetLevelFirstEntity(LevelID level) const
+{
+	return (IsLevelValid(level) ? levelData.at(level) : LevelData()).first;
 }
 
 std::string EntityManager::GetEntityName(Entity entity) const
@@ -516,7 +583,7 @@ void EntityManager::SaveLevel(const std::filesystem::path& levelPath)
 
 	/* Save all top-level entities in the level (each entity will recursively save their children) */
 
-	Entity entity = GetEntityFirstChild({});
+	Entity entity = GetLevelFirstEntity(INVALID_LEVEL);
 	while(entity.IsValid())
 	{
 		levelObject.children.push_back(SaveEntity(entity));
@@ -646,6 +713,12 @@ Entity EntityManager::GetEntityByIndex(uint32_t index)
 	entity.generation = index == INVALID_ENTITY ? INVALID_ENTITY : entityData[index].generationCount;
 
 	return entity;
+}
+
+void EntityManager::SetLevelFirstEntity(LevelID level, Entity entity)
+{
+	if(IsLevelValid(level))
+		levelData.at(level).first = entity;
 }
 
 void EntityManager::SetEntityParent(Entity entity, Entity parent)
