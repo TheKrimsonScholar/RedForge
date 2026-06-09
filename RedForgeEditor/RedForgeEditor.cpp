@@ -1,46 +1,3 @@
-//#include <crtdbg.h>
-//
-//#include "Engine.h"
-//
-//#include <QtWidgets/QApplication>
-//#include <QtWidgets/QWidget>
-//#include <QtWidgets/QHBoxLayout>
-//#include <QtGui/QVulkanWindow>
-//#include <QtWidgets/QWidget>
-//
-//#include "VulkanViewport.h"
-//
-//// ... QVulkanInstance and MyVulkanWindow definitions ...
-//
-//int main(int argc, char* argv[])
-//{
-//    _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
-//
-//    QApplication app(argc, argv);
-//
-//    Engine* engine = new Engine();
-//    engine->Startup(true);
-//
-//    QVulkanInstance vulkanInstance;
-//    // ... create vulkanInstance ...
-//
-//    VulkanViewport* vulkanViewport = new VulkanViewport();
-//    vulkanViewport->setVulkanInstance(&vulkanInstance);
-//
-//    // Create the QWidget wrapper for the QWindow
-//    QWidget* vulkanWidgetWrapper = QWidget::createWindowContainer(vulkanViewport);
-//
-//    // Use the wrapper widget in a QWidget main window/layout
-//    QWidget mainWindow;
-//    QHBoxLayout* layout = new QHBoxLayout(&mainWindow);
-//    layout->addWidget(vulkanWidgetWrapper);
-//
-//    // Add other Qt Widgets here, e.g., layout->addWidget(new QPushButton("UI"));
-//
-//    mainWindow.show();
-//    return app.exec();
-//}
-
 #include <QApplication>
 #include <QFile>
 #include <QStyleFactory>
@@ -59,7 +16,6 @@
 int main(int argc, char* argv[])
 {
     _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
-    //_CrtSetBreakAlloc(337);
 
     std::cout << GetEnginePath() << std::endl;
     std::cout << GetEngineAssetsPath() << std::endl;

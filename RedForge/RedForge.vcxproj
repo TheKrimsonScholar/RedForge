@@ -466,6 +466,8 @@
     <ClCompile Include="DebugLogEvent.cpp" />
     <ClCompile Include="DebugManager.cpp" />
     <ClCompile Include="DebugState.cpp" />
+    <ClCompile Include="DefaultCameraControllerComponent.cpp" />
+    <ClCompile Include="DefaultCameraControllerSystem.cpp" />
     <ClCompile Include="Engine.cpp" />
     <ClCompile Include="EntityManager.cpp" />
     <ClCompile Include="Event.cpp" />
@@ -534,6 +536,8 @@
     <ClInclude Include="DebugMacros.h" />
     <ClInclude Include="DebugManager.h" />
     <ClInclude Include="DebugState.h" />
+    <ClInclude Include="DefaultCameraControllerComponent.h" />
+    <ClInclude Include="DefaultCameraControllerSystem.h" />
     <ClInclude Include="Engine.h" />
     <ClInclude Include="EngineParams.h" />
     <ClInclude Include="EntityManager.h" />
