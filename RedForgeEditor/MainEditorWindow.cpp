@@ -18,12 +18,15 @@ MainEditorWindow::MainEditorWindow(QWidget* parent) : QMainWindow(parent)
 
 	Engine* engine = Editor::CreateEngineInstance();
 
+	editorConfig = EditorConfiguration::LoadFromFile();
+
 	viewport = new VulkanViewport(engine);
 	viewport->onSurfaceInitialized = 
 		[this, engine](VkSurfaceKHR surface)
 		{
 			EngineStartupParams startupParams = engine->CreateStartupParams();
 			startupParams.surfaceOverride = surface;
+			startupParams.startupLevelPath = editorConfig.startupLevelPath;
 
 			engine->GetWorld().GetResource<InputState>().SetActiveInputLayer(startupParams, inputLayer);
 			engine->GetWorld().GetResource<DebugCameraState>().isActive = true;
@@ -82,8 +85,6 @@ MainEditorWindow::~MainEditorWindow()
 
 void MainEditorWindow::Initialize()
 {
-	Editor::GetEntityManager().LoadLevel(L"Levels/Level.txt");
-
 	viewport->Initialize();
 	hierarchyPanel->Initialize();
 	fileBrowserPanel->Initialize();

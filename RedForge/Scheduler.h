@@ -1,17 +1,15 @@
 #pragma once
 
 #include "Stage.h"
-//#include "Phase.h"
-
-#include "SystemMacros.h"
 
 class Scheduler
 {
 private:
 	World* world;
 
-	std::vector<std::type_index> systemTypes;
-	std::unordered_map<std::type_index, SystemBase*> systems;
+	std::vector<TypeID> systemTypes;
+	std::unordered_map<TypeID, SystemBase*> systems;
+	std::unordered_map<TypeID, size_t> systemPhaseIndices;
 
 	//std::vector<Stage> stages;
 	std::vector<Phase> phases;
@@ -28,7 +26,7 @@ private:
 
 	void GeneratePhases();
 
-	bool IsSystemCompatibleWithPhase(std::type_index systemType, const Phase& phase);
+	bool IsSystemCompatibleWithPhase(TypeID systemType, const Phase& phase);
 
 	void Update(float deltaTime);
 	void RunPhase(size_t phaseIndex, float deltaTime);

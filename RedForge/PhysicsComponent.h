@@ -1,13 +1,16 @@
 #pragma once
 
-#include <glm/glm.hpp>
+#include "KMath.h"
 
 #include "TransformComponent.h"
 
-#include "ComponentRegistrationMacros.h"
+#include "ComponentRegistration.h"
 
-struct PhysicsComponent
+struct PhysicsComponent : public IComponent
 {
+    SERIALIZED_COMPONENT_VARS()
+	REPLICATED_COMPONENT_VARS()
+
     bool isStatic;
 
     float mass = 1;
@@ -31,16 +34,3 @@ public:
     float GetMass() const;
     float GetInverseMass() const;
 };
-
-REGISTER_COMPONENT_BEGIN(PhysicsComponent)
-COMPONENT_REQUIRES(TransformComponent)
-COMPONENT_VARS_BEGIN
-COMPONENT_VAR(float, mass)
-COMPONENT_VAR(float, bounciness)
-COMPONENT_VAR(float, staticFriction)
-COMPONENT_VAR(float, dynamicFriction)
-COMPONENT_VAR(glm::vec3, gravity)
-COMPONENT_VAR(glm::vec3, velocity)
-COMPONENT_VAR(glm::vec3, angularVelocity)
-COMPONENT_VARS_END
-REGISTER_COMPONENT_END(PhysicsComponent)

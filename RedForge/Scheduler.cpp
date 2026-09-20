@@ -3,45 +3,19 @@
 #include <unordered_set>
 #include <queue>
 
-#include "SystemMacros.h"
+#include "TypeRegistry.h"
 
 #define DEBUG_NEW new(_NORMAL_BLOCK, __FILE__, __LINE__)
 #define new DEBUG_NEW
 
 Scheduler::Scheduler()
 {
-	/* Sort all systems in dependent order */
-
-	std::vector<std::type_index> systemTypesList = GetRegisteredSystemsList();
-	std::unordered_map<std::type_index, size_t> systemInDegrees;
-	std::queue<std::type_index> zeroInDegreeSystems;
-	for(std::type_index system : systemTypesList)
-	{
-		systemInDegrees[system] = GET_SYSTEM_DEPENDENCIES(system).size();
-		if(systemInDegrees[system] == 0)
-			zeroInDegreeSystems.push(system);
-	}
-
-	std::vector<std::type_index> sortedSystems;
-	while(!zeroInDegreeSystems.empty())
-	{
-		std::type_index system = zeroInDegreeSystems.front();
-		zeroInDegreeSystems.pop();
-
-		sortedSystems.push_back(system);
-		for(std::type_index dependent : GET_SYSTEM_DEPENDENTS(system))
-		{
-			systemInDegrees[dependent]--;
-			if(systemInDegrees[dependent] == 0)
-				zeroInDegreeSystems.push(dependent);
-		}
-	}
-
-	systemTypes = sortedSystems;
+	// Get the list of all registered systems in dependent order
+	systemTypes = TypeRegistry::GetSystemDependencyHierarchy().GetTopologicallySortedListBFS();
 
 	// Instantiate all registered systems
-	for(std::type_index systemType : systemTypes)
-		systems[systemType] = GetRegisteredSystemInfoMap()[systemType].createSystem();
+	for(TypeID systemType : systemTypes)
+		systems[systemType] = TypeRegistry::GetRegisteredSystemInfoMap().at(systemType).createSystem();
 }
 Scheduler::~Scheduler()
 {
@@ -84,13 +58,13 @@ void Scheduler::GeneratePhases()
 {
 	/* Generate phases from sorted systems list */
 
-	for(std::type_index system : systemTypes)
+	for(TypeID system : systemTypes)
 	{
 		size_t minPhase = 0;
 		// Determine the minimum phase index this system can be placed in based on its dependencies
-		for(std::type_index dependency : GET_SYSTEM_DEPENDENCIES(system))
+		for(TypeID dependency : GET_SYSTEM_DEPENDENCIES(system))
 		{
-			size_t dependencyPhase = GET_SYSTEM_PHASEINDEX(dependency);
+			size_t dependencyPhase = systemPhaseIndices.at(dependency);
 			if(dependencyPhase + 1 > minPhase)
 				minPhase = dependencyPhase + 1;
 		}
@@ -102,21 +76,22 @@ void Scheduler::GeneratePhases()
 			if(IsSystemCompatibleWithPhase(system, phases[phaseIndex]))
 			{
 				phases[phaseIndex].AddSystem(world, system, systems[system]);
-				GetRegisteredSystemInfoMap()[system].phaseIndex = phaseIndex;
+				systemPhaseIndices.emplace(system, phaseIndex);
 				placedInPhase = true;
 				break;
 			}
 		}
 		// If the system couldn't be placed in an existing phase, create a new phase for it
-		if(GET_SYSTEM_PHASEINDEX(system) == -1)
+		if(systemPhaseIndices.find(system) == systemPhaseIndices.end())
 		{
 			Phase& newPhase = phases.emplace_back();
 			newPhase.AddSystem(world, system, systems[system]);
+			systemPhaseIndices.emplace(system, phases.size() - 1);
 		}
 	}
 }
 
-bool Scheduler::IsSystemCompatibleWithPhase(std::type_index systemType, const Phase& phase)
+bool Scheduler::IsSystemCompatibleWithPhase(TypeID systemType, const Phase& phase)
 {
 	std::vector<std::type_index> systemWrites = GET_SYSTEM_WRITELIST(systemType);
 	std::vector<std::type_index> systemReads = GET_SYSTEM_READLIST(systemType);
@@ -150,7 +125,7 @@ void Scheduler::Update(float deltaTime)
 		RunPhase(i, deltaTime);
 
 	// Finalize queued events by swapping the read and write buffers of all event queues
-	for(const std::pair<std::type_index, IEventQueue*>& eventQueue : world->eventQueues)
+	for(const std::pair<TypeID, IEventQueue*>& eventQueue : world->eventQueues)
 		eventQueue.second->SwapBuffers();
 	
 	isRunningExternalTasks = true;

@@ -55,17 +55,17 @@ class CommandBuffer
 	struct AddComponentCommand
 	{
 		Entity entity;
-		std::type_index componentType;
+		TypeID componentType;
 		//void* component;
 	};
 	struct RemoveComponentCommand
 	{
 		Entity entity;
-		std::type_index componentType;
+		TypeID componentType;
 	};
 	struct QueueEventCommand
 	{
-		std::type_index eventType;
+		TypeID eventType;
 		//void* event;
 	};
 
@@ -119,24 +119,24 @@ public:
 		MoveEntityAfterCommand command = { entity, previous };
 		WriteCommand(ECommandType::MoveEntityAfter, &command);
 	}
-	void Command_AddComponent(const Entity& entity, std::type_index componentType, void* component)
+	void Command_AddComponent(const Entity& entity, TypeID componentType, void* component)
 	{
 		AddComponentCommand command = { entity, componentType };
 
 		// Write command with the component as extra data
-		WriteCommand(ECommandType::AddComponent, &command, GET_COMPONENT_SIZE(componentType), component);
+		WriteCommand(ECommandType::AddComponent, &command, GET_TYPE_SIZE(componentType), component);
 	}
-	void Command_RemoveComponent(const Entity& entity, std::type_index componentType)
+	void Command_RemoveComponent(const Entity& entity, TypeID componentType)
 	{
 		RemoveComponentCommand command = { entity, componentType };
 		WriteCommand(ECommandType::RemoveComponent, &command);
 	}
-	void Command_QueueEvent(std::type_index eventType, const void* event)
+	void Command_QueueEvent(TypeID eventType, const void* event)
 	{
 		QueueEventCommand command = { eventType };
 
 		// Write command with the event as extra data
-		WriteCommand(ECommandType::QueueEvent, &command, GET_EVENT_SIZE(eventType), event);
+		WriteCommand(ECommandType::QueueEvent, &command, GET_TYPE_SIZE(eventType), event);
 	}
 
 	void Flush()
@@ -203,14 +203,14 @@ public:
 					AddComponentCommand* command = reinterpret_cast<AddComponentCommand*>(data);
 					void* component = extra;
 
-					world->GetEntityManager().AddComponentOfType(ResolveTransientEntity(command->entity), command->componentType, component);
+					world->GetEntityManager().AddComponentOfType(ResolveTransientEntity(command->entity), { command->componentType }, component);
 				}
 				break;
 				case ECommandType::RemoveComponent:
 				{
 					RemoveComponentCommand* command = reinterpret_cast<RemoveComponentCommand*>(data);
 
-					world->GetEntityManager().RemoveComponentOfType(ResolveTransientEntity(command->entity), command->componentType);
+					world->GetEntityManager().RemoveComponentOfType(ResolveTransientEntity(command->entity), { command->componentType });
 				}
 				break;
 				case ECommandType::QueueEvent:
@@ -220,8 +220,8 @@ public:
 
 					/* Use event reflection to manually resolve any transient entities found in event arguments */
 
-					std::vector<std::pair<void*, EventVariableInfo>> eventVariables = GET_EVENT_VARS(command->eventType, event);
-					for(const std::pair<void*, EventVariableInfo>& eventVariable : eventVariables)
+					std::vector<std::pair<void*, EventVariableTypeInfo>> eventVariables = GET_EVENT_VARS(command->eventType, event);
+					for(const std::pair<void*, EventVariableTypeInfo>& eventVariable : eventVariables)
 					{
 						// If the event variable is of type Entity, cast it to Entity and resolve its permanent ID in-place
 						if(eventVariable.second.variableType == typeid(Entity))

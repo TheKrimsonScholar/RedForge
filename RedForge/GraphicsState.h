@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ResourceRegistrationMacros.h"
+#include "ResourceRegistration.h"
 
 #include "Vertex.h"
 #include "TextureCube.h"
@@ -62,6 +62,9 @@ struct DrawBatch
 
 struct GraphicsState : public IResource
 {
+    SERIALIZED_RESOURCE_VARS()
+	REPLICATED_RESOURCE_VARS()
+
     VkInstance vulkanInstance;
     VkDebugUtilsMessengerEXT debugMessenger;
     VkSurfaceKHR surface;
@@ -143,7 +146,7 @@ struct GraphicsState : public IResource
 
     std::vector<DrawBatch> drawBatches;
 
-private:
+protected:
     REDFORGE_API void Startup(const EngineStartupParams& params, World& world) override;
     REDFORGE_API void Shutdown(const EngineShutdownParams& params, World& world) override;
 
@@ -179,4 +182,4 @@ public:
 private:
     uint32_t FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) const;
 };
-REGISTER_RESOURCE(GraphicsState)
+REGISTER_RESOURCE_TYPE(GraphicsState, IResource)

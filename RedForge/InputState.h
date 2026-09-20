@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ResourceRegistrationMacros.h"
+#include "ResourceRegistration.h"
 
 #include "EngineParams.h"
 
@@ -26,6 +26,9 @@ class InputLayer;
 
 struct InputState : public IResource
 {
+	SERIALIZED_RESOURCE_VARS()
+	REPLICATED_RESOURCE_VARS()
+
 private:
 	InputLayer* activeInputLayer = nullptr;
 
@@ -41,7 +44,7 @@ public:
 	glm::dvec2 mousePosition = { 0, 0 };
 	glm::dvec2 mouseDelta = { 0, 0 };
 
-private:
+protected:
 	REDFORGE_API void Startup(const EngineStartupParams& params, World& world) override;
 	REDFORGE_API void Shutdown(const EngineShutdownParams& params, World& world) override;
 
@@ -56,4 +59,4 @@ public:
 	InputLayer* GetActiveInputLayer() { return activeInputLayer; }
 	void SetActiveInputLayer(const EngineStartupParams& params, InputLayer* inputLayer) { activeInputLayer = inputLayer; }
 };
-REGISTER_RESOURCE(InputState)
+REGISTER_RESOURCE_TYPE(InputState, IResource)

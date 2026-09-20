@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ResourceRegistrationMacros.h"
+#include "ResourceRegistration.h"
 
 #include "GLFWInputLayer.h"
 
@@ -11,6 +11,9 @@
 
 struct Window : public IResource
 {
+	SERIALIZED_RESOURCE_VARS()
+	REPLICATED_RESOURCE_VARS()
+
 	GLFWwindow* window;
 	GLFWInputLayer inputLayer;
 
@@ -27,7 +30,7 @@ struct Window : public IResource
 
 	bool wasFramebufferResized = false;
 
-private:
+protected:
 	REDFORGE_API void Startup(const EngineStartupParams& params, World& world) override;
 	REDFORGE_API void Shutdown(const EngineShutdownParams& params, World& world) override;
 
@@ -36,4 +39,4 @@ public:
     uint32_t GetHeight() const { return swapChainExtent.height; };
     REDFORGE_API float GetAspectRatio() const { return (float) GetWidth() / (float) GetHeight(); };
 };
-REGISTER_RESOURCE(Window)
+REGISTER_RESOURCE_TYPE(Window, IResource)

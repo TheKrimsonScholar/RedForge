@@ -4,16 +4,19 @@
 #include <functional>
 #include <cstdint>
 
-#include "ComponentRegistrationMacros.h"
+#include "ComponentRegistration.h"
 
-struct InputComponent
+struct InputComponent : public IComponent
 {
+	SERIALIZED_COMPONENT_VARS()
+	REPLICATED_COMPONENT_VARS()
+
 	std::unordered_map<uint32_t, std::function<void(Entity)>> mouseDownCallbacks;
 
 	std::unordered_map<uint32_t, std::function<void(Entity)>> keyDownCallbacks;
 };
 
-REGISTER_COMPONENT_BEGIN(InputComponent)
+REGISTER_COMPONENT_TYPE_BEGIN(InputComponent, IComponent)
 COMPONENT_VARS_BEGIN
 COMPONENT_VARS_END
-REGISTER_COMPONENT_END(InputComponent)
+REGISTER_COMPONENT_TYPE_END(InputComponent)

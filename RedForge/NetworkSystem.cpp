@@ -2,19 +2,51 @@
 
 #include <iostream>
 
-void NetworkSystem::Startup()
+#include "NetworkComponent.h"
+
+void NetworkSystem::Startup(const EngineStartupParams& params, World& world)
 {
-    Connect();
+    #ifdef NETMODE_SERVER
+    InitializeServer();
+    #endif // NETMODE_SERVER
+    #ifdef NETMODE_CLIENT
+    if(params.ShouldConnectToServer())
+        ConnectToHost(params.startupLevelPath.string(), world);
+    #endif // NETMODE_CLIENT
 }
-void NetworkSystem::Shutdown()
+void NetworkSystem::PostStartup(const EngineStartupParams& params, World& world)
+{
+
+}
+void NetworkSystem::Shutdown(const EngineShutdownParams& params, World& world)
 {
     Disconnect();
 }
 
-void NetworkSystem::Update()
+void NetworkSystem::Update(LocalSystemContext& ctx, float deltaTime)
 {
     if(!isConnected)
         return;
+
+    #ifdef NETMODE_SERVER
+    // Replication logic
+
+    // Iterate through all replicated component types and query for entities with that component and network component
+    for(TypeID replicatedComponentType : GET_TYPES_DERIVED_FROM(TYPEID(IReplicatedComponent)))
+    {
+        ctx.ForEachComponentOfType({ TypeRegistry::GetTypeID<NetworkComponent>(), replicatedComponentType },
+            [this, replicatedComponentType](const Entity& entity, std::span<void*> components) -> void
+            {
+                //std::string msg = "awd";
+				//ENetPacket* replicationPacket = enet_packet_create(msg.c_str(), msg.size() + 1, ENET_PACKET_FLAG_RELIABLE);
+                //enet_host_broadcast(host, 0, replicationPacket);
+                //enet_host_flush(host);
+                
+                //int k = 0;
+                //REPLICATE_COMPONENT(replicatedComponentType);
+            });
+    }
+    #endif // NETMODE_SERVER
 
     #ifdef NETMODE_SERVER
     ENetEvent event;
@@ -24,6 +56,27 @@ void NetworkSystem::Update()
         {
             case ENET_EVENT_TYPE_CONNECT:
                 std::cout << "Client connected from " << event.peer->address.host << "\n";
+				/*ctx.ForEachEntity([this](const Entity& entity)
+					{
+						if(!ctx.HasComponent<NetworkComponent>(entity))
+							ctx.AddComponent<NetworkComponent>(entity, NetworkComponent());
+					});*/
+                
+                /*{
+                    std::string msg = "awd";
+                    ENetPacket* replicationPacket = enet_packet_create(msg.c_str(), msg.size() + 1, ENET_PACKET_FLAG_RELIABLE);
+                    enet_host_broadcast(host, 0, replicationPacket);
+                    enet_host_flush(host);
+                }*/
+
+                {
+                    ENetPacket* packet = CreatePacket_CreateEntity();
+                    enet_host_broadcast(host, 0, packet);
+                    enet_host_flush(host);
+                }
+                
+                ctx.CreateEntity({}, "Hello");
+                //InitializeConnectedClient();
                 break;
             case ENET_EVENT_TYPE_RECEIVE:
                 std::cout << "Message from client: " << (char*) event.packet->data << "\n";
@@ -43,9 +96,18 @@ void NetworkSystem::Update()
         switch(event.type)
         {
             case ENET_EVENT_TYPE_RECEIVE:
+            {
+                const NetworkPacket* packet = reinterpret_cast<NetworkPacket*>(event.packet->data);
+                switch(packet->packetType)
+                {
+				    case ENetworkPacketType::CreateEntity:
+                        ReceivePacket_CreateEntity(ctx, reinterpret_cast<NetworkPacket_CreateEntity*>(packet->data));
+					    break;
+                }
                 std::cout << "Server says: " << (char*) event.packet->data << "\n";
                 enet_packet_destroy(event.packet);
                 break;
+            }
             case ENET_EVENT_TYPE_DISCONNECT:
                 std::cout << "Disconnected from server.\n";
                 break;
@@ -55,7 +117,7 @@ void NetworkSystem::Update()
     #endif // NETMODE_CLIENT
 }
 
-bool NetworkSystem::Connect()
+bool NetworkSystem::InitializeServer()
 {
     if(isConnected)
         return false;
@@ -69,7 +131,7 @@ bool NetworkSystem::Connect()
     atexit(enet_deinitialize);
 
     ENetAddress address;
-    address.host = ENET_HOST_ANY;   // listen on all interfaces
+    address.host = ENET_HOST_ANY; // Listen on all interfaces
     address.port = 1234;
 
     host = enet_host_create(&address, 32, 2, 0, 0);
@@ -81,6 +143,16 @@ bool NetworkSystem::Connect()
 
     std::cout << "Server started on port 1234...\n";
     #endif // NETMODE_SERVER
+
+    isConnected = true;
+
+    return true;
+}
+bool NetworkSystem::ConnectToHost(std::string hostAddress, World& world)
+{
+    if(isConnected)
+        return false;
+
     #ifdef NETMODE_CLIENT
     if(enet_initialize() != 0)
     {
@@ -97,13 +169,13 @@ bool NetworkSystem::Connect()
     }
 
     ENetAddress address;
-    enet_address_set_host(&address, "127.0.0.1"); // server IP
+    enet_address_set_host(&address, hostAddress.c_str());
     address.port = 1234;
 
-    ENetPeer* peer = enet_host_connect(host, &address, 2, 0);
-    if(!peer)
+    server = enet_host_connect(host, &address, 2, 0);
+    if(!server)
     {
-        std::cerr << "No available peers.\n";
+        std::cerr << "No available servers.\n";
         return false;
     }
 
@@ -115,13 +187,16 @@ bool NetworkSystem::Connect()
 
         std::string msg = "Hello from client!";
         ENetPacket* packet = enet_packet_create(msg.c_str(), msg.size() + 1, ENET_PACKET_FLAG_RELIABLE);
-        enet_peer_send(peer, 0, packet);
+        enet_peer_send(server, 0, packet);
         enet_host_flush(host);
+
+        // Clear all active entities so the client can synchronize with the server's current world state
+        world.GetEntityManager().UnloadAllLevels();
     }
     else
     {
         std::cerr << "Connection to server failed.\n";
-        enet_peer_reset(peer);
+        enet_peer_reset(server);
     }
     #endif // NETMODE_CLIENT
 
@@ -142,4 +217,57 @@ void NetworkSystem::Disconnect()
     #endif // NETMODE_CLIENT
 
     isConnected = false;
+}
+
+void NetworkSystem::InitializeConnectedClient(const World& world)
+{
+    auto k = 1;
+}
+
+ENetPacket* NetworkSystem::CreatePacket_CreateEntity()
+{
+    //std::string msg = "Hello from client!";
+    //return enet_packet_create(msg.c_str(), msg.size() + 1, ENET_PACKET_FLAG_RELIABLE);
+
+    NetworkPacket_CreateEntity packetData = {};
+    packetData.parent = {};
+    //packetData.name = "Hello";
+
+	/*NetworkPacket packet = {};
+	packet.packetType = ENetworkPacketType::CreateEntity;
+    memcpy(&packet.data, &packetData, sizeof(NetworkPacket_CreateEntity));
+	packet.data = &packetData;
+
+    return enet_packet_create(&packet, sizeof(ENetworkPacketType) + sizeof(NetworkPacket_CreateEntity), ENET_PACKET_FLAG_RELIABLE);*/
+
+    char* packet = (char*) malloc(sizeof(ENetworkPacketType) + sizeof(NetworkPacket_CreateEntity));
+    if(!packet)
+        return nullptr;
+    
+	ENetworkPacketType packetType = ENetworkPacketType::CreateEntity;
+    memcpy(packet, &packetType, sizeof(ENetworkPacketType));
+    memcpy(packet + sizeof(ENetworkPacketType), &packetData, sizeof(NetworkPacket_CreateEntity));
+
+    ENetPacket* packetToSend = enet_packet_create(packet, sizeof(ENetworkPacketType) + sizeof(NetworkPacket_CreateEntity), ENET_PACKET_FLAG_RELIABLE);
+
+    free(packet);
+
+    int k1 = 4;
+    packetByteStream << k1;
+    std::string k2 = "Hello";
+    packetByteStream << k2;
+
+	int dst1;
+    packetByteStream >> dst1;
+    std::string dst2;
+    packetByteStream >> dst2;
+
+    packetByteStream.Clear();
+
+    return packetToSend;
+}
+
+void NetworkSystem::ReceivePacket_CreateEntity(LocalSystemContext& ctx, const NetworkPacket_CreateEntity* packetData)
+{
+	ctx.CreateEntity(packetData->parent, "K");
 }

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "EditorConfiguration.h"
+
 #include <QtWidgets/QMainWindow>
 
 #include "VulkanViewport.h"
@@ -17,6 +19,8 @@ class MainEditorWindow : public QMainWindow
 
 private:
     static inline MainEditorWindow* Instance;
+
+    EditorConfiguration editorConfig;
 
     EditorToolbar* toolbar;
     VulkanViewport* viewport;

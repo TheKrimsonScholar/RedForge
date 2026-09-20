@@ -1,7 +1,7 @@
 #pragma once
 
 #include "System.h"
-#include "SystemRegistrationMacros.h"
+#include "SystemRegistration.h"
 
 #include "TimeResource.h"
 

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "EventRegistrationMacros.h"
+#include "EventRegistration.h"
 
 enum class ELogType
 {

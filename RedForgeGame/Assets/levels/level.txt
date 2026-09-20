@@ -4,15 +4,18 @@ $Level
 		Name=Cube
 		PrefabPath=C:/Users/krims/Documents/GitHub/RedForge/RedForge/../Assets/Engine/Cube.entity
 		$Component
-			TypeName=TransformComponent
+			TypeName=NetworkComponent
+		$$
+		$Component
+			TypeName=MeshRendererComponent
+			mesh="default.obj" 
+			material="default" 
+		$$
+		$Component
 			location=(0, 0, 0) 
+			TypeName=TransformComponent
 			rotation=(0, -0, -1, 7.54979e-08) 
 			scale=(1, 1, 1) 
-		$$
-		$Component
-			TypeName=MeshRendererComponent
-			mesh="default.obj" 
-			material="default" 
 		$$
 		$Component
 			TypeName=PhysicsComponent
@@ -29,15 +32,15 @@ $Level
 		Name=Cube
 		PrefabPath=C:/Users/krims/Documents/GitHub/RedForge/RedForge/../Assets/Engine/Cube.entity
 		$Component
+			TypeName=MeshRendererComponent
+			mesh="default.obj" 
+			material="default" 
+		$$
+		$Component
+			TypeName=TransformComponent
 			location=(-5.5, 0, 0) 
-			TypeName=TransformComponent
 			rotation=(0, -0, -1, 7.54979e-08) 
 			scale=(1, 1, 1) 
-		$$
-		$Component
-			TypeName=MeshRendererComponent
-			mesh="default.obj" 
-			material="default" 
 		$$
 		$Component
 			angularVelocity=(0, 0, 0) 
@@ -54,15 +57,15 @@ $Level
 		Name=Cube
 		PrefabPath=C:/Users/krims/Documents/GitHub/RedForge/RedForge/../Assets/Engine/Cube.entity
 		$Component
-			TypeName=TransformComponent
-			location=(3.4, 0, 0) 
-			rotation=(0, -0, -1, 7.54979e-08) 
-			scale=(1, 1, 1) 
-		$$
-		$Component
 			TypeName=MeshRendererComponent
 			mesh="default.obj" 
 			material="default" 
+		$$
+		$Component
+			location=(3.4, 0, 0) 
+			TypeName=TransformComponent
+			rotation=(0, -0, -1, 7.54979e-08) 
+			scale=(1, 1, 1) 
 		$$
 		$Component
 			TypeName=PhysicsComponent

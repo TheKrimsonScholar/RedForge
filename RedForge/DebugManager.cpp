@@ -7,7 +7,7 @@
 
 #include "DebugLogEvent.h"
 
-#include "SystemRegistrationMacros.h"
+#include "SystemRegistration.h"
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -15,9 +15,9 @@
 #define DEBUG_NEW new(_NORMAL_BLOCK, __FILE__, __LINE__)
 #define new DEBUG_NEW
 
-REGISTER_SYSTEM_BEGIN(DebugManager)
+REGISTER_SYSTEM_TYPE_BEGIN(DebugManager, System<const DebugState>)
 SYSTEM_REQUIRES(ResourceManager)
-REGISTER_SYSTEM_END(DebugManager)
+REGISTER_SYSTEM_TYPE_END(DebugManager)
 
 void DebugManager::Startup(const EngineStartupParams& params, World& world)
 {

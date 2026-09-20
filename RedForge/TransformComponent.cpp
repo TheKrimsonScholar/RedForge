@@ -1,7 +1,12 @@
 #include "TransformComponent.h"
 
-#define GLM_ENABLE_EXPERIMENTAL
-#include <glm/gtx/quaternion.hpp>
+REGISTER_COMPONENT_TYPE_BEGIN(TransformComponent, IComponent)
+COMPONENT_VARS_BEGIN
+COMPONENT_VAR_REPLICATED(glm::vec3, location)
+COMPONENT_VAR_REPLICATED(glm::quat, rotation)
+COMPONENT_VAR_REPLICATED(glm::vec3, scale)
+COMPONENT_VARS_END
+REGISTER_COMPONENT_TYPE_END(TransformComponent)
 
 void TransformComponent::MoveRelative(glm::vec3 vector)
 {

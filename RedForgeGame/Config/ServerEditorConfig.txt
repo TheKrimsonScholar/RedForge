@@ -1,0 +1,3 @@
+$EditorConfig
+	DefaultLevel=Levels/Level.txt
+$$

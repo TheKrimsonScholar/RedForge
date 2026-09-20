@@ -1,6 +1,14 @@
 #include "ColliderComponent.h"
 
-#include <glm/gtc/matrix_transform.hpp>
+REGISTER_COMPONENT_TYPE_BEGIN(ColliderComponent, IComponent)
+COMPONENT_REQUIRES(TransformComponent)
+COMPONENT_VARS_BEGIN
+//COMPONENT_VAR(EColliderType, colliderType)
+COMPONENT_VAR(glm::vec3, center)
+COMPONENT_VAR(glm::vec3, halfSize)
+COMPONENT_VAR(float, radius)
+COMPONENT_VARS_END
+REGISTER_COMPONENT_TYPE_END(ColliderComponent)
 
 glm::mat4 ColliderComponent::GetInertiaTensor(float mass) const
 {

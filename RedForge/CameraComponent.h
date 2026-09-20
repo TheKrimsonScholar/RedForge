@@ -2,7 +2,7 @@
 
 #include <glm/glm.hpp>
 
-#include "ComponentRegistrationMacros.h"
+#include "ComponentRegistration.h"
 
 #include "SystemContext.h"
 #include "TransformComponent.h"
@@ -13,8 +13,11 @@ enum class ECameraProjectionType
 	Orthographic
 };
 
-struct CameraComponent
+struct CameraComponent : public IComponent
 {
+	SERIALIZED_COMPONENT_VARS()
+	REPLICATED_COMPONENT_VARS()
+
 	ECameraProjectionType projectionType;
 
 	float nearClipPlaneDistance;
@@ -36,9 +39,6 @@ public:
 	glm::mat4 GetProjectionMatrix() const;
 };
 
-REGISTER_COMPONENT_BEGIN(CameraComponent)
-COMPONENT_VARS_BEGIN
-COMPONENT_VARS_END
-REGISTER_COMPONENT_END(CameraComponent)
+REGISTER_COMPONENT_TYPE(CameraComponent, IComponent)
 
 glm::mat4 GetViewMatrix(Entity cameraEntity, SystemContext<const TransformComponent> ctx);

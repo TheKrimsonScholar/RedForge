@@ -7,7 +7,7 @@
 #include "DebugManager.h"
 #include "LevelManager.h"
 
-REGISTER_SYSTEM(PhysicsSystem)
+REGISTER_SYSTEM_TYPE(PhysicsSystem, System<PhysicsComponent, const ColliderComponent, TransformComponent>)
 
 PhysicsSystem::PhysicsSystem()
 {

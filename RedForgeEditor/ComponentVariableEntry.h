@@ -1,6 +1,8 @@
 #pragma once
 
 #include <typeindex>
+#include <math.h>
+#include <cmath>
 
 #include "Editor.h"
 

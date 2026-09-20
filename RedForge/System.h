@@ -6,7 +6,7 @@
 #include "SystemContext.h"
 #include "EngineParams.h"
 
-//#include "SystemRegistrationMacros.h"
+#include "TypeRegistration.h"
 
 class SystemBase
 {
@@ -25,9 +25,19 @@ public:
 	
 	friend class Scheduler;
 };
+REGISTER_TYPE(SystemBase)
 template<typename... Components>
 class System : public SystemBase
 {
+	typedef System<Components...> LocalSystemAlias;
+	struct RegisterType_LocalSystemAlias : public RegisterTypeBase {
+		RegisterType_LocalSystemAlias() : RegisterTypeBase("LocalSystemAlias") {
+			AddToRegistry<LocalSystemAlias, SystemBase>();
+		} void Register() override {
+			RegisterType<LocalSystemAlias, SystemBase>();
+		}
+	};static inline RegisterType_LocalSystemAlias RegisterType_LocalSystemAlias_Instance;
+
 protected:
 	typedef SystemContext<Components...> LocalSystemContext;
 

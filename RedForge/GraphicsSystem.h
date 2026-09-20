@@ -201,6 +201,6 @@ private:
 
     void UpdateUniformBuffer(const GraphicsState& graphicsState, const Cameras& cameras, SystemContext<const TransformComponent, const CameraComponent> ctx, uint32_t currentImage);
 };
-REGISTER_SYSTEM_BEGIN(GraphicsSystem)
+REGISTER_SYSTEM_TYPE_BEGIN(GraphicsSystem, System<Window, GraphicsState, const Cameras, const Assets, const Time, TransformComponent, MeshRendererComponent, const LightComponent, const CameraComponent>)
 SYSTEM_REQUIRES(WindowSystem)
-REGISTER_SYSTEM_END(GraphicsSystem)
+REGISTER_SYSTEM_TYPE_END(GraphicsSystem)

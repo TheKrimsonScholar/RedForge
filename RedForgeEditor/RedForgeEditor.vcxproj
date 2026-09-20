@@ -512,6 +512,7 @@
     <ClCompile Include="ConsolePanel.cpp" />
     <ClCompile Include="DragFloat.cpp" />
     <ClCompile Include="Editor.cpp" />
+    <ClCompile Include="EditorConfiguration.cpp" />
     <ClCompile Include="EditorPanel.cpp" />
     <ClCompile Include="EditorToolbar.cpp" />
     <ClCompile Include="EntityHierarchyItemModel.cpp" />
@@ -543,6 +544,7 @@
     <QtMoc Include="ComponentVariableEntry_Vector3.h" />
     <QtMoc Include="ConsolePanel.h" />
     <ClInclude Include="Editor.h" />
+    <ClInclude Include="EditorConfiguration.h" />
     <ClInclude Include="EditorPaths.h" />
     <QtMoc Include="EntityHierarchyTreeView.h" />
     <QtMoc Include="EditorToolbar.h" />

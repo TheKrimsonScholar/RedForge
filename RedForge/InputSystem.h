@@ -1,7 +1,7 @@
 #pragma once
 
 #include "System.h"
-#include "SystemRegistrationMacros.h"
+#include "SystemRegistration.h"
 
 #include "WindowSystem.h"
 
@@ -30,6 +30,6 @@ public:
 	
 	REDFORGE_API void Update(LocalSystemContext& ctx, float deltaTime) override;
 };
-REGISTER_SYSTEM_BEGIN(InputSystem)
+REGISTER_SYSTEM_TYPE_BEGIN(InputSystem, System<InputState>)
 SYSTEM_REQUIRES(WindowSystem)
-REGISTER_SYSTEM_END(InputSystem)
+REGISTER_SYSTEM_TYPE_END(InputSystem)

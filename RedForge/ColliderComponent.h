@@ -1,10 +1,10 @@
 #pragma once
 
-#include <glm/glm.hpp>
+#include "KMath.h"
 
 #include "TransformComponent.h"
 
-#include "ComponentRegistrationMacros.h"
+#include "ComponentRegistration.h"
 
 enum class EColliderType
 {
@@ -12,8 +12,11 @@ enum class EColliderType
     Box,
     Sphere
 };
-struct ColliderComponent
+struct ColliderComponent : public IComponent
 {
+    SERIALIZED_COMPONENT_VARS()
+	REPLICATED_COMPONENT_VARS()
+
     EColliderType colliderType;
 
     glm::vec3 center;
@@ -23,13 +26,3 @@ struct ColliderComponent
 public:
     glm::mat4 GetInertiaTensor(float mass) const;
 };
-
-REGISTER_COMPONENT_BEGIN(ColliderComponent)
-COMPONENT_REQUIRES(TransformComponent)
-COMPONENT_VARS_BEGIN
-//COMPONENT_VAR(EColliderType, colliderType)
-COMPONENT_VAR(glm::vec3, center)
-COMPONENT_VAR(glm::vec3, halfSize)
-COMPONENT_VAR(float, radius)
-COMPONENT_VARS_END
-REGISTER_COMPONENT_END(ColliderComponent)

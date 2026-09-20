@@ -1,16 +1,30 @@
 #pragma once
 
 #include <unordered_map>
-#include <any>
 #include <queue>
 #include <cassert>
 #include <iostream>
+#include <span>
 
-#include "ComponentMacros.h"
+#include <unordered_map>
+#include <typeindex>
+#include <functional>
+#include <string>
+#include <ostream>
+#include <istream>
+
+#include "Exports.h"
+
+#include <glm/glm.hpp>
+#include <glm/gtc/quaternion.hpp>
+#include "TypeRegistry.h"
 #include "Event.h"
 #include "FileManager.h"
 
 #include "Exports.h"
+
+struct EngineStartupParams;
+struct EngineShutdownParams;
 
 typedef size_t LevelID;
 
@@ -276,14 +290,14 @@ private:
 	// Queue of free entity indices less than nextEntity, sorted by index.
 	std::priority_queue<uint32_t> freeQueue;
 
-	std::unordered_map<std::type_index, IComponentArray*> componentArrays;
+	std::unordered_map<TypeID, IComponentArray*> componentArrays;
 
 public:
 	EntityManager(World* world) : world(world) {};
 	~EntityManager() {};
 
-	void Startup();
-	void Shutdown();
+	void Startup(const EngineStartupParams& params);
+	void Shutdown(const EngineShutdownParams& params);
 
 	template<typename... Components>
 	Entity CreateEntity(const std::string& name = "New Entity", LevelID level = INVALID_LEVEL, const std::filesystem::path& prefabPath = {});
@@ -311,10 +325,10 @@ public:
 	template<typename T>
 	T& GetComponent(Entity entity);
 
-	REDFORGE_API void AddComponentOfType(Entity entity, std::type_index componentType, const void* component = nullptr);
-	REDFORGE_API void RemoveComponentOfType(Entity entity, std::type_index componentType);
-	REDFORGE_API bool HasComponentOfType(Entity entity, std::type_index componentType);
-	REDFORGE_API void* GetComponentOfType(Entity entity, std::type_index componentType);
+	REDFORGE_API void AddComponentOfType(Entity entity, TypeID componentType, const void* component = nullptr);
+	REDFORGE_API void RemoveComponentOfType(Entity entity, TypeID componentType);
+	REDFORGE_API bool HasComponentOfType(Entity entity, TypeID componentType);
+	REDFORGE_API void* GetComponentOfType(Entity entity, TypeID componentType);
 
 	// Recursively traverses the entity hierarchy of every active level, performing the callback on each valid entity.
 	REDFORGE_API void ForEachEntity(std::function<void(const Entity&)> callback) const;
@@ -336,11 +350,13 @@ public:
 	// Efficiently iterates through all active entities which have all of the specified component types. Triggers the callback for each, providing the entity along with each of its relevant components by reference.
 	void ForEachComponentOfType(Callback&& callback);
 
-	REDFORGE_API std::unordered_map<void*, std::type_index> GetAllComponents(Entity entity);
+	void ForEachComponentOfType(const std::vector<TypeID>& componentTypes, std::function<void(const Entity&, std::span<void*>)> callback);
+
+	REDFORGE_API std::unordered_map<void*, TypeID> GetAllComponents(Entity entity);
 
 	REDFORGE_API bool IsLevelValid(LevelID level) const;
 	REDFORGE_API bool IsEntityValid(Entity entity) const;
-	REDFORGE_API bool IsComponentValid(Entity entity, std::type_index componentType) const;
+	REDFORGE_API bool IsComponentValid(Entity entity, TypeID componentType) const;
 
 	REDFORGE_API bool IsEntityChildOf(Entity parent, Entity child) const;
 
@@ -364,6 +380,9 @@ public:
 
 	REDFORGE_API void SaveLevel(const std::filesystem::path& levelPath);
 	REDFORGE_API void LoadLevel(const std::filesystem::path& levelPath);
+
+	REDFORGE_API void UnloadLevel(LevelID level);
+	REDFORGE_API void UnloadAllLevels();
 
 	Event<const Entity&>& GetOnEntityCreated() { return onEntityCreated; }
 	Event<const Entity&>& GetOnEntityDestroyed() { return onEntityDestroyed; }
@@ -414,7 +433,7 @@ inline Entity EntityManager::CreateEntity(const std::string& name, LevelID level
 		newEntity.index = nextEntity++;
 		entityData.resize(nextEntity);
 		// Resize all component array index maps to fit the new entity
-		for(const std::pair<std::type_index, IComponentArray*>& componentArray : componentArrays)
+		for(const std::pair<TypeID, IComponentArray*>& componentArray : componentArrays)
 			componentArray.second->Resize(nextEntity);
 	}
 
@@ -479,7 +498,7 @@ inline Entity EntityManager::CreateEntity(const Entity& parent, const std::strin
 		newEntity.index = nextEntity++;
 		entityData.resize(nextEntity);
 		// Resize all component array index maps to fit the new entity
-		for(const std::pair<std::type_index, IComponentArray*>& componentArray : componentArrays)
+		for(const std::pair<TypeID, IComponentArray*>& componentArray : componentArrays)
 			componentArray.second->Resize(nextEntity);
 	}
 
@@ -521,30 +540,30 @@ inline Entity EntityManager::CreateEntity(const Entity& parent, const std::strin
 template<typename T>
 inline void EntityManager::RegisterComponent()
 {
-	componentArrays[typeid(T)] = new ComponentArray<T>();
+	componentArrays[TypeRegistry::GetTypeID<T>()] = new ComponentArray<T>();
 }
 template<typename T>
 inline void EntityManager::AddComponent(Entity entity, T component)
 {
 	assert(IsEntityValid(entity) && "Attempting to modify invalid entity.");
 
-	assert(componentArrays.find(typeid(T)) != componentArrays.end() && "Component has not been registered.");
+	assert(componentArrays.find(TYPEID(T)) != componentArrays.end() && "Component has not been registered.");
 
 	// First add all components that the given component depends on
-	for(std::type_index dependencyID : GET_COMPONENT_DEPENDENCIES(typeid(T)))
+	for(TypeID dependencyID : ((std::unordered_set<TypeID>) TypeRegistry::GetComponentDependencyHierarchy().GetInValuesOfNode(TYPEID(T))))
 		if(!HasComponentOfType(entity, dependencyID))
 			AddComponentOfType(entity, dependencyID);
 
-	static_cast<ComponentArray<T>*>(componentArrays[typeid(T)])->Add(entity.index, component);
+	static_cast<ComponentArray<T>*>(componentArrays[TYPEID(T)])->Add(entity.index, component);
 }
 template<typename T>
 inline void EntityManager::RemoveComponent(Entity entity)
 {
 	assert(IsEntityValid(entity) && "Attempting to modify invalid entity.");
 
-	assert(componentArrays.find(typeid(T)) != componentArrays.end() && "Component has not been registered.");
+	assert(componentArrays.find(TypeRegistry::GetTypeID<T>()) != componentArrays.end() && "Component has not been registered.");
 
-	static_cast<ComponentArray<T>*>(componentArrays[typeid(T)])->Remove(entity.index);
+	static_cast<ComponentArray<T>*>(componentArrays[TypeRegistry::GetTypeID<T>()])->Remove(entity.index);
 
 	// After removing the component, also remove all components that depend on it
 	for(std::type_index dependent : GET_COMPONENT_DEPENDENTS(typeid(T)))
@@ -556,9 +575,9 @@ inline bool EntityManager::HasComponent(Entity entity)
 {
 	assert(IsEntityValid(entity) && "Attempting to access invalid entity.");
 
-	assert(componentArrays.find(typeid(T)) != componentArrays.end() && "Component has not been registered.");
+	assert(componentArrays.find(TypeRegistry::GetTypeID<T>()) != componentArrays.end() && "Component has not been registered.");
 
-	return static_cast<ComponentArray<T>*>(componentArrays[typeid(T)])->Has(entity.index);
+	return static_cast<ComponentArray<T>*>(componentArrays[TypeRegistry::GetTypeID<T>()])->Has(entity.index);
 }
 template<typename... Args>
 inline bool EntityManager::HasComponents(Entity entity)
@@ -570,9 +589,9 @@ inline T& EntityManager::GetComponent(Entity entity)
 {
 	assert(IsEntityValid(entity) && "Attempting to access invalid entity.");
 
-	assert(componentArrays.find(typeid(T)) != componentArrays.end() && "Component has not been registered.");
+	assert(componentArrays.find(TypeRegistry::GetTypeID(typeid(T))) != componentArrays.end() && "Component has not been registered.");
 
-	return static_cast<ComponentArray<T>*>(componentArrays[typeid(T)])->GetByEntityIndex(entity.index);
+	return static_cast<ComponentArray<T>*>(componentArrays[TypeRegistry::GetTypeID(typeid(T))])->GetByEntityIndex(entity.index);
 }
 
 template<typename T>
@@ -591,12 +610,12 @@ void EntityManager::ForEachComponentOfType(std::function<void(const Entity&, T&)
 template<typename... Args, typename Callback>
 void EntityManager::ForEachComponentOfType(Callback&& callback)
 {
-	std::vector<std::type_index> componentTypes = { (std::type_index(typeid(Args)))... };
+	std::vector<TypeID> componentTypes = { (TypeRegistry::GetTypeID<Args>())... };
 
 	IComponentArray* smallestArray = nullptr;
 	uint32_t smallestArraySize = -1;
 	// Determine the smallest component array
-	for(const std::type_index& type : componentTypes)
+	for(TypeID type : componentTypes)
 	{
 		IComponentArray* componentArray = componentArrays[type];
 		if(componentArray->GetSize() < smallestArraySize)
@@ -607,17 +626,13 @@ void EntityManager::ForEachComponentOfType(Callback&& callback)
 	}
 
 	uint32_t* entitiesArray = smallestArray->GetEntitiesArray();
-	// Iterate through the the smallest array, checking which of the associated entities have all of the specified components
+	// Iterate through the smallest array, checking which of the associated entities have all of the specified components
 	for(uint32_t i = 0; i < smallestArraySize; i++)
 	{
 		uint32_t entityIndex = entitiesArray[i];
 		const Entity& entity = GetEntityByIndex(entityIndex);
-
-		// TEMP
-		//std::tuple<const int*> componentArrays = std::make_tuple(new int());
-		//std::tuple<ComponentArray<Args>*...> componentArrays = std::make_tuple((new ComponentArray<Args>())...);
 		
-		std::tuple<ComponentArray<Args>*...> componentArraysTuple = std::make_tuple(static_cast<ComponentArray<Args>*>(componentArrays[typeid(Args)])...);
+		std::tuple<ComponentArray<Args>*...> componentArraysTuple = std::make_tuple(static_cast<ComponentArray<Args>*>(componentArrays[TypeRegistry::GetTypeID<Args>()])...);
 		std::tuple<Args*...> componentPtrs;
 		// Use index sequence to check for the other component types
 		bool hasRequiredComponents = [&]<size_t... I>(std::index_sequence<I...>) -> bool

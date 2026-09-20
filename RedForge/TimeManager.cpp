@@ -3,7 +3,7 @@
 #include <cstdio>
 #include <chrono>
 
-REGISTER_SYSTEM(TimeManager)
+REGISTER_SYSTEM_TYPE(TimeManager, System<Time>)
 
 TimeManager::TimeManager()
 {

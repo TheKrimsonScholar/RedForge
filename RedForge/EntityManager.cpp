@@ -1,5 +1,7 @@
 #include "EntityManager.h"
 
+#include "EngineParams.h"
+
 #include "TransformComponent.h"
 #include "MeshRendererComponent.h"
 #include "CameraComponent.h"
@@ -16,17 +18,21 @@
 #define DEBUG_NEW new(_NORMAL_BLOCK, __FILE__, __LINE__)
 #define new DEBUG_NEW
 
-void EntityManager::Startup()
+void EntityManager::Startup(const EngineStartupParams& params)
 {
 	// Register all components defined in the global list
-	for(auto& componentInfo : GetRegisteredComponentInfoMap())
+	for(auto& componentInfo : TypeRegistry::GetRegisteredComponentInfoMap())
 	{
-		std::cout << "Name: " << componentInfo.first.name() << std::endl;
+		std::cout << "Name: " << GET_TYPE_NAME(componentInfo.first) << std::endl;
 		assert(componentInfo.second.registerComponent != nullptr);
 		componentInfo.second.registerComponent(*this);
 	}
+
+	// Load default level
+	if(!params.ShouldConnectToServer())
+		LoadLevel(params.startupLevelPath);
 }
-void EntityManager::Shutdown()
+void EntityManager::Shutdown(const EngineShutdownParams& params)
 {
 	for(auto& componentArray : componentArrays)
 		delete componentArray.second;
@@ -289,20 +295,20 @@ bool EntityManager::MoveEntityAfter(Entity entity, Entity previous)
     return true;
 }
 
-void EntityManager::AddComponentOfType(Entity entity, std::type_index componentType, const void* component)
+void EntityManager::AddComponentOfType(Entity entity, TypeID componentType, const void* component)
 {
 	assert(IsEntityValid(entity) && "Attempting to modify invalid entity.");
 
 	assert(componentArrays.find(componentType) != componentArrays.end() && "Component has not been registered.");
 
 	// First add all components that the given component depends on
-	for(std::type_index dependencyID : GET_COMPONENT_DEPENDENCIES(componentType))
+	for(TypeID dependencyID : GET_COMPONENT_DEPENDENCIES(componentType))
 		if(!HasComponentOfType(entity, dependencyID))
 			AddComponentOfType(entity, dependencyID);
 
 	componentArrays[componentType]->Add(entity.index, component);
 }
-void EntityManager::RemoveComponentOfType(Entity entity, std::type_index componentType)
+void EntityManager::RemoveComponentOfType(Entity entity, TypeID componentType)
 {
 	assert(IsEntityValid(entity) && "Attempting to modify invalid entity.");
 
@@ -311,11 +317,11 @@ void EntityManager::RemoveComponentOfType(Entity entity, std::type_index compone
 	componentArrays[componentType]->Remove(entity.index);
 
 	// After removing the component, also remove all components that depend on it
-	for(std::type_index dependent : GET_COMPONENT_DEPENDENTS(componentType))
+	for(TypeID dependent : GET_COMPONENT_DEPENDENTS(componentType))
 		if(HasComponentOfType(entity, dependent))
 			RemoveComponentOfType(entity, dependent);
 }
-bool EntityManager::HasComponentOfType(Entity entity, std::type_index componentType)
+bool EntityManager::HasComponentOfType(Entity entity, TypeID componentType)
 {
 	assert(IsEntityValid(entity) && "Attempting to access invalid entity.");
 
@@ -323,7 +329,7 @@ bool EntityManager::HasComponentOfType(Entity entity, std::type_index componentT
 
 	return componentArrays[componentType]->Has(entity.index);
 }
-void* EntityManager::GetComponentOfType(Entity entity, std::type_index componentType)
+void* EntityManager::GetComponentOfType(Entity entity, TypeID componentType)
 {
 	assert(IsEntityValid(entity) && "Attempting to access invalid entity.");
 
@@ -379,11 +385,11 @@ void EntityManager::ForEachEntity_Reversed(std::function<void(const Entity&)> ca
 		});
 
 	// Process in reverse order
-	for (int i = allEntities.size() - 1; i >= 0; i--)
+	for(int i = allEntities.size() - 1; i >= 0; i--)
 	{
 		const Entity& entity = allEntities[i];
 
-		if (IsEntityValid(entity))
+		if(IsEntityValid(entity))
 			callback(entity);
 	}
 }
@@ -426,11 +432,65 @@ void EntityManager::ForEachEntity_Reversed(std::function<void(const Entity&)> ca
 	}
 }
 
-std::unordered_map<void*, std::type_index> EntityManager::GetAllComponents(Entity entity)
+void EntityManager::ForEachComponentOfType(const std::vector<TypeID>& componentTypes, std::function<void(const Entity&, std::span<void*>)> callback)
+{
+	IComponentArray* smallestArray = nullptr;
+	uint32_t smallestArraySize = -1;
+	// Determine the smallest component array
+	for(TypeID type : componentTypes)
+	{
+		IComponentArray* componentArray = componentArrays[type];
+		if(componentArray->GetSize() < smallestArraySize)
+		{
+			smallestArray = componentArray;
+			smallestArraySize = componentArray->GetSize();
+		}
+	}
+
+	uint32_t* entitiesArray = smallestArray->GetEntitiesArray();
+	// Iterate through the smallest array, checking which of the associated entities have all of the specified components
+	for(uint32_t i = 0; i < smallestArraySize; i++)
+	{
+		uint32_t entityIndex = entitiesArray[i];
+		const Entity& entity = GetEntityByIndex(entityIndex);
+		
+		bool hasRequiredComponents = true;
+		std::vector<void*> components(componentTypes.size());
+		// Check for the required components on this entity and gather pointers to them if they exist
+		for(uint32_t i = 0; i < componentTypes.size(); i++)
+		{
+			IComponentArray* componentArray = componentArrays[componentTypes[i]];
+			// If componentArray is the smallest array (the one being iterated through), then we know the component exists for this entity
+			if(componentArray == smallestArray)
+			{
+				// Set the component pointer at this index
+				components[i] = componentArray->GetRaw(entityIndex);
+			}
+			else
+			{
+				// If the entity doesn't have this component, stop and skip this entity
+				if(!componentArray->Has(entityIndex))
+				{
+					hasRequiredComponents = false;
+					break;
+				}
+
+				// Otherwise set the component pointer at this index
+				components[i] = componentArray->GetRaw(entityIndex);
+			}
+		}
+
+		// If this entity has all required components, trigger callback with entity and component pointers
+		if(hasRequiredComponents)
+			callback(entity, std::span<void*>(components));
+	}
+}
+
+std::unordered_map<void*, TypeID> EntityManager::GetAllComponents(Entity entity)
 {
 	assert(IsEntityValid(entity) && "Attempting to access invalid entity.");
 
-	std::unordered_map<void*, std::type_index> components;
+	std::unordered_map<void*, TypeID> components;
 	
 	for(auto& componentArray : componentArrays)
 	{
@@ -454,7 +514,7 @@ bool EntityManager::IsEntityValid(Entity entity) const
 	// Entity index must be valid and of the same generation
 	return entity.index < nextEntity && entityData[entity.index].valid && entityData[entity.index].generationCount == entity.generation;
 }
-bool EntityManager::IsComponentValid(Entity entity, std::type_index componentType) const
+bool EntityManager::IsComponentValid(Entity entity, TypeID componentType) const
 {
 	if(!EntityManager::IsEntityValid(entity))
 		return false;
@@ -615,6 +675,26 @@ void EntityManager::LoadLevel(const std::filesystem::path& levelPath)
 	LOG((*world), "Level Loaded: {}", levelObject.parameters["Name"]);
 }
 
+void EntityManager::UnloadLevel(LevelID level)
+{
+	ForEachEntity_Reversed(
+		[this](const Entity& entity)
+		{
+			DestroyEntity(entity);
+		}, level);
+
+	levelData.erase(level);
+}
+void EntityManager::UnloadAllLevels()
+{
+	std::vector<LevelID> levelsToDestroy;
+	for(const std::pair<LevelID, LevelData>& level : levelData)
+		levelsToDestroy.push_back(level.first);
+	
+	for(LevelID levelID : levelsToDestroy)
+		UnloadLevel(levelID);
+}
+
 SerializedObject EntityManager::SaveEntity(Entity entity)
 {
 	SerializedObject entityObject = {};
@@ -622,15 +702,15 @@ SerializedObject EntityManager::SaveEntity(Entity entity)
 	entityObject.parameters.emplace("Name", GetEntityName(entity));
 	entityObject.parameters.emplace("PrefabPath", GetEntityPrefabPath(entity).string());
 
-	std::unordered_map<void*, std::type_index> components = EntityManager::GetAllComponents(entity);
+	std::unordered_map<void*, TypeID> components = EntityManager::GetAllComponents(entity);
 	for(auto& component : components)
 	{
 		SerializedObject componentObject;
 		componentObject.typeName = "Component";
-		componentObject.parameters.emplace("TypeName", GET_COMPONENT_NAME(component.second));
+		componentObject.parameters.emplace("TypeName", GET_TYPE_NAME(component.second));
 
-		std::vector<std::pair<void*, ComponentVariableInfo>> variables = GET_COMPONENT_VARS(component.second, component.first);
-		for(std::pair<void*, ComponentVariableInfo>& variable : variables)
+		std::vector<std::pair<void*, ComponentVariableTypeInfo>> variables = GET_COMPONENT_VARS(component.second, component.first);
+		for(std::pair<void*, ComponentVariableTypeInfo>& variable : variables)
 		{
 			/* Use a string stream to write the value to a string */
 
@@ -670,23 +750,25 @@ Entity EntityManager::LoadEntity(const SerializedObject& entityObject, Entity pa
 			uint32_t componentTypeIndex = 0xFFFFFFFF;
 
 			// Find the component type with the given name
-			for(uint32_t j = 0; j < GetRegisteredComponentsList().size(); j++)
-				if(GET_COMPONENT_NAME(GetRegisteredComponentsList()[j]) == child.parameters.at("TypeName"))
+			for(uint32_t j = 0; j < TypeRegistry::GetRegisteredComponentsList().size(); j++)
+			{
+				if(GET_TYPE_NAME(TypeRegistry::GetRegisteredComponentsList()[j]) == child.parameters.at("TypeName"))
 				{
 					componentTypeIndex = j;
 					break;
 				}
+			}
 
 			assert(componentTypeIndex < 0xFFFFFFFF && "Unregistered component read in from file!");
 
-			std::type_index componentType = GetRegisteredComponentsList()[componentTypeIndex];
+			TypeID componentType = TypeRegistry::GetRegisteredComponentsList()[componentTypeIndex];
 
 			AddComponentOfType(newEntity, componentType);
 			void* newComponent = GetComponentOfType(newEntity, componentType);
-			std::vector<std::pair<void*, ComponentVariableInfo>> variables = GET_COMPONENT_VARS(componentType, newComponent);
+			std::vector<std::pair<void*, ComponentVariableTypeInfo>> variables = GET_COMPONENT_VARS(componentType, newComponent);
 			// Load variable values as string streams and parse them by type
 			// Variables are searched for by name
-			for(auto& variable : variables)
+			for(std::pair<void*, ComponentVariableTypeInfo>& variable : variables)
 			{
 				std::stringstream ss(child.parameters.at(variable.second.variableName));
 				variable.second.readFromFile(ss, variable.first);

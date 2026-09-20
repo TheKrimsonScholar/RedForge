@@ -2,6 +2,8 @@
 
 #include <iostream>
 
+#include "TypeRegistry.h"
+
 #include "LevelManager.h"
 
 #include "GraphicsSystem.h"
@@ -21,15 +23,33 @@
     #undef GetCurrentTime()
 #endif
 
+Engine::Engine()
+{
+    // Initialize runtime type information tracked by TypeRegistry
+    TypeRegistry::GetInstance().RegisterAllTypes();
+
+	world = new World();
+	scheduler = new Scheduler();
+}
+Engine::~Engine()
+{
+    delete scheduler;
+    delete world;
+
+    TypeRegistry::DestroyInstance();
+}
+
 void Engine::Run()
 {
     if(isRunning)
 		return;
 
-    Startup();
+	engineConfig = EngineConfiguration::LoadFromFile();
+	gameConfig = GameConfiguration::LoadFromFile();
 
-    // Load default level
-    world.GetEntityManager().LoadLevel(L"Levels/Level.txt");
+    EngineStartupParams startupParams = {};
+	startupParams.startupLevelPath = gameConfig.startupLevelPath;
+    Startup(startupParams);
 
     // TEMP: Main camera creation
     {
@@ -41,21 +61,21 @@ void Engine::Run()
         CameraComponent camera{};
         camera.projectionType = ECameraProjectionType::Perspective;
 		camera.fov = glm::radians(45.0f);
-		camera.aspectRatio = world.GetResource<const Window>().GetAspectRatio();
+		camera.aspectRatio = world->GetResource<const Window>().GetAspectRatio();
 		camera.nearClipPlaneDistance = 0.1f;
 		camera.farClipPlaneDistance = 100.0f;
 
         DefaultCameraControllerComponent cameraController {};
 
-	    Entity cameraEntity = world.GetEntityManager().CreateEntity();
-	    world.GetEntityManager().AddComponent<TransformComponent>(cameraEntity, transform);
-	    world.GetEntityManager().AddComponent<CameraComponent>(cameraEntity, camera);
-		world.GetEntityManager().AddComponent<DefaultCameraControllerComponent>(cameraEntity, cameraController);
-        world.GetResource<Cameras>().mainCameraEntity = cameraEntity;
+	    Entity cameraEntity = world->GetEntityManager().CreateEntity();
+	    world->GetEntityManager().AddComponent<TransformComponent>(cameraEntity, transform);
+	    world->GetEntityManager().AddComponent<CameraComponent>(cameraEntity, camera);
+		world->GetEntityManager().AddComponent<DefaultCameraControllerComponent>(cameraEntity, cameraController);
+        world->GetResource<Cameras>().mainCameraEntity = cameraEntity;
     }
 
     double lastFrameTime = glfwGetTime();
-    while(!glfwWindowShouldClose(world.GetResource<Window>().window))
+    while(!glfwWindowShouldClose(world->GetResource<Window>().window))
     {
 		glfwPollEvents();
 
@@ -70,11 +90,11 @@ void Engine::Run()
 
 void Engine::CreateVulkanInstance()
 {
-    static_cast<GraphicsSystem*>(scheduler.systems[typeid(GraphicsSystem)])->CreateVulkanInstance_PreStartup(world.GetResource<GraphicsState>());
+    static_cast<GraphicsSystem*>(scheduler->systems[TYPEID(GraphicsSystem)])->CreateVulkanInstance_PreStartup(world->GetResource<GraphicsState>());
 }
 void Engine::DestroyVulkanInstance()
 {
-    static_cast<GraphicsSystem*>(scheduler.systems[typeid(GraphicsSystem)])->DestroyVulkanInstance_PostShutdown(world.GetResource<GraphicsState>());
+    static_cast<GraphicsSystem*>(scheduler->systems[TYPEID(GraphicsSystem)])->DestroyVulkanInstance_PostShutdown(world->GetResource<GraphicsState>());
 }
 
 void Engine::Startup(const EngineStartupParams& params)
@@ -83,7 +103,7 @@ void Engine::Startup(const EngineStartupParams& params)
 		return;
 	isRunning = true;
 
-	scheduler.Startup(params, world);
+	scheduler->Startup(params, *world);
     
     //for(size_t i = 0; i < archetypes.size(); i++)
         //archetypes[i]->Startup(params, world);
@@ -94,7 +114,7 @@ void Engine::Startup(const EngineStartupParams& params)
     Player::QueuePlayerEvent1(player, {});
     Player::QueuePlayerEvent1(player, {});
     Enemy::QueuePlayerEvent1(enemy, {});*/
-    LOG(world, "---- RedForge Version 0.1 ----");
+    LOG((*world), "---- RedForge Version 0.1 ----");
 }
 void Engine::Shutdown(const EngineShutdownParams& params)
 {
@@ -102,9 +122,9 @@ void Engine::Shutdown(const EngineShutdownParams& params)
         return;
 
     // Wait for device to finish operations before exiting
-    vkDeviceWaitIdle(world.GetResource<GraphicsState>().device);
+    vkDeviceWaitIdle(world->GetResource<GraphicsState>().device);
 
-	scheduler.Shutdown(params, world);
+	scheduler->Shutdown(params, *world);
 
     for(size_t i = 0; i < archetypes.size(); i++)
         delete archetypes[i];
@@ -120,7 +140,7 @@ void Engine::Update(float deltaTime)
 
     glfwPollEvents();
 
-	scheduler.Update(deltaTime);
+	scheduler->Update(deltaTime);
 
     //for(size_t i = 0; i < archetypes.size(); i++)
         //archetypes[i]->Update();
@@ -128,5 +148,5 @@ void Engine::Update(float deltaTime)
 
 void Engine::QueueExternalTask(std::function<void(World&)> callback)
 {
-	scheduler.QueueExternalTask(callback);
+	scheduler->QueueExternalTask(callback);
 }

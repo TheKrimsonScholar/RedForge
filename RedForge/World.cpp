@@ -6,48 +6,18 @@
 World::World() 
 	: entityManager(this)
 {
-	// Sort resource order by dependencies
-	/* Sort all systems in dependent order */
-
-	std::vector<std::type_index> resourceTypesList = GetRegisteredResourcesList();
-	std::unordered_map<std::type_index, size_t> resourceInDegrees;
-	std::queue<std::type_index> zeroInDegreeResources;
-	for(std::type_index resource : resourceTypesList)
-	{
-		resourceInDegrees[resource] = GET_RESOURCE_DEPENDENCIES(resource).size();
-		if(resourceInDegrees[resource] == 0)
-			zeroInDegreeResources.push(resource);
-	}
-
-	std::vector<std::type_index> sortedResources;
-	while(!zeroInDegreeResources.empty())
-	{
-		std::type_index resource = zeroInDegreeResources.front();
-		zeroInDegreeResources.pop();
-
-		sortedResources.push_back(resource);
-		for(std::type_index dependent : GET_RESOURCE_DEPENDENTS(resource))
-		{
-			resourceInDegrees[dependent]--;
-			if(resourceInDegrees[dependent] == 0)
-				zeroInDegreeResources.push(dependent);
-		}
-	}
-
-	resourceTypes = sortedResources;
-
-	// Instantiate all registered resources
-	for(std::type_index resourceType : resourceTypes)
-		resources[resourceType] = GetRegisteredResourceInfoMap()[resourceType].createResource();
+	// Instantiate all registered resources in dependent order
+	for(TypeID resourceType : GET_ALL_RESOURCE_TYPES)
+		resources[resourceType] = TypeRegistry::GetRegisteredResourceInfoMap().at(resourceType).createResource();
 
 	// Instantiate a queue for all registered events
-	for(std::type_index eventType : GetRegisteredEventsList())
-		eventQueues[eventType] = GetRegisteredEventInfoMap()[eventType].createQueue();
+	for(TypeID eventType : TypeRegistry::GetRegisteredEventsList())
+		eventQueues[eventType] = TypeRegistry::GetRegisteredEventInfoMap().at(eventType).createQueue();
 }
 World::~World()
 {
 	// Destroy all resources
-	for(const std::type_index& resourceType : resourceTypes)
+	for(TypeID resourceType : GET_ALL_RESOURCE_TYPES)
 		delete resources[resourceType];
 	resources.clear();
 }
@@ -55,26 +25,26 @@ World::~World()
 void World::Startup(const EngineStartupParams& params)
 {
 	// Startup all resources
-	for(const std::type_index& resourceType : resourceTypes)
+	for(TypeID resourceType : GET_ALL_RESOURCE_TYPES)
 		resources[resourceType]->Startup(params, *this);
 
-	entityManager.Startup();
+	entityManager.Startup(params);
 }
 void World::Shutdown(const EngineShutdownParams& params)
 {
-	entityManager.Shutdown();
+	entityManager.Shutdown(params);
 
 	// Shutdown all resources
-	for(const std::type_index& resourceType : resourceTypes)
+	for(TypeID resourceType : GET_ALL_RESOURCE_TYPES)
 		resources[resourceType]->Shutdown(params, *this);
 
 	// Delete all event queues
-	for(std::pair<const std::type_index, IEventQueue*>& eventQueue : eventQueues)
+	for(const std::pair<TypeID, IEventQueue*>& eventQueue : eventQueues)
 		delete eventQueue.second;
 	eventQueues.clear();
 }
 
-void World::QueueEventOfType(std::type_index eventType, const void* event)
+void World::QueueEventOfType(TypeID eventType, const void* event)
 {
 	eventQueues.at(eventType)->PushEvent(event);
 }

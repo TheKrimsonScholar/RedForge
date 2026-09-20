@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ResourceRegistrationMacros.h"
+#include "ResourceRegistration.h"
 
 #include "Texture.h"
 #include "TextureCube.h"
@@ -9,6 +9,9 @@
 
 struct Assets : public IResource
 {
+	SERIALIZED_RESOURCE_VARS()
+	REPLICATED_RESOURCE_VARS()
+
 private:
 	std::vector<Texture*> textures;
 	std::vector<TextureCube*> textureCubes;
@@ -20,7 +23,7 @@ private:
 	std::unordered_map<std::wstring, Material*> materialMap;
 	std::unordered_map<std::wstring, Mesh*> meshMap;
 
-private:
+protected:
 	REDFORGE_API void Startup(const EngineStartupParams& params, World& world) override;
 	REDFORGE_API void Shutdown(const EngineShutdownParams& params, World& world) override;
 	
@@ -68,4 +71,4 @@ public:
 
 	friend struct RegisterResourceBase;
 };
-REGISTER_RESOURCE(Assets)
+REGISTER_RESOURCE_TYPE(Assets, IResource)

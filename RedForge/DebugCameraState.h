@@ -1,11 +1,14 @@
 #pragma once
 
-#include "ResourceRegistrationMacros.h"
+#include "ResourceRegistration.h"
 
 #include <glm/glm.hpp>
 
 struct DebugCameraState : public IResource
 {
+	SERIALIZED_RESOURCE_VARS()
+	REPLICATED_RESOURCE_VARS()
+
 	float fov = 60.0f;
 	float nearClipPlaneDistance = 0.001f;
 	float farClipPlaneDistance = 10000.0f;
@@ -37,4 +40,4 @@ public:
 	glm::vec3 GetUp() const;
 	glm::vec3 GetForward() const;
 };
-REGISTER_RESOURCE(DebugCameraState)
+REGISTER_RESOURCE_TYPE(DebugCameraState, IResource)

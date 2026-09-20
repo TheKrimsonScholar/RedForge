@@ -17,10 +17,10 @@ protected:
 	World* world;
 
 	CommandBuffer* commandBuffer;
-	//std::unordered_map<std::type_index, IEventQueue*> eventQueues; Instead of per-context queues, defer event queueing via command buffer
 
 protected:
 	SystemContextBase(World* world, CommandBuffer* commandBuffer) : world(world), commandBuffer(commandBuffer) {}
+	virtual ~SystemContextBase() = default;
 
 	template<typename... Args>
 	SystemContext<Args...> ConstructContext()
@@ -29,6 +29,7 @@ protected:
 	}
 
 	friend class Scheduler;
+	friend struct Phase;
 };
 template<typename... Components>
 class System;
@@ -36,10 +37,13 @@ template<typename... Components>
 struct SystemContext : public SystemContextBase
 {
 protected:
-	SystemContext(World* world, CommandBuffer* commandBuffer) : SystemContextBase(world, commandBuffer) {}
+	std::unordered_set<TypeID> contextTypes = { TypeRegistry::GetTypeID<Components>()...};
+
+protected:
+	SystemContext(World* world, CommandBuffer* commandBuffer);
 
 public:
-	Entity CreateEntity(const std::string& name, const Entity& parent, const std::filesystem::path& prefabPath);
+	Entity CreateEntity(const Entity& parent, const std::string& name = "New Entity", const std::filesystem::path& prefabPath = {});
 	void DestroyEntity(const Entity& entity);
 	
 	void RenameEntity(const Entity& entity, const std::string& name);
@@ -66,6 +70,7 @@ public:
 	template<typename... Args, typename Callback>
 	// Efficiently iterates through all active entities which have all of the specified component types. Triggers the callback for each, providing the entity along with each of its relevant components by reference.
 	void ForEachComponentOfType(Callback&& callback);
+	void ForEachComponentOfType(const std::vector<TypeID>& componentTypes, std::function<void(const Entity&, std::span<void*>)> callback);
 	void ForEachEntity(std::function<void(const Entity&)> callback);
 	void ForEachEntity(std::function<void(const Entity&)> callback, LevelID level);
 	void ForEachEntity(std::function<void(const Entity&)> callback, const Entity& root);
@@ -94,7 +99,16 @@ public:
 };
 
 template<typename ...Components>
-inline Entity SystemContext<Components...>::CreateEntity(const std::string& name, const Entity& parent, const std::filesystem::path& prefabPath)
+inline SystemContext<Components...>::SystemContext(World* world, CommandBuffer* commandBuffer) : SystemContextBase(world, commandBuffer)
+{
+	// Resolve types represented by tags in the context signature, adding each tagged component to the type list
+	for(TypeID contextType : contextTypes)
+		for(TypeID taggedType : GET_TYPES_DERIVED_FROM(contextType))
+			contextTypes.insert(taggedType);
+}
+
+template<typename ...Components>
+inline Entity SystemContext<Components...>::CreateEntity(const Entity& parent, const std::string& name, const std::filesystem::path& prefabPath)
 {
 	return commandBuffer->Command_CreateEntity(name, parent, prefabPath);
 }
@@ -129,7 +143,7 @@ template<typename ...Components>
 template<typename T>
 inline T& SystemContext<Components...>::GetResource()
 {
-	static_assert(is_one_of_v<T, Components...> && "Component not compatible with context signature.");
+	static_assert((is_one_of_v<T, Components...> || is_one_of_v<IResource, Components...>) && "Component not compatible with context signature.");
 
 	return world->GetResource<T>();
 }
@@ -164,7 +178,7 @@ template<typename ...Components>
 template<typename T>
 inline T& SystemContext<Components...>::GetComponent(const Entity& entity)
 {
-	static_assert(is_one_of_v<T, Components...> && "Component not compatible with context signature.");
+	static_assert((is_one_of_v<T, Components...> || is_one_of_v<IComponent, Components...>) && "Component not compatible with context signature.");
 
 	return world->GetEntityManager().GetComponent<T>(entity);
 }
@@ -173,9 +187,18 @@ template<typename ...Components>
 template<typename ...Args, typename Callback>
 inline void SystemContext<Components...>::ForEachComponentOfType(Callback&& callback)
 {
-	static_assert(((is_one_of_v<Args, Components...>) && ...) && "Component set not compatible with context signature.");
+	static_assert((((is_one_of_v<Args, Components...>) && ...) || is_one_of_v<IComponent, Components...>) && "Component set not compatible with context signature.");
 
 	world->GetEntityManager().ForEachComponentOfType<Args...>(std::forward<Callback>(callback));
+}
+template<typename ...Components>
+inline void SystemContext<Components...>::ForEachComponentOfType(const std::vector<TypeID>& componentTypes, std::function<void(const Entity&, std::span<void*>)> callback)
+{
+	// Runtime check for context compatibility using type index. Types must be either in the context signature or have a tag which is included in the context signature.
+	for(TypeID componentType : componentTypes)
+		assert(contextTypes.find(componentType) != contextTypes.end() && "Component set not compatible with context signature.");
+
+	world->GetEntityManager().ForEachComponentOfType(componentTypes, callback);
 }
 template<typename ...Components>
 inline void SystemContext<Components...>::ForEachEntity(std::function<void(const Entity&)> callback)
@@ -256,7 +279,7 @@ template<typename ...Components>
 template<typename ...Args>
 inline SystemContext<Args...> SystemContext<Components...>::GetContext()
 {
-	static_assert(((is_one_of_v<Args, Components...>) && ...) && "Component set not compatible with context signature.");
+	static_assert((((is_one_of_v<Args, Components...>) && ...) || is_one_of_v<IComponent, Components...>) && "Component set not compatible with context signature.");
 
 	return ConstructContext<Args...>();
 }

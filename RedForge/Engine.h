@@ -1,5 +1,6 @@
 #pragma once
 
+#include "EngineConfiguration.h"
 #include "EngineParams.h"
 
 #include "Scheduler.h"
@@ -13,16 +14,19 @@
 REDFORGE_API class Engine
 {
 private:
-	World world;
-	Scheduler scheduler;
+	World* world;
+	Scheduler* scheduler;
 
 	std::vector<SystemBase*> archetypes;
 
 	bool isRunning = false;
 
+	EngineConfiguration engineConfig;
+	GameConfiguration gameConfig;
+
 public:
-	REDFORGE_API Engine() {};
-	REDFORGE_API ~Engine() {};
+	REDFORGE_API Engine();
+	REDFORGE_API ~Engine();
 
 	REDFORGE_API EngineStartupParams CreateStartupParams() { return EngineStartupParams(); }
 	REDFORGE_API EngineShutdownParams CreateShutdownParams() { return EngineShutdownParams(); }
@@ -45,7 +49,7 @@ public:
 
 	REDFORGE_API void QueueExternalTask(std::function<void(World&)> callback);
 
-	REDFORGE_API World& GetWorld() { return world; }
+	REDFORGE_API World& GetWorld() { return *world; }
 };
 
 //#ifdef REDFORGE_EXPORTS

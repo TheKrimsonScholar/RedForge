@@ -57,6 +57,6 @@ private:
 	static VkImageView CreateImageView(const GraphicsState& graphicsState, VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, uint32_t mipLevels,
 		VkImageViewType viewType = VK_IMAGE_VIEW_TYPE_2D, uint32_t layerCount = 1);
 };
-REGISTER_SYSTEM_BEGIN(ResourceManager)
+REGISTER_SYSTEM_TYPE_BEGIN(ResourceManager, System<>)
 SYSTEM_REQUIRES(GraphicsSystem)
-REGISTER_SYSTEM_END(ResourceManager)
+REGISTER_SYSTEM_TYPE_END(ResourceManager)

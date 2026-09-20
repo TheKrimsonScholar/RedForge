@@ -1,14 +1,16 @@
 #pragma once
 
-#include "ComponentRegistrationMacros.h"
+#include "ComponentRegistration.h"
 
 #include "Exports.h"
 
-#include <glm/glm.hpp>
-#include <glm/gtc/quaternion.hpp>
+#include "KMath.h"
 
-REDFORGE_API struct TransformComponent
+REDFORGE_API struct TransformComponent : public IComponent
 {
+	SERIALIZED_COMPONENT_VARS(location, rotation, scale)
+	REPLICATED_COMPONENT_VARS(location, rotation, scale)
+
 	glm::vec3 location = { 0, 0, 0 };
 	glm::quat rotation = { 0, 0, 0, 1 };
 	glm::vec3 scale = { 1, 1, 1 };
@@ -27,35 +29,36 @@ public:
 	glm::vec3 LocalToWorld_Direction(const glm::vec3& vector, bool includeScale = false) const;
 };
 
-//struct RegisterComponent_TransformComponent
-//{
-//	RegisterComponent_TransformComponent()
-//	{
-//		GetMembersMap().emplace(typeid(TransformComponent), [](void* rawComponent) -> std::unordered_map<void*, ComponentVariableInfo>
-//			{
-//				TransformComponent* component = static_cast<TransformComponent*>(rawComponent);
+//template<>																																				
+//template<>																																				
+//ByteStream<IFileStreamFormat>& ByteStream<IFileStreamFormat>::operator<<(const TransformComponent& src)
+//{																																						
+//src.SerializeComponent(*this);																														
 //
-//				return
-//				{
-//					{ &component->location, { typeid(glm::vec3), "location" }},
-//					{ &component->scale, { typeid(glm::vec3), "scale" }}
-//				};
-//			});
-//	}
-//};
+//return *this;																																		
+//}																																						
+//template<>																																				
+//template<>																																				
+//ByteStream<IFileStreamFormat>& ByteStream<IFileStreamFormat>::operator>>(TransformComponent& dst)
+//{																																						
+//dst.DeserializeComponent(*this);																													
 //
-//static RegisterComponent_TransformComponent k;
+//return *this;																																		
+//}																																						
 
-REGISTER_COMPONENT_BEGIN(TransformComponent)
-COMPONENT_VARS_BEGIN
-COMPONENT_VAR(glm::vec3, location)
-COMPONENT_VAR(glm::quat, rotation)
-COMPONENT_VAR(glm::vec3, scale)
-COMPONENT_VARS_END
-REGISTER_COMPONENT_END(TransformComponent)
-
-//COMPONENT_BEGIN(TransformComponent)
-//COMPONENT_VAR(glm::vec3, location)
-//COMPONENT_VAR(glm::quat, rotation)
-//COMPONENT_VAR(glm::vec3, scale)
-//COMPONENT_END()
+//template<>																																				
+//template<>																																				
+//ByteStream<IPacketStreamFormat>& ByteStream<IPacketStreamFormat>::operator<<(const TransformComponent& src)
+//{																																						
+//src.SerializeComponent(*this);																														
+//
+//return *this;																																		
+//}																																						
+//template<>																																				
+//template<>																																				
+//ByteStream<IPacketStreamFormat>& ByteStream<IPacketStreamFormat>::operator>>(TransformComponent& dst)
+//{																																						
+//dst.DeserializeComponent(*this);																													
+//
+//return *this;																																		
+//}

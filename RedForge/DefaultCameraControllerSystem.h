@@ -2,7 +2,7 @@
 
 #include "System.h"
 
-#include "SystemRegistrationMacros.h"
+#include "SystemRegistration.h"
 
 #include "InputSystem.h"
 
@@ -24,6 +24,6 @@ public:
 
 	void Update(LocalSystemContext& ctx, float deltaTime) override;
 };
-REGISTER_SYSTEM_BEGIN(DefaultCameraControllerSystem)
+REGISTER_SYSTEM_TYPE_BEGIN(DefaultCameraControllerSystem, System<const InputState, const Time, const DefaultCameraControllerComponent, TransformComponent>)
 SYSTEM_REQUIRES(InputSystem)
-REGISTER_SYSTEM_END(DefaultCameraControllerSystem)
+REGISTER_SYSTEM_TYPE_END(DefaultCameraControllerSystem)

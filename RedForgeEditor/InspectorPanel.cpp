@@ -45,10 +45,10 @@ void InspectorPanel::SetTarget(const Entity& entity)
 	// Clear any existing component entries
 	clearLayout(componentEntriesBox);
 	
-	std::unordered_map<void*, std::type_index> components = Editor::GetEntityManager().GetAllComponents(entity);
-	std::vector<std::type_index> registeredComponentTypes = GetRegisteredComponentsList();
+	std::unordered_map<void*, TypeID> components = Editor::GetEntityManager().GetAllComponents(entity);
+	std::vector<TypeID> registeredComponentTypes = TypeRegistry::GetRegisteredComponentsList();
 	// List this entity's components in order by type
-	for(std::type_index componentType : registeredComponentTypes)
+	for(TypeID componentType : registeredComponentTypes)
 		for(auto& component : components)
 		{
 			if(component.second != componentType)
@@ -79,15 +79,15 @@ void InspectorPanel::SetTarget(const Entity& entity)
 	
 	QStringList componentNames;
 	// Get the names of all registered component types
-	for(std::type_index componentTypeIndex : GetRegisteredComponentsList())
-		componentNames << QString(GET_COMPONENT_NAME(componentTypeIndex).c_str());
+	for(TypeID componentTypeIndex : TypeRegistry::GetRegisteredComponentsList())
+		componentNames << QString(GET_TYPE_NAME(componentTypeIndex).c_str());
 
 	SearchField* addComponentField = new SearchField("Add Component...", this);
 	addComponentField->SetItems(componentNames);
 	QObject::connect(addComponentField, &SearchField::OnSelectionChanged,
 		[this, entity, addComponentField](int index)
 		{
-			Editor::GetEntityManager().AddComponentOfType(entity, GetRegisteredComponentsList()[index]);
+			Editor::GetEntityManager().AddComponentOfType(entity, { TypeRegistry::GetRegisteredComponentsList()[index] });
 			
 			// Refresh the inspector
 			SetTarget(entity);

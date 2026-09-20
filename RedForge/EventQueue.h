@@ -2,7 +2,7 @@
 
 #include <vector>
 
-#include "EventMacros.h"
+#include "TypeRegistry.h"
 
 class IEventQueue
 {
@@ -19,6 +19,8 @@ private:
 template<typename T>
 class EventQueue : public IEventQueue
 {
+	static_assert(std::is_base_of_v<IEvent, T>, "EventQueue template parameter must be derived from IEvent");
+
 	std::vector<T> buffers[2];
 	uint8_t writeBufferIndex = 0;
 	uint8_t readBufferIndex = 1;

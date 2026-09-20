@@ -1,7 +1,7 @@
 #pragma once
 
 #include "System.h"
-#include "SystemRegistrationMacros.h"
+#include "SystemRegistration.h"
 
 #include "WindowSystem.h"
 
@@ -25,6 +25,6 @@ public:
 
 	void Update(SystemContext<const Cameras, const Window, CameraComponent>& ctx, float deltaTime) override;
 };
-REGISTER_SYSTEM_BEGIN(CameraManager)
+REGISTER_SYSTEM_TYPE_BEGIN(CameraManager, System<const Cameras, const Window, CameraComponent>)
 SYSTEM_REQUIRES(WindowSystem)
-REGISTER_SYSTEM_END(CameraManager)
+REGISTER_SYSTEM_TYPE_END(CameraManager)

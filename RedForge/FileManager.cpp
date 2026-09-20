@@ -23,6 +23,10 @@ std::filesystem::path GetGamePath()
 {
     return activeGamePath;
 }
+std::filesystem::path GetGameConfigPath()
+{
+    return GetGamePath().append(L"Config/");
+}
 std::filesystem::path GetGameAssetsPath()
 {
     return GetGamePath().append(L"Assets/");

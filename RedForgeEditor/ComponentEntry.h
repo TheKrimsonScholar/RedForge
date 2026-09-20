@@ -17,22 +17,21 @@ private:
     QToolButton* expandableArrow;
     QLabel* label;
     QToolButton* removeButton;
-    //QFrame* frame;
     QFrame* content;
 
     std::vector<ComponentVariableEntry*> variableEntries;
 
     Entity entity;
-    std::type_index componentTypeID;
+    TypeID componentTypeID;
 
     bool isExpanded = false;
 
 public:
-    ComponentEntry(const Entity& entity, std::type_index componentTypeID, void* componentPtr, QWidget* parent = nullptr);
+    ComponentEntry(const Entity& entity, TypeID componentTypeID, void* componentPtr, QWidget* parent = nullptr);
     ~ComponentEntry();
 
 protected:
-    void AppendVariableWidget(const ComponentVariableInfo& variableInfo, void* variablePtr);
+    void AppendVariableWidget(const ComponentVariableTypeInfo& variableInfo, void* variablePtr);
 
     void UpdateDisplayedVariables();
 };

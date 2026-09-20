@@ -2,9 +2,9 @@
 
 #include <cstdint>
 
-#include <glm/glm.hpp>
+#include "KMath.h"
 
-#include "ComponentRegistrationMacros.h"
+#include "ComponentRegistration.h"
 
 enum class ELightType : uint32_t
 {
@@ -12,8 +12,11 @@ enum class ELightType : uint32_t
 	Point,
 	Spot
 };
-struct LightComponent
+struct LightComponent : public IComponent
 {
+    SERIALIZED_COMPONENT_VARS()
+	REPLICATED_COMPONENT_VARS()
+
     ELightType lightType;
     
     /* All types */
@@ -35,16 +38,3 @@ struct LightComponent
     float spotInnerAngle;
     float spotOuterAngle;
 };
-
-REGISTER_COMPONENT_BEGIN(LightComponent)
-COMPONENT_VARS_BEGIN
-//COMPONENT_VAR(ELightType, lightType)
-COMPONENT_VAR(glm::vec3, color)
-COMPONENT_VAR(float, intensity)
-COMPONENT_VAR(glm::vec3, direction)
-COMPONENT_VAR(glm::vec3, location)
-COMPONENT_VAR(float, range)
-COMPONENT_VAR(float, spotInnerAngle)
-COMPONENT_VAR(float, spotOuterAngle)
-COMPONENT_VARS_END
-REGISTER_COMPONENT_END(LightComponent)

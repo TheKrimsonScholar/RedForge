@@ -1,11 +1,14 @@
 #pragma once
 
-#include "ResourceRegistrationMacros.h"
+#include "ResourceRegistration.h"
 
 #include <cstdint>
 
 struct Time : public IResource
 {
+	SERIALIZED_RESOURCE_VARS()
+	REPLICATED_RESOURCE_VARS()
+
 	long totalFrames = -1;
 
 	long long startTimeMicro = 0;
@@ -19,7 +22,7 @@ struct Time : public IResource
 	float currentFPS = 0.0f;
 	float minFPS = 0.0f;
 
-private:
+protected:
 	REDFORGE_API void Startup(const EngineStartupParams& params, World& world) override;
 	REDFORGE_API void Shutdown(const EngineShutdownParams& params, World& world) override;
 
@@ -29,4 +32,4 @@ public:
 	float GetFPS() const { return 1.0f / deltaTime; };
 	float GetAverageFPS() const { return currentFPS; };
 };
-REGISTER_RESOURCE(Time)
+REGISTER_RESOURCE_TYPE(Time, IResource)

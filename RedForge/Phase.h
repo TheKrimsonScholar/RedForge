@@ -4,7 +4,6 @@
 #include <typeindex>
 
 #include "System.h"
-#include "SystemRegistrationMacros.h"
 
 struct Phase
 {
@@ -20,7 +19,7 @@ public:
 	Phase();
 	~Phase();
 
-	void AddSystem(World* world, std::type_index systemType, SystemBase* system);
+	void AddSystem(World* world, TypeID systemType, SystemBase* system);
 	
 	void ClearSystems();
 

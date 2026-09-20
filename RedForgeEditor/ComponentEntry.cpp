@@ -19,7 +19,7 @@
 #define DEBUG_NEW new(_NORMAL_BLOCK, __FILE__, __LINE__)
 #define new DEBUG_NEW
 
-ComponentEntry::ComponentEntry(const Entity& entity, std::type_index componentTypeID, void* componentPtr, QWidget* parent) : QWidget(parent),
+ComponentEntry::ComponentEntry(const Entity& entity, TypeID componentTypeID, void* componentPtr, QWidget* parent) : QWidget(parent),
     entity(entity), componentTypeID(componentTypeID)
 {
     QVBoxLayout* vBox = new QVBoxLayout();
@@ -39,7 +39,7 @@ ComponentEntry::ComponentEntry(const Entity& entity, std::type_index componentTy
             content->setVisible(isExpanded);
         });
 
-    label = new QLabel((GET_COMPONENT_NAME(componentTypeID)).c_str(), this);
+    label = new QLabel((GET_TYPE_NAME(componentTypeID)).c_str(), this);
 
     removeButton = new QToolButton(this);
     removeButton->setIcon(QICON_FROM_PATH("Basic/Cross"));
@@ -47,7 +47,7 @@ ComponentEntry::ComponentEntry(const Entity& entity, std::type_index componentTy
     QObject::connect(removeButton, &QPushButton::clicked, this, 
         [entity, componentTypeID]()
         {
-            Editor::GetWorld().GetEntityManager().RemoveComponentOfType(entity, componentTypeID);
+            Editor::GetWorld().GetEntityManager().RemoveComponentOfType(entity, { componentTypeID });
 
             // Refresh the inspector
             if(MainEditorWindow::Get())
@@ -66,7 +66,7 @@ ComponentEntry::ComponentEntry(const Entity& entity, std::type_index componentTy
 
     vBox->addWidget(content);
 
-    std::vector<std::pair<void*, ComponentVariableInfo>> variables = GET_COMPONENT_VARS(componentTypeID, componentPtr);
+    std::vector<std::pair<void*, ComponentVariableTypeInfo>> variables = GET_COMPONENT_VARS(componentTypeID, componentPtr);
     for(auto& member : variables)
     	AppendVariableWidget(member.second, member.first);
 
@@ -77,7 +77,7 @@ ComponentEntry::ComponentEntry(const Entity& entity, std::type_index componentTy
     QObject::connect(timer, &QTimer::timeout, this,
         [this]()
         {
-            if(Editor::GetEngine()->IsRunning() && Editor::GetEntityManager().IsComponentValid(this->entity, this->componentTypeID))
+            if(Editor::GetEngine()->IsRunning() && Editor::GetEntityManager().IsComponentValid(this->entity, { this->componentTypeID }))
     		    UpdateDisplayedVariables();
         });
     timer->start();
@@ -87,7 +87,7 @@ ComponentEntry::~ComponentEntry()
 
 }
 
-void ComponentEntry::AppendVariableWidget(const ComponentVariableInfo& variableInfo, void* variablePtr)
+void ComponentEntry::AppendVariableWidget(const ComponentVariableTypeInfo& variableInfo, void* variablePtr)
 {
     ComponentVariableEntry* varEntry = nullptr;
     if(variableInfo.variableType == typeid(float)) varEntry = new ComponentVariableEntry_Float(variableInfo.variableName, variablePtr, this);

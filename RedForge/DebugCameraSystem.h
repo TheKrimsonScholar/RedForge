@@ -1,7 +1,7 @@
 #pragma once
 
 #include "System.h"
-#include "SystemRegistrationMacros.h"
+#include "SystemRegistration.h"
 
 #include "WindowSystem.h"
 #include "InputSystem.h"
@@ -19,7 +19,7 @@ class DebugCameraSystem : public System<DebugCameraState, Cameras, const InputSt
 
 	void Update(SystemContext<DebugCameraState, Cameras, const InputState, const Window>& ctx, float deltaTime) override;
 };
-REGISTER_SYSTEM_BEGIN(DebugCameraSystem)
+REGISTER_SYSTEM_TYPE_BEGIN(DebugCameraSystem, System<DebugCameraState, Cameras, const InputState, const Window>)
 SYSTEM_REQUIRES(WindowSystem)
 SYSTEM_REQUIRES(InputSystem)
-REGISTER_SYSTEM_END(DebugCameraSystem)
+REGISTER_SYSTEM_TYPE_END(DebugCameraSystem)

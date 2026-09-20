@@ -1,11 +1,11 @@
 #include "DebugLogEvent.h"
 
-REGISTER_EVENT_BEGIN(DebugLogEvent)
+REGISTER_EVENT_TYPE_BEGIN(DebugLogEvent, IEvent)
 EVENT_VARS_BEGIN
 		EVENT_VAR(ELogType, logType)
 		EVENT_VAR(std::string, text)
 EVENT_VARS_END
-REGISTER_EVENT_END(DebugLogEvent)
+REGISTER_EVENT_TYPE_END(DebugLogEvent)
 
 DebugLogEvent::DebugLogEvent(ELogType logType, std::string text)
 	: logType(logType), text(text)

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "System.h"
-#include "SystemRegistrationMacros.h"
+#include "SystemRegistration.h"
 
 #include "Window.h"
 
@@ -16,4 +16,4 @@ public:
 
 	static void FramebufferResizeCallback(GLFWwindow* window, int width, int height);
 };
-REGISTER_SYSTEM(WindowSystem)
+REGISTER_SYSTEM_TYPE(WindowSystem, System<Window>)
