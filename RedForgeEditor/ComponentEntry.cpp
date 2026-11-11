@@ -1,6 +1,7 @@
 #include "ComponentEntry.h"
 
 #include "FileManager.h"
+#include "NetworkDirtyTracker.h"
 
 #include <QVBoxLayout>
 
@@ -99,6 +100,8 @@ void ComponentEntry::AppendVariableWidget(const ComponentVariableTypeInfo& varia
     	
     assert(varEntry && "Serialized component variable's type is not registered!");
     
+    varEntry->onValueChanged.AddUnique(EventCallback(this, &ComponentEntry::OnVariableChanged));
+
     variableEntries.push_back(varEntry);
     content->layout()->addWidget(varEntry);
 }
@@ -107,4 +110,9 @@ void ComponentEntry::UpdateDisplayedVariables()
 {
     for(ComponentVariableEntry* varEntry : variableEntries)
 	    varEntry->UpdateDisplayedValue();
+}
+
+void ComponentEntry::OnVariableChanged(void* variablePtr)
+{
+    NetworkDirtyTracker::MarkComponentDirty(entity, componentTypeID);
 }

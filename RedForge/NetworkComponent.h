@@ -2,16 +2,18 @@
 
 #include "ComponentRegistration.h"
 
+#define NETID_INVALID -1
+
 struct NetworkComponent : public IComponent
 {
-	SERIALIZED_COMPONENT_VARS()
+	SERIALIZED_COMPONENT_VARS(networkID)
 	REPLICATED_COMPONENT_VARS()
 
-	//uint32_t networkID = -1;
-};
+private:
+	size_t networkID = NETID_INVALID;
 
-REGISTER_COMPONENT_TYPE_BEGIN(NetworkComponent, IComponent)
-COMPONENT_VARS_BEGIN
-//COMPONENT_VAR(uint32_t, networkID)
-COMPONENT_VARS_END
-REGISTER_COMPONENT_TYPE_END(NetworkComponent)
+	friend class NetworkSystem;
+
+public:
+	size_t GetNetworkID() const { return networkID; }
+};

@@ -4,6 +4,7 @@
 #include <string>
 #include <type_traits>
 #include <concepts>
+#include <filesystem>
 
 struct IByteStreamFormat {};
 struct ILogStreamFormat : public IByteStreamFormat {};
@@ -36,11 +37,13 @@ struct ByteStreamBase
 		(*this >> ... >> dsts);
 	}
 
-	void Clear()
-	{
-		buffer.clear();
-		readOffset = 0;
-	}
+	void CopyBytesIntoBuffer(const void* data, size_t size);
+	void Clear();
+
+	std::vector<uint8_t> GetBytes();
+	std::vector<uint8_t> GetAllBytes() const;
+	size_t GetSize() const;
+	bool HasNext() const;
 };
 
 template<typename Format>
@@ -149,19 +152,15 @@ ByteStreamBase& ByteStreamBase::operator>>(T& dst)
 /* Default specializations for standard non-primitive data types */
 
 template<>
-inline void ByteStreamBase::Serialize(const std::string& src)
-{
-	*this << src.size();
-	for(size_t i = 0; i < src.size(); i++)
-		*this << src[i];
-}
+void ByteStreamBase::Serialize(const std::vector<uint8_t>& src);
 template<>
-inline void ByteStreamBase::Deserialize(std::string& dst)
-{
-	size_t size;
-	*this >> size;
+void ByteStreamBase::Deserialize(std::vector<uint8_t>& dst);
 
-	dst.resize(size);
-	for(size_t i = 0; i < size; i++)
-		*this >> dst[i];
-}
+template<>
+void ByteStreamBase::Serialize(const std::string& src);
+template<>
+void ByteStreamBase::Deserialize(std::string& dst);
+template<>
+void ByteStreamBase::Serialize(const std::filesystem::path& src);
+template<>
+void ByteStreamBase::Deserialize(std::filesystem::path& dst);

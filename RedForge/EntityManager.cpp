@@ -2,6 +2,7 @@
 
 #include "EngineParams.h"
 
+#include "World.h"
 #include "TransformComponent.h"
 #include "MeshRendererComponent.h"
 #include "CameraComponent.h"
@@ -17,6 +18,63 @@
 
 #define DEBUG_NEW new(_NORMAL_BLOCK, __FILE__, __LINE__)
 #define new DEBUG_NEW
+
+REGISTER_EVENT_TYPE_BEGIN(EntityCreatedEvent, IEvent)
+EVENT_VARS_BEGIN
+EVENT_VAR(Entity, entity)
+EVENT_VAR(LevelID, level)
+EVENT_VAR(Entity, parent)
+EVENT_VAR(std::string, name)
+EVENT_VARS_END
+REGISTER_EVENT_TYPE_END(EntityCreatedEvent)
+
+REGISTER_EVENT_TYPE_BEGIN(EntityDestroyedEvent, IEvent)
+EVENT_VARS_BEGIN
+EVENT_VAR(Entity, entity)
+EVENT_VARS_END
+REGISTER_EVENT_TYPE_END(EntityDestroyedEvent)
+
+REGISTER_EVENT_TYPE_BEGIN(EntityLevelChangedEvent, IEvent)
+EVENT_VARS_BEGIN
+EVENT_VAR(Entity, entity)
+EVENT_VAR(LevelID, level)
+EVENT_VARS_END
+REGISTER_EVENT_TYPE_END(EntityLevelChangedEvent)
+
+REGISTER_EVENT_TYPE_BEGIN(EntityReparentedEvent, IEvent)
+EVENT_VARS_BEGIN
+EVENT_VAR(Entity, entity)
+EVENT_VAR(Entity, parent)
+EVENT_VARS_END
+REGISTER_EVENT_TYPE_END(EntityReparentedEvent)
+
+REGISTER_EVENT_TYPE_BEGIN(EntityMovedBeforeEvent, IEvent)
+EVENT_VARS_BEGIN
+EVENT_VAR(Entity, entity)
+EVENT_VAR(Entity, next)
+EVENT_VARS_END
+REGISTER_EVENT_TYPE_END(EntityMovedBeforeEvent)
+
+REGISTER_EVENT_TYPE_BEGIN(EntityMovedAfterEvent, IEvent)
+EVENT_VARS_BEGIN
+EVENT_VAR(Entity, entity)
+EVENT_VAR(Entity, previous)
+EVENT_VARS_END
+REGISTER_EVENT_TYPE_END(EntityMovedAfterEvent)
+
+REGISTER_EVENT_TYPE_BEGIN(ComponentAddedEvent, IEvent)
+EVENT_VARS_BEGIN
+EVENT_VAR(Entity, entity)
+EVENT_VAR(TypeID, componentType)
+EVENT_VARS_END
+REGISTER_EVENT_TYPE_END(ComponentAddedEvent)
+
+REGISTER_EVENT_TYPE_BEGIN(ComponentRemovedEvent, IEvent)
+EVENT_VARS_BEGIN
+EVENT_VAR(Entity, entity)
+EVENT_VAR(TypeID, componentType)
+EVENT_VARS_END
+REGISTER_EVENT_TYPE_END(ComponentRemovedEvent)
 
 void EntityManager::Startup(const EngineStartupParams& params)
 {
@@ -94,9 +152,13 @@ void EntityManager::DestroyEntity(Entity entity)
 
 	// Remove all of the entity's components (prevents conflict if this entity slot is reused)
 	for(auto& componentArray : componentArrays)
-		componentArray.second->Remove(entity.index);
+		RemoveComponentOfType(entity, componentArray.first);
 
 	entityData[entity.index].valid = false;
+
+	EntityDestroyedEvent event = {};
+	event.entity = entity;
+	world->QueueEvent(event);
 }
 
 bool EntityManager::MoveEntityToLevel(Entity entity, LevelID level)
@@ -105,7 +167,7 @@ bool EntityManager::MoveEntityToLevel(Entity entity, LevelID level)
 
 	onEntityLevelChanged.Broadcast(entity, level);
 
-    /* Update entity level data to set entity as the last child of newParent */
+    /* Update entity level data to set entity as the last root entity of level */
 
 	// Update level's first entity if this is the first entity in the level
     if(GetLevelFirstEntity(GetEntityLevel(entity)) == entity)
@@ -141,6 +203,11 @@ bool EntityManager::MoveEntityToLevel(Entity entity, LevelID level)
     entityData[entity.index].depth = 0;
 
 	onEntityLevelDataModified.Broadcast(entity);
+
+	EntityLevelChangedEvent event = {};
+	event.entity = entity;
+	event.level = level;
+	world->QueueEvent(event);
 
     return true;
 }
@@ -190,6 +257,11 @@ bool EntityManager::ReparentEntity(Entity entity, Entity newParent)
     entityData[entity.index].depth = entityData[newParent.index].depth + 1;
 
 	onEntityLevelDataModified.Broadcast(entity);
+
+	EntityReparentedEvent event = {};
+	event.entity = entity;
+	event.parent = newParent;
+	world->QueueEvent(event);
 
     return true;
 }
@@ -246,6 +318,11 @@ bool EntityManager::MoveEntityBefore(Entity entity, Entity next)
 
 	onEntityLevelDataModified.Broadcast(entity);
 
+	EntityMovedBeforeEvent event = {};
+	event.entity = entity;
+	event.next = next;
+	world->QueueEvent(event);
+
     return true;
 }
 bool EntityManager::MoveEntityAfter(Entity entity, Entity previous)
@@ -292,6 +369,11 @@ bool EntityManager::MoveEntityAfter(Entity entity, Entity previous)
 
 	onEntityLevelDataModified.Broadcast(entity);
 
+	EntityMovedAfterEvent event = {};
+	event.entity = entity;
+	event.previous = previous;
+	world->QueueEvent(event);
+
     return true;
 }
 
@@ -307,6 +389,11 @@ void EntityManager::AddComponentOfType(Entity entity, TypeID componentType, cons
 			AddComponentOfType(entity, dependencyID);
 
 	componentArrays[componentType]->Add(entity.index, component);
+
+	ComponentAddedEvent event = {};
+	event.entity = entity;
+	event.componentType = componentType;
+	QueueComponentAddedEvent(event);
 }
 void EntityManager::RemoveComponentOfType(Entity entity, TypeID componentType)
 {
@@ -314,7 +401,13 @@ void EntityManager::RemoveComponentOfType(Entity entity, TypeID componentType)
 
 	assert(componentArrays.find(componentType) != componentArrays.end() && "Component has not been registered.");
 
-	componentArrays[componentType]->Remove(entity.index);
+	if(!componentArrays[componentType]->Remove(entity.index))
+		return;
+
+	ComponentRemovedEvent event = {};
+	event.entity = entity;
+	event.componentType = componentType;
+	QueueComponentRemovedEvent(event);
 
 	// After removing the component, also remove all components that depend on it
 	for(TypeID dependent : GET_COMPONENT_DEPENDENTS(componentType))
@@ -432,59 +525,59 @@ void EntityManager::ForEachEntity_Reversed(std::function<void(const Entity&)> ca
 	}
 }
 
-void EntityManager::ForEachComponentOfType(const std::vector<TypeID>& componentTypes, std::function<void(const Entity&, std::span<void*>)> callback)
-{
-	IComponentArray* smallestArray = nullptr;
-	uint32_t smallestArraySize = -1;
-	// Determine the smallest component array
-	for(TypeID type : componentTypes)
-	{
-		IComponentArray* componentArray = componentArrays[type];
-		if(componentArray->GetSize() < smallestArraySize)
-		{
-			smallestArray = componentArray;
-			smallestArraySize = componentArray->GetSize();
-		}
-	}
-
-	uint32_t* entitiesArray = smallestArray->GetEntitiesArray();
-	// Iterate through the smallest array, checking which of the associated entities have all of the specified components
-	for(uint32_t i = 0; i < smallestArraySize; i++)
-	{
-		uint32_t entityIndex = entitiesArray[i];
-		const Entity& entity = GetEntityByIndex(entityIndex);
-		
-		bool hasRequiredComponents = true;
-		std::vector<void*> components(componentTypes.size());
-		// Check for the required components on this entity and gather pointers to them if they exist
-		for(uint32_t i = 0; i < componentTypes.size(); i++)
-		{
-			IComponentArray* componentArray = componentArrays[componentTypes[i]];
-			// If componentArray is the smallest array (the one being iterated through), then we know the component exists for this entity
-			if(componentArray == smallestArray)
-			{
-				// Set the component pointer at this index
-				components[i] = componentArray->GetRaw(entityIndex);
-			}
-			else
-			{
-				// If the entity doesn't have this component, stop and skip this entity
-				if(!componentArray->Has(entityIndex))
-				{
-					hasRequiredComponents = false;
-					break;
-				}
-
-				// Otherwise set the component pointer at this index
-				components[i] = componentArray->GetRaw(entityIndex);
-			}
-		}
-
-		// If this entity has all required components, trigger callback with entity and component pointers
-		if(hasRequiredComponents)
-			callback(entity, std::span<void*>(components));
-	}
-}
+//void EntityManager::ForEachComponentOfType(const std::unordered_set<TypeID>& componentsToRead, const std::unordered_set<TypeID>& componentsToWrite, std::function<void(const Entity&, std::span<void*>)> callback)
+//{
+//	IComponentArray* smallestArray = nullptr;
+//	uint32_t smallestArraySize = -1;
+//	// Determine the smallest component array
+//	for(TypeID type : componentTypes)
+//	{
+//		IComponentArray* componentArray = componentArrays[type];
+//		if(componentArray->GetSize() < smallestArraySize)
+//		{
+//			smallestArray = componentArray;
+//			smallestArraySize = componentArray->GetSize();
+//		}
+//	}
+//
+//	uint32_t* entitiesArray = smallestArray->GetEntitiesArray();
+//	// Iterate through the smallest array, checking which of the associated entities have all of the specified components
+//	for(uint32_t i = 0; i < smallestArraySize; i++)
+//	{
+//		uint32_t entityIndex = entitiesArray[i];
+//		const Entity& entity = GetEntityByIndex(entityIndex);
+//		
+//		bool hasRequiredComponents = true;
+//		std::vector<void*> components(componentTypes.size());
+//		// Check for the required components on this entity and gather pointers to them if they exist
+//		for(uint32_t i = 0; i < componentTypes.size(); i++)
+//		{
+//			IComponentArray* componentArray = componentArrays[componentTypes[i]];
+//			// If componentArray is the smallest array (the one being iterated through), then we know the component exists for this entity
+//			if(componentArray == smallestArray)
+//			{
+//				// Set the component pointer at this index
+//				components[i] = componentArray->GetRaw(entityIndex);
+//			}
+//			else
+//			{
+//				// If the entity doesn't have this component, stop and skip this entity
+//				if(!componentArray->Has(entityIndex))
+//				{
+//					hasRequiredComponents = false;
+//					break;
+//				}
+//
+//				// Otherwise set the component pointer at this index
+//				components[i] = componentArray->GetRaw(entityIndex);
+//			}
+//		}
+//
+//		// If this entity has all required components, trigger callback with entity and component pointers
+//		if(hasRequiredComponents)
+//			callback(entity, std::span<void*>(components));
+//	}
+//}
 
 std::unordered_map<void*, TypeID> EntityManager::GetAllComponents(Entity entity)
 {
@@ -822,4 +915,17 @@ void EntityManager::SetEntityLastSibling(Entity entity, Entity lastSibling)
 {
 	if(IsEntityValid(entity))
 		entityData[entity.index].lastSibling = lastSibling;
+}
+
+void EntityManager::QueueEntityCreatedEvent(const EntityCreatedEvent& event)
+{
+	world->QueueEvent(event);
+}
+void EntityManager::QueueComponentAddedEvent(const ComponentAddedEvent& event)
+{
+	world->QueueEvent(event);
+}
+void EntityManager::QueueComponentRemovedEvent(const ComponentRemovedEvent& event)
+{
+	world->QueueEvent(event);
 }

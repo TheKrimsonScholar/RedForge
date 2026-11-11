@@ -2,6 +2,11 @@
 
 #include "GraphicsState.h"
 
+#define DEBUG_NEW new(_NORMAL_BLOCK, __FILE__, __LINE__)
+#define new DEBUG_NEW
+
+REGISTER_SYSTEM_TYPE(WindowSystem, System<Window>)
+
 void WindowSystem::Startup(const EngineStartupParams& params, World& world)
 {
 	static const uint32_t WIDTH = 800;

@@ -37,22 +37,16 @@ inline void RegisterResourceTypeBase::RegisterResourceType()
 	ResourceTypeInfo resourceTypeInfo = {};
 	resourceTypeInfo.createResource = [this]() { return CreateResource<T>(); };
 	resourceTypeInfo.getVariables = [](void* rawResource) -> std::vector<std::pair<void*, ResourceVariableTypeInfo>> { return {}; };
-	resourceTypeInfo.deserializePacket = [](ByteStream<IPacketStreamFormat>& str, void* dst)
-		{
-			T* dstObj = static_cast<T*>(dst);
-
-			str >> *dstObj;
-		};
 
 	GetRegistryInstance().registeredResourceInfoMap.emplace(TYPEID(T), resourceTypeInfo);
 }
 
 #define SERIALIZED_RESOURCE_VARS(...)																													\
-void SerializeResource(ByteStream<IFileStreamFormat>& str) const																						\
+void SerializeResource(ByteStreamBase& str) const																										\
 {																																						\
 	str.SerializeAll(__VA_ARGS__);																														\
 }																																						\
-void DeserializeResource(ByteStream<IFileStreamFormat>& str)																							\
+void DeserializeResource(ByteStreamBase& str)																											\
 {																																						\
 	str.DeserializeAll(__VA_ARGS__);																													\
 }
@@ -135,14 +129,12 @@ struct RegisterResourceType_##Type : public RegisterResourceTypeBase												
 inline RegisterResourceType_##Type RegisterResourceType_##Type##_Instance;																				\
 																																						\
 template<>																																				\
-template<>																																				\
-inline void ByteStream<IFileStreamFormat>::Serialize(const Type& src)																					\
+inline void ByteStreamBase::Serialize(const Type& src)																									\
 {																																						\
 	src.SerializeResource(*this);																														\
 }																																						\
 template<>																																				\
-template<>																																				\
-inline void ByteStream<IFileStreamFormat>::Deserialize(Type& dst)																						\
+inline void ByteStreamBase::Deserialize(Type& dst)																										\
 {																																						\
 	dst.DeserializeResource(*this);																														\
 }																																						\

@@ -6,6 +6,12 @@
 #include "World.h"
 #include "EntityManager.h"
 #include "EventQueue.h"
+#include "GenericComponentData.h"
+#include "GenericEventData.h"
+
+#include "DebugLogEvent.h"
+
+struct ICommandStreamFormat : public IByteStreamFormat {};
 
 class CommandBuffer
 {
@@ -14,6 +20,7 @@ class CommandBuffer
 		CreateEntity,
 		DestroyEntity,
 		RenameEntity,
+		MoveEntityToLevel,
 		ReparentEntity,
 		MoveEntityBefore,
 		MoveEntityAfter,
@@ -25,7 +32,10 @@ class CommandBuffer
 	struct CreateEntityCommand
 	{
 		std::string name;
+		LevelID level;
 		Entity parent;
+		Entity previous;
+		Entity next;
 		std::filesystem::path prefabPath;
 	};
 	struct DestroyEntityCommand
@@ -36,6 +46,11 @@ class CommandBuffer
 	{
 		Entity entity;
 		std::string name;
+	};
+	struct MoveEntityToLevelCommand
+	{
+		Entity entity;
+		LevelID level;
 	};
 	struct ReparentEntityCommand
 	{
@@ -55,8 +70,7 @@ class CommandBuffer
 	struct AddComponentCommand
 	{
 		Entity entity;
-		TypeID componentType;
-		//void* component;
+		GenericComponentData component;
 	};
 	struct RemoveComponentCommand
 	{
@@ -65,17 +79,17 @@ class CommandBuffer
 	};
 	struct QueueEventCommand
 	{
-		TypeID eventType;
-		//void* event;
+		GenericEventData event;
 	};
 
 private:
 	World* world;
 
-	std::vector<std::byte> buffer;
+	ByteStream<ICommandStreamFormat> buffer;
+	//std::vector<std::byte> buffer;
 	
-	size_t writePosition = 0;
-	size_t readPosition = 0;
+	//size_t writePosition = 0;
+	//size_t readPosition = 0;
 
 	size_t entitiesCreated = 0;
 	std::vector<Entity> createdEntities;
@@ -83,10 +97,19 @@ private:
 public:
 	CommandBuffer(World* world) : world(world) {}
 
-	Entity Command_CreateEntity(const std::string& name, const Entity& parent, const std::filesystem::path& prefabPath)
+	Entity Command_CreateEntity(
+		const std::string& name, LevelID level, const Entity& parent, const Entity& previous, const Entity& next, const std::filesystem::path& prefabPath)
 	{
-		CreateEntityCommand command = { name, parent, prefabPath };
-		WriteCommand(ECommandType::CreateEntity, &command);
+		CreateEntityCommand command = {};
+		command.name = name;
+		command.level = level;
+		command.parent = parent;
+		command.previous = previous;
+		command.next = next;
+		command.prefabPath = prefabPath;
+
+		buffer << ECommandType::CreateEntity;
+		buffer << command;
 
 		Entity tempEntity;
 		tempEntity.index = entitiesCreated++;
@@ -96,131 +119,183 @@ public:
 	}
 	void Command_DestroyEntity(const Entity& entity)
 	{
-		DestroyEntityCommand command = { entity };
-		WriteCommand(ECommandType::DestroyEntity, &command);
+		DestroyEntityCommand command = {};
+		command.entity = entity;
+
+		buffer << ECommandType::DestroyEntity;
+		buffer << command;
 	}
 	void Command_RenameEntity(const Entity& entity, const std::string& name)
 	{
-		RenameEntityCommand command = { entity, name };
-		WriteCommand(ECommandType::RenameEntity, &command);
+		RenameEntityCommand command = {};
+		command.entity = entity;
+		command.name = name;
+		
+		buffer << ECommandType::RenameEntity;
+		buffer << command;
+	}
+	void Command_MoveEntityToLevel(const Entity& entity, LevelID level)
+	{
+		MoveEntityToLevelCommand command = {};
+		command.entity = entity;
+		command.level = level;
+
+		buffer << ECommandType::MoveEntityToLevel;
+		buffer << command;
 	}
 	void Command_ReparentEntity(const Entity& entity, const Entity& parent)
 	{
-		ReparentEntityCommand command = { entity, parent };
-		WriteCommand(ECommandType::ReparentEntity, &command);
+		ReparentEntityCommand command = {};
+		command.entity = entity;
+		command.parent = parent;
+		
+		buffer << ECommandType::ReparentEntity;
+		buffer << command;
 	}
 	void Command_MoveEntityBefore(const Entity& entity, const Entity& next)
 	{
-		MoveEntityBeforeCommand command = { entity, next };
-		WriteCommand(ECommandType::MoveEntityBefore, &command);
+		MoveEntityBeforeCommand command = {};
+		command.entity = entity;
+		command.next = next;
+		
+		buffer << ECommandType::MoveEntityBefore;
+		buffer << command;
 	}
 	void Command_MoveEntityAfter(const Entity& entity, const Entity& previous)
 	{
-		MoveEntityAfterCommand command = { entity, previous };
-		WriteCommand(ECommandType::MoveEntityAfter, &command);
-	}
-	void Command_AddComponent(const Entity& entity, TypeID componentType, void* component)
-	{
-		AddComponentCommand command = { entity, componentType };
+		MoveEntityAfterCommand command = {};
+		command.entity = entity;
+		command.previous = previous;
 
-		// Write command with the component as extra data
-		WriteCommand(ECommandType::AddComponent, &command, GET_TYPE_SIZE(componentType), component);
+		buffer << ECommandType::MoveEntityAfter;
+		buffer << command;
+	}
+	void Command_AddComponent(const Entity& entity, TypeID componentType, const void* component)
+	{
+		AddComponentCommand command = { entity, GenericComponentData(componentType, component) };
+
+		buffer << ECommandType::AddComponent;
+		buffer << command;
 	}
 	void Command_RemoveComponent(const Entity& entity, TypeID componentType)
 	{
-		RemoveComponentCommand command = { entity, componentType };
-		WriteCommand(ECommandType::RemoveComponent, &command);
+		RemoveComponentCommand command = {};
+		command.entity = entity;
+		command.componentType = componentType;
+		
+		buffer << ECommandType::RemoveComponent;
+		buffer << command;
 	}
-	void Command_QueueEvent(TypeID eventType, const void* event)
+	void Command_QueueEvent(TypeID eventType, void* event)
 	{
-		QueueEventCommand command = { eventType };
+		QueueEventCommand command = { GenericEventData(eventType, event) };
 
-		// Write command with the event as extra data
-		WriteCommand(ECommandType::QueueEvent, &command, GET_TYPE_SIZE(eventType), event);
+		buffer << ECommandType::QueueEvent;
+		buffer << command;
 	}
 
 	void Flush()
 	{
 		ECommandType commandType;
-		void* data;
-		size_t extraBytes;
-		void* extra;
-		while(ReadCommand(commandType, data, extraBytes, extra))
+		while(buffer.HasNext())
 		{
+			buffer >> commandType;
 			switch(commandType)
 			{
 				case ECommandType::CreateEntity:
 				{
-					CreateEntityCommand* command = reinterpret_cast<CreateEntityCommand*>(data);
+					CreateEntityCommand command;
+					buffer >> command;
 
 					// Create the entity and add it to internal list for future reference
-					createdEntities.push_back(world->GetEntityManager().CreateEntity(command->parent, command->name, command->prefabPath));
+					if(command.previous.IsValid() || command.next.IsValid())
+						createdEntities.push_back(world->GetEntityManager().CreateEntity(command.previous, command.next, command.name, command.prefabPath));
+					else if(command.parent.IsValid())
+						createdEntities.push_back(world->GetEntityManager().CreateEntity(command.parent, command.name, command.prefabPath));
+					else
+						createdEntities.push_back(world->GetEntityManager().CreateEntity(command.name, command.level, command.prefabPath));
 				}
 				break;
 				case ECommandType::DestroyEntity:
 				{
-					DestroyEntityCommand* command = reinterpret_cast<DestroyEntityCommand*>(data);
-					
-					world->GetEntityManager().DestroyEntity(ResolveTransientEntity(command->entity));
+					DestroyEntityCommand command;
+					buffer >> command;
+
+					world->GetEntityManager().DestroyEntity(ResolveTransientEntity(command.entity));
 				}
 				break;
 				case ECommandType::RenameEntity:
 				{
-					RenameEntityCommand* command = reinterpret_cast<RenameEntityCommand*>(data);
+					RenameEntityCommand command;
+					buffer >> command;
 					
-					world->GetEntityManager().SetEntityName(ResolveTransientEntity(command->entity), command->name);
+					world->GetEntityManager().SetEntityName(ResolveTransientEntity(command.entity), command.name);
+				}
+				break;
+				case ECommandType::MoveEntityToLevel:
+				{
+					MoveEntityToLevelCommand command;
+					buffer >> command;
+
+					world->GetEntityManager().MoveEntityToLevel(
+						ResolveTransientEntity(command.entity),
+						command.level);
 				}
 				break;
 				case ECommandType::ReparentEntity:
 				{
-					ReparentEntityCommand* command = reinterpret_cast<ReparentEntityCommand*>(data);
+					ReparentEntityCommand command;
+					buffer >> command;
 					
 					world->GetEntityManager().ReparentEntity(
-						ResolveTransientEntity(command->entity), 
-						ResolveTransientEntity(command->parent));
+						ResolveTransientEntity(command.entity), 
+						ResolveTransientEntity(command.parent));
 				}
 				break;
 				case ECommandType::MoveEntityBefore:
 				{
-					MoveEntityBeforeCommand* command = reinterpret_cast<MoveEntityBeforeCommand*>(data);
+					MoveEntityBeforeCommand command;
+					buffer >> command;
 					
 					world->GetEntityManager().MoveEntityBefore(
-						ResolveTransientEntity(command->entity), 
-						ResolveTransientEntity(command->next));
+						ResolveTransientEntity(command.entity), 
+						ResolveTransientEntity(command.next));
 				}
 				break;
 				case ECommandType::MoveEntityAfter:
 				{
-					MoveEntityAfterCommand* command = reinterpret_cast<MoveEntityAfterCommand*>(data);
+					MoveEntityAfterCommand command;
+					buffer >> command;
 
 					world->GetEntityManager().MoveEntityAfter(
-						ResolveTransientEntity(command->entity), 
-						ResolveTransientEntity(command->previous));
+						ResolveTransientEntity(command.entity), 
+						ResolveTransientEntity(command.previous));
 				}
 				break;
 				case ECommandType::AddComponent:
 				{
-					AddComponentCommand* command = reinterpret_cast<AddComponentCommand*>(data);
-					void* component = extra;
+					AddComponentCommand command;
+					buffer >> command;
 
-					world->GetEntityManager().AddComponentOfType(ResolveTransientEntity(command->entity), { command->componentType }, component);
+					world->GetEntityManager().AddComponentOfType(ResolveTransientEntity(command.entity), command.component.GetComponentType(), command.component.GetComponentPtr());
 				}
 				break;
 				case ECommandType::RemoveComponent:
 				{
-					RemoveComponentCommand* command = reinterpret_cast<RemoveComponentCommand*>(data);
+					RemoveComponentCommand command;
+					buffer >> command;
 
-					world->GetEntityManager().RemoveComponentOfType(ResolveTransientEntity(command->entity), { command->componentType });
+					world->GetEntityManager().RemoveComponentOfType(ResolveTransientEntity(command.entity), { command.componentType });
 				}
 				break;
 				case ECommandType::QueueEvent:
 				{
-					QueueEventCommand* command = reinterpret_cast<QueueEventCommand*>(data);
-					void* event = extra;
+					QueueEventCommand command;
+					buffer >> command;
 
 					/* Use event reflection to manually resolve any transient entities found in event arguments */
 
-					std::vector<std::pair<void*, EventVariableTypeInfo>> eventVariables = GET_EVENT_VARS(command->eventType, event);
+					std::vector<std::pair<void*, EventVariableTypeInfo>> eventVariables = GET_EVENT_VARS(command.event.GetEventType(), command.event.GetEventPtr());
 					for(const std::pair<void*, EventVariableTypeInfo>& eventVariable : eventVariables)
 					{
 						// If the event variable is of type Entity, cast it to Entity and resolve its permanent ID in-place
@@ -231,70 +306,14 @@ public:
 						}
 					}
 
-					world->QueueEventOfType(command->eventType, event);
+					world->QueueEventOfType(command.event.GetEventType(), command.event.GetEventPtr());
 				}
 				break;
 				default: break;
 			}
 		}
 
-		writePosition = 0;
-		readPosition = 0;
-		buffer.clear();
-	}
-
-private:
-	void WriteCommand(ECommandType commandType, const void* data, size_t extraBytes = 0, const void* extra = nullptr)
-	{
-		size_t dataSize = GetCommandSize(commandType);
-
-		size_t totalCommandSize = sizeof(ECommandType) + dataSize + sizeof(size_t) + extraBytes;
-		if(buffer.size() < writePosition + totalCommandSize)
-			buffer.resize(writePosition + totalCommandSize);
-
-		// Write command type
-		memcpy(buffer.data() + writePosition, &commandType, sizeof(ECommandType));
-		writePosition += sizeof(ECommandType);
-		// Write command data
-		memcpy(buffer.data() + writePosition, data, dataSize);
-		writePosition += dataSize;
-		// Write extra data size
-		memcpy(buffer.data() + writePosition, &extraBytes, sizeof(size_t));
-		writePosition += sizeof(size_t);
-		// Write extra data (optional)
-		if(extraBytes > 0 && extra)
-		{
-			memcpy(buffer.data() + writePosition, extra, extraBytes);
-			writePosition += extraBytes;
-		}
-	}
-	bool ReadCommand(ECommandType& out_type, void*& out_data, size_t& out_extraBytes, void*& out_extra)
-	{
-		if(readPosition >= writePosition)
-			return false;
-
-		// Read command type
-		out_type = *reinterpret_cast<ECommandType*>(buffer.data() + readPosition);
-		readPosition += sizeof(ECommandType);
-		
-		size_t dataSize = GetCommandSize(out_type);
-		// Read command data
-		out_data = buffer.data() + readPosition;
-		readPosition += dataSize;
-
-		// Read extra data size
-		out_extraBytes = *reinterpret_cast<size_t*>(buffer.data() + readPosition);
-		readPosition += sizeof(size_t);
-		// Read extra data (if applicable)
-		if(out_extraBytes > 0)
-		{
-			out_extra = buffer.data() + readPosition;
-			readPosition += out_extraBytes;
-		}
-		else
-			out_extra = nullptr;
-
-		return true;
+		buffer.Clear();
 	}
 
 	Entity ResolveTransientEntity(const Entity& entity)
@@ -305,21 +324,65 @@ private:
 		else
 			return entity;
 	}
-
-	size_t GetCommandSize(ECommandType commandType) const
-	{
-		switch(commandType)
-		{
-			case ECommandType::CreateEntity: return sizeof(CreateEntityCommand);
-			case ECommandType::DestroyEntity: return sizeof(DestroyEntityCommand);
-			case ECommandType::RenameEntity: return sizeof(RenameEntityCommand);
-			case ECommandType::ReparentEntity: return sizeof(ReparentEntityCommand);
-			case ECommandType::MoveEntityBefore: return sizeof(MoveEntityBeforeCommand);
-			case ECommandType::MoveEntityAfter: return sizeof(MoveEntityAfterCommand);
-			case ECommandType::AddComponent: return sizeof(AddComponentCommand);
-			case ECommandType::RemoveComponent: return sizeof(RemoveComponentCommand);
-			case ECommandType::QueueEvent: return sizeof(QueueEventCommand);
-			default: return 0;
-		}
-	}
 };
+
+template<>
+template<>
+void ByteStream<ICommandStreamFormat>::Serialize(const CommandBuffer::CreateEntityCommand& src);
+template<>
+template<>
+void ByteStream<ICommandStreamFormat>::Deserialize(CommandBuffer::CreateEntityCommand& dst);
+template<>
+template<>
+void ByteStream<ICommandStreamFormat>::Serialize(const CommandBuffer::DestroyEntityCommand& src);
+template<>
+template<>
+void ByteStream<ICommandStreamFormat>::Deserialize(CommandBuffer::DestroyEntityCommand& dst);
+template<>
+template<>
+void ByteStream<ICommandStreamFormat>::Serialize(const CommandBuffer::RenameEntityCommand& src);
+template<>
+template<>
+void ByteStream<ICommandStreamFormat>::Deserialize(CommandBuffer::RenameEntityCommand& dst);
+template<>
+template<>
+void ByteStream<ICommandStreamFormat>::Serialize(const CommandBuffer::MoveEntityToLevelCommand& src);
+template<>
+template<>
+void ByteStream<ICommandStreamFormat>::Deserialize(CommandBuffer::MoveEntityToLevelCommand& dst);
+template<>
+template<>
+void ByteStream<ICommandStreamFormat>::Serialize(const CommandBuffer::ReparentEntityCommand& src);
+template<>
+template<>
+void ByteStream<ICommandStreamFormat>::Deserialize(CommandBuffer::ReparentEntityCommand& dst);
+template<>
+template<>
+void ByteStream<ICommandStreamFormat>::Serialize(const CommandBuffer::MoveEntityBeforeCommand& src);
+template<>
+template<>
+void ByteStream<ICommandStreamFormat>::Deserialize(CommandBuffer::MoveEntityBeforeCommand& dst);
+template<>
+template<>
+void ByteStream<ICommandStreamFormat>::Serialize(const CommandBuffer::MoveEntityAfterCommand& src);
+template<>
+template<>
+void ByteStream<ICommandStreamFormat>::Deserialize(CommandBuffer::MoveEntityAfterCommand& dst);
+template<>
+template<>
+void ByteStream<ICommandStreamFormat>::Serialize(const CommandBuffer::AddComponentCommand& src);
+template<>
+template<>
+void ByteStream<ICommandStreamFormat>::Deserialize(CommandBuffer::AddComponentCommand& dst);
+template<>
+template<>
+void ByteStream<ICommandStreamFormat>::Serialize(const CommandBuffer::RemoveComponentCommand& src);
+template<>
+template<>
+void ByteStream<ICommandStreamFormat>::Deserialize(CommandBuffer::RemoveComponentCommand& dst);
+template<>
+template<>
+void ByteStream<ICommandStreamFormat>::Serialize(const CommandBuffer::QueueEventCommand& src);
+template<>
+template<>
+void ByteStream<ICommandStreamFormat>::Deserialize(CommandBuffer::QueueEventCommand& dst);

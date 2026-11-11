@@ -71,4 +71,3 @@ public:
 
 	friend struct RegisterResourceBase;
 };
-REGISTER_RESOURCE_TYPE(Assets, IResource)

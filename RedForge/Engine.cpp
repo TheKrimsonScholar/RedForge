@@ -35,8 +35,6 @@ Engine::~Engine()
 {
     delete scheduler;
     delete world;
-
-    TypeRegistry::DestroyInstance();
 }
 
 void Engine::Run()

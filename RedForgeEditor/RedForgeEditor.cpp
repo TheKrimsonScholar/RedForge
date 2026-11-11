@@ -33,6 +33,12 @@ int main(int argc, char* argv[])
     app.setWindowIcon(QICON_FROM_PATH("icon.ico"));
     app.setApplicationName("RedForgeEditor");
     app.setApplicationDisplayName("RedForge Editor");
+#ifdef NETMODE_SERVER
+    app.setApplicationDisplayName("RedForge Editor (Server)");
+#endif // NETMODE_SERVER
+#ifdef NETMODE_CLIENT
+    app.setApplicationDisplayName("RedForge Editor (Client)");
+#endif // NETMODE_CLIENT
     app.setStyle("Fusion");
 
     QFile file(GetEditorAssetsPath().append("styles/style.qss"));

@@ -16,6 +16,8 @@ class World;
 class EntityManager;
 class SystemBase;
 
+#define INVALID_TYPE TypeID(-1)
+
 REDFORGE_API struct TypeID
 {
 	size_t id;
@@ -55,6 +57,15 @@ struct TypeInfo
 {
 	std::string name;
 	size_t size;
+
+	std::function<void*()> constructInstance;
+	std::function<void*(const void*)> copyConstructInstance;
+	std::function<void(const void*, void*)> copyInstance;
+	std::function<void(void*)> destroyInstance;
+	std::function<void(ByteStreamBase&, void*)> serialize;
+	std::function<void(ByteStreamBase&, void*)> deserialize;
+	std::function<void(ByteStream<IPacketStreamFormat>&, void*)> serializePacket;
+	std::function<void(ByteStream<IPacketStreamFormat>&, void*)> deserializePacket;
 };
 struct SystemTypeInfo
 {
@@ -77,8 +88,6 @@ struct ComponentTypeInfo
 	std::function<void(EntityManager&)> registerComponent;
 
 	std::function<std::vector<std::pair<void*, ComponentVariableTypeInfo>>(void*)> getVariables;
-
-	std::function<void(ByteStream<IPacketStreamFormat>&, void*)> deserializePacket;
 
 	std::vector<ComponentVariableTypeInfo> variables;
 
@@ -104,8 +113,6 @@ struct ResourceTypeInfo
 	std::function<IResource*()> createResource;
 
 	std::function<std::vector<std::pair<void*, ResourceVariableTypeInfo>>(void*)> getVariables;
-	
-	std::function<void(ByteStream<IPacketStreamFormat>&, void*)> deserializePacket;
 };
 struct EventVariableTypeInfo
 {
@@ -127,6 +134,15 @@ class RegisterTypeBase;
 class TypeRegistry
 {
 private:
+	struct TypeRegistryDestructor
+	{
+		TypeRegistryDestructor();
+		~TypeRegistryDestructor();
+	};
+	// Static object used to tie type registry destruction to program termination.
+	// Because TypeRegistry follows the Meyer's Singleton pattern, it is created on first use and therefore must be destroyed by an external object when static objects are destroyed on shutdown, but this lifetime shouldn't be managed by the engine since the type registry may be used before the engine is initialized.
+	static TypeRegistryDestructor destructor;
+
 	REDFORGE_API static TypeRegistry* instance;
 
 	std::unordered_map<std::type_index, RegisterTypeBase*> registrars;
@@ -238,6 +254,14 @@ public:
 #define TYPEID(Type) ((TypeID) TypeRegistry::GetTypeID<Type>())
 #define GET_TYPE_NAME(typeID) ((std::string) TypeRegistry::GetRegisteredTypesList()[typeID.id].name)
 #define GET_TYPE_SIZE(typeID) ((size_t) TypeRegistry::GetRegisteredTypesList()[typeID.id].size)
+#define CONSTRUCT(typeID) ((std::function<void*()>) TypeRegistry::GetRegisteredTypesList()[typeID.id].constructInstance)
+#define CONSTRUCT_COPY(typeID) ((std::function<void*(const void*)>) TypeRegistry::GetRegisteredTypesList()[typeID.id].copyConstructInstance)
+#define COPY(typeID) ((std::function<void(const void*, void*)>) TypeRegistry::GetRegisteredTypesList()[typeID.id].copyInstance)
+#define DESTROY(typeID) ((std::function<void(void*)>) TypeRegistry::GetRegisteredTypesList()[typeID.id].destroyInstance)
+#define SERIALIZE(typeID) ((std::function<void(ByteStreamBase&, void*)>) TypeRegistry::GetRegisteredTypesList()[typeID.id].serialize)
+#define DESERIALIZE(typeID) ((std::function<void(ByteStreamBase&, void*)>) TypeRegistry::GetRegisteredTypesList()[typeID.id].deserialize)
+#define SERIALIZE_TO_PACKET(typeID) ((std::function<void(ByteStream<IPacketStreamFormat>&, void*)>) TypeRegistry::GetRegisteredTypesList()[typeID.id].serializePacket)
+#define DESERIALIZE_FROM_PACKET(typeID) ((std::function<void(ByteStream<IPacketStreamFormat>&, void*)>) TypeRegistry::GetRegisteredTypesList()[typeID.id].deserializePacket)
 #define IS_TYPE_DERIVED_FROM(typeID, baseTypeID) TypeRegistry::GetTypeHierarchy().IsNodeDownstreamFrom(typeID, baseTypeID)
 #define GET_TYPES_DERIVED_FROM(typeID) ((std::unordered_set<TypeID>) TypeRegistry::GetTypeHierarchy().GetAllDescendants(typeID))
 #define GET_ALL_TYPES ((std::vector<TypeID>) TypeRegistry::GetTypeHierarchy().GetTopologicallySortedListBFS())
@@ -252,7 +276,6 @@ public:
 #define GET_COMPONENT_DEPENDENTS(componentTypeID) ((std::unordered_set<TypeID>) TypeRegistry::GetComponentDependencyHierarchy().GetOutValuesOfNode(componentTypeID))
 // Returns a vector of void*-ComponentVariableInfo pairs indicating the location of variables and their type/name data
 #define GET_COMPONENT_VARS(componentTypeID, componentPtr) ((std::vector<std::pair<void*, ComponentVariableTypeInfo>>) TypeRegistry::GetRegisteredComponentInfoMap().at(componentTypeID).getVariables(componentPtr))
-#define DESERIALIZE_COMPONENT(componentTypeID) ((std::function<void(ByteStream<IPacketStreamFormat>&, void*)>) TypeRegistry::GetRegisteredComponentInfoMap().at(componentTypeID).deserializePacket)
 #define GET_COMPONENT_VAR_INFO(componentTypeID) ((std::vector<ComponentVariableTypeInfo>) TypeRegistry::GetRegisteredComponentInfoMap().at(componentTypeID).variables)
 #define GET_ALL_COMPONENT_TYPES ((std::vector<TypeID>) TypeRegistry::GetComponentDependencyHierarchy().GetTopologicallySortedListBFS())
 

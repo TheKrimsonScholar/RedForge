@@ -34,4 +34,6 @@ protected:
     void AppendVariableWidget(const ComponentVariableTypeInfo& variableInfo, void* variablePtr);
 
     void UpdateDisplayedVariables();
+
+    void OnVariableChanged(void* variablePtr);
 };

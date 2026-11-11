@@ -16,4 +16,3 @@ public:
 
 	static void FramebufferResizeCallback(GLFWwindow* window, int width, int height);
 };
-REGISTER_SYSTEM_TYPE(WindowSystem, System<Window>)

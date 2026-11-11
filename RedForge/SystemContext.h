@@ -37,22 +37,27 @@ template<typename... Components>
 struct SystemContext : public SystemContextBase
 {
 protected:
-	std::unordered_set<TypeID> contextTypes = { TypeRegistry::GetTypeID<Components>()...};
+	std::unordered_set<TypeID> contextReadableTypes;
+	std::unordered_set<TypeID> contextWritableTypes;
 
 protected:
 	SystemContext(World* world, CommandBuffer* commandBuffer);
 
 public:
+	Entity CreateEntity(const std::string& name = "New Entity", LevelID level = INVALID_LEVEL, const std::filesystem::path& prefabPath = {});
 	Entity CreateEntity(const Entity& parent, const std::string& name = "New Entity", const std::filesystem::path& prefabPath = {});
+	Entity CreateEntity(const Entity& previous, const Entity& next, const std::string& name = "New Entity", const std::filesystem::path& prefabPath = {});
 	void DestroyEntity(const Entity& entity);
 	
 	void RenameEntity(const Entity& entity, const std::string& name);
+	void MoveEntityToLevel(const Entity& entity, LevelID level);
 	void ReparentEntity(const Entity& entity, const Entity& parent);
 	void MoveEntityBefore(const Entity& entity, const Entity& next);
 	void MoveEntityAfter(const Entity& entity, const Entity& previous);
 
 	template<typename T>
 	T& GetResource();
+	void* GetResourceOfType(TypeID resourceType);
 	
 	template<typename T>
 	void AddComponent(const Entity& entity, const T& component);
@@ -67,18 +72,26 @@ public:
 	template<typename T>
 	T& GetComponent(const Entity& entity);
 
+	void AddComponentOfType(Entity entity, TypeID componentType, const void* component = nullptr);
+	void RemoveComponentOfType(Entity entity, TypeID componentType);
+	bool HasComponentOfType(Entity entity, TypeID componentType);
+	void* GetComponentOfType(Entity entity, TypeID componentType);
+	const void* GetComponentOfType_Const(Entity entity, TypeID componentType) const;
+
 	template<typename... Args, typename Callback>
 	// Efficiently iterates through all active entities which have all of the specified component types. Triggers the callback for each, providing the entity along with each of its relevant components by reference.
 	void ForEachComponentOfType(Callback&& callback);
-	void ForEachComponentOfType(const std::vector<TypeID>& componentTypes, std::function<void(const Entity&, std::span<void*>)> callback);
+	//void ForEachComponentOfType(const std::unordered_set<TypeID>& componentsToRead, const std::unordered_set<TypeID>& componentsToWrite, std::function<void(const Entity&, std::span<void*>)> callback);
 	void ForEachEntity(std::function<void(const Entity&)> callback);
 	void ForEachEntity(std::function<void(const Entity&)> callback, LevelID level);
 	void ForEachEntity(std::function<void(const Entity&)> callback, const Entity& root);
 
 	template<typename T>
-	void QueueEvent(const T& event);
+	void QueueEvent(T event);
 	template<typename T>
 	const std::vector<T>& PollEvents() const;
+	template<typename... Ts>
+	void PollEvents(std::vector<GenericEventData>& out_eventList) const;
 
 	bool IsEntityActive(Entity entity);
 	std::string GetEntityName(Entity entity);
@@ -89,6 +102,9 @@ public:
 	Entity GetEntityNextSibling(Entity entity);
 	Entity GetEntityLastSibling(Entity entity);
 	uint32_t GetEntityDepth(Entity entity);
+
+	bool CanContextReadTypes(const std::unordered_set<TypeID>& types) const;
+	bool CanContextWriteTypes(const std::unordered_set<TypeID>& types) const;
 
 	template<typename... Args>
 	SystemContext<Args...> GetContext();
@@ -101,16 +117,39 @@ public:
 template<typename ...Components>
 inline SystemContext<Components...>::SystemContext(World* world, CommandBuffer* commandBuffer) : SystemContextBase(world, commandBuffer)
 {
-	// Resolve types represented by tags in the context signature, adding each tagged component to the type list
-	for(TypeID contextType : contextTypes)
-		for(TypeID taggedType : GET_TYPES_DERIVED_FROM(contextType))
-			contextTypes.insert(taggedType);
+	// Sort context types into readable and writable for runtime compatibility checks
+	auto getContextTypes = [&]<typename T>()
+	{
+		if(std::is_const<T>())
+			contextReadableTypes.insert(TYPEID(T));
+		else
+			contextWritableTypes.insert(TYPEID(T));
+	};
+	(getContextTypes.template operator()<Components>(), ...);
+
+	// Resolve types represented by a base type in the context signature, adding all of their derived components to the type lists
+	for(TypeID readType : contextReadableTypes)
+		for(TypeID derivedType : GET_TYPES_DERIVED_FROM(readType))
+			contextReadableTypes.insert(derivedType);
+	for(TypeID writeType : contextWritableTypes)
+		for(TypeID derivedType : GET_TYPES_DERIVED_FROM(writeType))
+			contextWritableTypes.insert(derivedType);
 }
 
 template<typename ...Components>
+inline Entity SystemContext<Components...>::CreateEntity(const std::string& name, LevelID level, const std::filesystem::path& prefabPath)
+{
+	return commandBuffer->Command_CreateEntity(name, level, {}, {}, {}, prefabPath);
+}
+template<typename ...Components>
 inline Entity SystemContext<Components...>::CreateEntity(const Entity& parent, const std::string& name, const std::filesystem::path& prefabPath)
 {
-	return commandBuffer->Command_CreateEntity(name, parent, prefabPath);
+	return commandBuffer->Command_CreateEntity(name, INVALID_LEVEL, parent, {}, {}, prefabPath);
+}
+template<typename ...Components>
+inline Entity SystemContext<Components...>::CreateEntity(const Entity& previous, const Entity& next, const std::string& name, const std::filesystem::path& prefabPath)
+{
+	return commandBuffer->Command_CreateEntity(name, INVALID_LEVEL, {}, previous, next, prefabPath);
 }
 template<typename ...Components>
 inline void SystemContext<Components...>::DestroyEntity(const Entity& entity)
@@ -122,6 +161,11 @@ template<typename ...Components>
 inline void SystemContext<Components...>::RenameEntity(const Entity& entity, const std::string& name)
 {
 	commandBuffer->Command_RenameEntity(entity, name);
+}
+template<typename ...Components>
+inline void SystemContext<Components...>::MoveEntityToLevel(const Entity& entity, LevelID level)
+{
+	return commandBuffer->Command_MoveEntityToLevel(entity, level);
 }
 template<typename ...Components>
 inline void SystemContext<Components...>::ReparentEntity(const Entity& entity, const Entity& parent)
@@ -147,18 +191,23 @@ inline T& SystemContext<Components...>::GetResource()
 
 	return world->GetResource<T>();
 }
+template<typename ...Components>
+inline void* SystemContext<Components...>::GetResourceOfType(TypeID resourceType)
+{
+	return world->GetResourceOfType(resourceType);
+}
 
 template<typename ...Components>
 template<typename T>
 inline void SystemContext<Components...>::AddComponent(const Entity& entity, const T& component)
 {
-	commandBuffer->Command_AddComponent(entity, typeid(T), &component);
+	commandBuffer->Command_AddComponent(entity, TYPEID(T), &component);
 }
 template<typename ...Components>
 template<typename T>
 inline void SystemContext<Components...>::RemoveComponent(const Entity& entity)
 {
-	commandBuffer->Command_RemoveComponent(entity, typeid(T));
+	commandBuffer->Command_RemoveComponent(entity, TYPEID(T));
 }
 
 template<typename ...Components>
@@ -180,7 +229,37 @@ inline T& SystemContext<Components...>::GetComponent(const Entity& entity)
 {
 	static_assert((is_one_of_v<T, Components...> || is_one_of_v<IComponent, Components...>) && "Component not compatible with context signature.");
 
-	return world->GetEntityManager().GetComponent<T>(entity);
+	return world->GetEntityManager().GetComponent<T>(commandBuffer->ResolveTransientEntity(entity));
+}
+
+template<typename ...Components>
+inline void SystemContext<Components...>::AddComponentOfType(Entity entity, TypeID componentType, const void* component)
+{
+	commandBuffer->Command_AddComponent(entity, componentType, component);
+}
+template<typename ...Components>
+inline void SystemContext<Components...>::RemoveComponentOfType(Entity entity, TypeID componentType)
+{
+	commandBuffer->Command_RemoveComponent(entity, componentType);
+}
+template<typename ...Components>
+inline bool SystemContext<Components...>::HasComponentOfType(Entity entity, TypeID componentType)
+{
+	return world->GetEntityManager().HasComponentOfType(entity, componentType);
+}
+template<typename ...Components>
+inline void* SystemContext<Components...>::GetComponentOfType(Entity entity, TypeID componentType)
+{
+	assert(CanContextWriteTypes({ componentType }) && "Component not compatible with context signature.");
+	
+	return world->GetEntityManager().GetComponentOfType(commandBuffer->ResolveTransientEntity(entity), componentType);
+}
+template<typename ...Components>
+inline const void* SystemContext<Components...>::GetComponentOfType_Const(Entity entity, TypeID componentType) const
+{
+	assert(CanContextReadTypes({ componentType }) && "Component not compatible with context signature.");
+
+	return world->GetEntityManager().GetComponentOfType(commandBuffer->ResolveTransientEntity(entity), componentType);
 }
 
 template<typename ...Components>
@@ -191,15 +270,13 @@ inline void SystemContext<Components...>::ForEachComponentOfType(Callback&& call
 
 	world->GetEntityManager().ForEachComponentOfType<Args...>(std::forward<Callback>(callback));
 }
-template<typename ...Components>
-inline void SystemContext<Components...>::ForEachComponentOfType(const std::vector<TypeID>& componentTypes, std::function<void(const Entity&, std::span<void*>)> callback)
-{
-	// Runtime check for context compatibility using type index. Types must be either in the context signature or have a tag which is included in the context signature.
-	for(TypeID componentType : componentTypes)
-		assert(contextTypes.find(componentType) != contextTypes.end() && "Component set not compatible with context signature.");
-
-	world->GetEntityManager().ForEachComponentOfType(componentTypes, callback);
-}
+//template<typename ...Components>
+//inline void SystemContext<Components...>::ForEachComponentOfType(const std::unordered_set<TypeID>& componentsToRead, const std::unordered_set<TypeID>& componentsToWrite, std::function<void(const Entity&, std::span<void*>)> callback)
+//{
+//	assert((CanContextReadTypes(componentsToRead) && CanContextWriteTypes(componentsToWrite)) && "Component set not compatible with context signature.");
+//
+//	world->GetEntityManager().ForEachComponentOfType(componentsToRead, componentsToWrite, callback);
+//}
 template<typename ...Components>
 inline void SystemContext<Components...>::ForEachEntity(std::function<void(const Entity&)> callback)
 {
@@ -218,15 +295,21 @@ inline void SystemContext<Components...>::ForEachEntity(std::function<void(const
 
 template<typename ...Components>
 template<typename T>
-inline void SystemContext<Components...>::QueueEvent(const T& event)
+inline void SystemContext<Components...>::QueueEvent(T event)
 {
-	commandBuffer->Command_QueueEvent(typeid(T), &event);
+	commandBuffer->Command_QueueEvent(TYPEID(T), &event);
 }
 template<typename ...Components>
 template<typename T>
 inline const std::vector<T>& SystemContext<Components...>::PollEvents() const
 {
 	return world->PollEvents<T>();
+}
+template<typename ...Components>
+template<typename ...Ts>
+inline void SystemContext<Components...>::PollEvents(std::vector<GenericEventData>& out_eventList) const
+{
+	world->PollEvents<Ts...>(out_eventList);
 }
 
 template<typename ...Components>
@@ -273,6 +356,27 @@ template<typename ...Components>
 inline uint32_t SystemContext<Components...>::GetEntityDepth(Entity entity)
 {
 	return world->GetEntityManager().GetEntityDepth(entity);
+}
+
+template<typename ...Components>
+inline bool SystemContext<Components...>::CanContextReadTypes(const std::unordered_set<TypeID>& types) const
+{
+	// Type is readable if it is found in either the readable or writable set
+	for(TypeID type : types)
+		if(!contextReadableTypes.contains(type) && !contextWritableTypes.contains(type))
+			return false;
+	
+	return true;
+}
+template<typename ...Components>
+inline bool SystemContext<Components...>::CanContextWriteTypes(const std::unordered_set<TypeID>& types) const
+{
+	// Type is writable if it is found in the writable set
+	for(TypeID type : types)
+		if(!contextWritableTypes.contains(type))
+			return false;
+	
+	return true;
 }
 
 template<typename ...Components>

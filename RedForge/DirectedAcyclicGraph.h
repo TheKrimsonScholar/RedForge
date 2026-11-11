@@ -172,7 +172,9 @@ inline std::unordered_set<T> DAG<T>::GetAllDescendants(const T& node) const
 	// Recursively traverse all nodes under the given node
 	for(const T& outNode : nodes.at(node).outValues)
 	{
-		std::unordered_set<T> outNodeDescendants = GetAllDescendants(node);
+		descendants.insert(outNode);
+
+		std::unordered_set<T> outNodeDescendants = GetAllDescendants(outNode);
 		descendants.insert(outNodeDescendants.begin(), outNodeDescendants.end());
 	}
 
@@ -185,7 +187,9 @@ inline std::unordered_set<T> DAG<T>::GetAllAncestors(const T& node) const
 	// Recursively traverse all nodes above the given node
 	for(const T& inNode : nodes.at(node).inValues)
 	{
-		std::unordered_set<T> inNodeAncestors = GetAllAncestors(node);
+		ancestors.insert(inNode);
+
+		std::unordered_set<T> inNodeAncestors = GetAllAncestors(inNode);
 		ancestors.insert(inNodeAncestors.begin(), inNodeAncestors.end());
 	}
 

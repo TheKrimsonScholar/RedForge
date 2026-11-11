@@ -1,1 +1,7 @@
 #include "NetworkComponent.h"
+
+REGISTER_COMPONENT_TYPE_BEGIN(NetworkComponent, IComponent)
+COMPONENT_VARS_BEGIN
+//COMPONENT_VAR(uint32_t, networkID)
+COMPONENT_VARS_END
+REGISTER_COMPONENT_TYPE_END(NetworkComponent)

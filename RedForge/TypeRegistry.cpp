@@ -2,6 +2,9 @@
 
 #include "ComponentRegistration.h"
 
+#define DEBUG_NEW new(_NORMAL_BLOCK, __FILE__, __LINE__)
+#define new DEBUG_NEW
+
 REGISTER_TYPE(IComponent)
 REGISTER_TYPE(IReplicatedComponent, IComponent)
 
@@ -10,6 +13,17 @@ REGISTER_TYPE(IResource)
 REGISTER_TYPE(IEvent)
 
 TypeRegistry* TypeRegistry::instance;
+
+TypeRegistry::TypeRegistryDestructor TypeRegistry::destructor;
+
+TypeRegistry::TypeRegistryDestructor::TypeRegistryDestructor()
+{
+	
+}
+TypeRegistry::TypeRegistryDestructor::~TypeRegistryDestructor()
+{
+	TypeRegistry::DestroyInstance();
+}
 
 void TypeRegistry::RegisterAllTypes()
 {

@@ -31,22 +31,16 @@ inline void RegisterComponentTypeBase::RegisterComponentType()
 	ComponentTypeInfo componentTypeInfo = {};
 	componentTypeInfo.registerComponent = [](EntityManager& entityManager) { entityManager.RegisterComponent<T>(); };
 	componentTypeInfo.getVariables = [](void* rawComponent) -> std::vector<std::pair<void*, ComponentVariableTypeInfo>> { return {}; };
-	componentTypeInfo.deserializePacket = [](ByteStream<IPacketStreamFormat>& str, void* dst)
-		{
-			T* dstObj = static_cast<T*>(dst);
-
-			str >> *dstObj;
-		};
 	
 	GetRegistryInstance().registeredComponentInfoMap.emplace(TYPEID(T), componentTypeInfo);
 }
 
 #define SERIALIZED_COMPONENT_VARS(...)																													\
-void SerializeComponent(ByteStream<IFileStreamFormat>& str) const																						\
+void SerializeComponent(ByteStreamBase& str) const																										\
 {																																						\
 	str.SerializeAll(__VA_ARGS__);																														\
 }																																						\
-void DeserializeComponent(ByteStream<IFileStreamFormat>& str)																							\
+void DeserializeComponent(ByteStreamBase& str)																											\
 {																																						\
 	str.DeserializeAll(__VA_ARGS__);																													\
 }
@@ -129,14 +123,12 @@ struct RegisterComponentType_##Type : public RegisterComponentTypeBase										
 inline RegisterComponentType_##Type RegisterComponentType_##Type##_Instance;																			\
 																																						\
 template<>																																				\
-template<>																																				\
-inline void ByteStream<IFileStreamFormat>::Serialize(const Type& src)																					\
+inline void ByteStreamBase::Serialize(const Type& src)																									\
 {																																						\
 	src.SerializeComponent(*this);																														\
 }																																						\
 template<>																																				\
-template<>																																				\
-inline void ByteStream<IFileStreamFormat>::Deserialize(Type& dst)																						\
+inline void ByteStreamBase::Deserialize(Type& dst)																										\
 {																																						\
 	dst.DeserializeComponent(*this);																													\
 }																																						\

@@ -39,4 +39,3 @@ public:
     uint32_t GetHeight() const { return swapChainExtent.height; };
     REDFORGE_API float GetAspectRatio() const { return (float) GetWidth() / (float) GetHeight(); };
 };
-REGISTER_RESOURCE_TYPE(Window, IResource)

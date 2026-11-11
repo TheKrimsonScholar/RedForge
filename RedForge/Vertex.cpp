@@ -1,5 +1,8 @@
 #include "Vertex.h"
 
+#define DEBUG_NEW new(_NORMAL_BLOCK, __FILE__, __LINE__)
+#define new DEBUG_NEW
+
 bool Vertex::operator==(const Vertex& other) const
 {
     return pos.x == other.pos.x && pos.y == other.pos.y && pos.z == other.pos.z

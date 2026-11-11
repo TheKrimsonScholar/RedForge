@@ -1,6 +1,9 @@
 #include "TransformComponent.h"
 
-REGISTER_COMPONENT_TYPE_BEGIN(TransformComponent, IComponent)
+#define DEBUG_NEW new(_NORMAL_BLOCK, __FILE__, __LINE__)
+#define new DEBUG_NEW
+
+REGISTER_COMPONENT_TYPE_BEGIN(TransformComponent, IReplicatedComponent)
 COMPONENT_VARS_BEGIN
 COMPONENT_VAR_REPLICATED(glm::vec3, location)
 COMPONENT_VAR_REPLICATED(glm::quat, rotation)

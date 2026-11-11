@@ -46,5 +46,6 @@ void World::Shutdown(const EngineShutdownParams& params)
 
 void World::QueueEventOfType(TypeID eventType, const void* event)
 {
-	eventQueues.at(eventType)->PushEvent(event);
+	eventQueues.at(eventType)->PushEvent(event, totalEventCount);
+	totalEventCount++;
 }

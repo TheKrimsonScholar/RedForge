@@ -452,6 +452,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="AlgorithmUtils.cpp" />
     <ClCompile Include="Archetype.cpp" />
     <ClCompile Include="Asset.cpp" />
     <ClCompile Include="Assets.cpp" />
@@ -461,6 +462,7 @@
     <ClCompile Include="Cameras.cpp" />
     <ClCompile Include="ColliderComponent.cpp" />
     <ClCompile Include="CommandBuffer.cpp" />
+    <ClCompile Include="ComponentRef.cpp" />
     <ClCompile Include="ComponentRegistration.cpp" />
     <ClCompile Include="DebugCameraState.cpp" />
     <ClCompile Include="DebugCameraSystem.cpp" />
@@ -472,6 +474,7 @@
     <ClCompile Include="DirectedAcyclicGraph.cpp" />
     <ClCompile Include="Engine.cpp" />
     <ClCompile Include="EngineConfiguration.cpp" />
+    <ClCompile Include="Entity.cpp" />
     <ClCompile Include="EntityManager.cpp" />
     <ClCompile Include="Event.cpp" />
     <ClCompile Include="EventQueue.cpp" />
@@ -480,6 +483,8 @@
     <ClCompile Include="FileManager.cpp" />
     <ClCompile Include="GameModule.cpp" />
     <ClCompile Include="GenericComponentData.cpp" />
+    <ClCompile Include="GenericEventData.cpp" />
+    <ClCompile Include="GenericObjectData.cpp" />
     <ClCompile Include="GLFWInputLayer.cpp" />
     <ClCompile Include="GraphicsState.cpp" />
     <ClCompile Include="GraphicsSystem.cpp" />
@@ -503,6 +508,7 @@
     <ClCompile Include="MeshRef.cpp" />
     <ClCompile Include="MeshRendererComponent.cpp" />
     <ClCompile Include="NetworkComponent.cpp" />
+    <ClCompile Include="NetworkDirtyTracker.cpp" />
     <ClCompile Include="NetworkSystem.cpp" />
     <ClCompile Include="PathUtils.cpp" />
     <ClCompile Include="Phase.cpp" />
@@ -529,6 +535,7 @@
     <ClCompile Include="World.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="AlgorithmUtils.h" />
     <ClInclude Include="Archetype.h" />
     <ClInclude Include="Asset.h" />
     <ClInclude Include="Assets.h" />
@@ -538,6 +545,7 @@
     <ClInclude Include="Cameras.h" />
     <ClInclude Include="ColliderComponent.h" />
     <ClInclude Include="CommandBuffer.h" />
+    <ClInclude Include="ComponentRef.h" />
     <ClInclude Include="ComponentRegistration.h" />
     <ClInclude Include="DebugCameraState.h" />
     <ClInclude Include="DebugCameraSystem.h" />
@@ -551,6 +559,7 @@
     <ClInclude Include="Engine.h" />
     <ClInclude Include="EngineConfiguration.h" />
     <ClInclude Include="EngineParams.h" />
+    <ClInclude Include="Entity.h" />
     <ClInclude Include="EntityManager.h" />
     <ClInclude Include="Event.h" />
     <ClInclude Include="EventQueue.h" />
@@ -559,6 +568,8 @@
     <ClInclude Include="FileManager.h" />
     <ClInclude Include="GameModule.h" />
     <ClInclude Include="GenericComponentData.h" />
+    <ClInclude Include="GenericEventData.h" />
+    <ClInclude Include="GenericObjectData.h" />
     <ClInclude Include="GLFWInputLayer.h" />
     <ClInclude Include="GraphicsState.h" />
     <ClInclude Include="GraphicsSystem.h" />
@@ -583,6 +594,7 @@
     <ClInclude Include="MeshRef.h" />
     <ClInclude Include="MeshRendererComponent.h" />
     <ClInclude Include="NetworkComponent.h" />
+    <ClInclude Include="NetworkDirtyTracker.h" />
     <ClInclude Include="NetworkSystem.h" />
     <ClInclude Include="PathUtils.h" />
     <ClInclude Include="Phase.h" />

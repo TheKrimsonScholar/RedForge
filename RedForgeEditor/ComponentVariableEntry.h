@@ -4,6 +4,8 @@
 #include <math.h>
 #include <cmath>
 
+#include "Event.h"
+
 #include "Editor.h"
 
 #include <QWidget>
@@ -12,6 +14,9 @@
 class ComponentVariableEntry : public QWidget
 {
 	Q_OBJECT
+
+public:
+	Event<void*> onValueChanged;
 
 protected:
 	QLabel* variableLabel;

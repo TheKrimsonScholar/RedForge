@@ -2,6 +2,8 @@
 
 #include <glm/gtc/matrix_transform.hpp>
 
+REGISTER_COMPONENT_TYPE(CameraComponent, IComponent)
+
 glm::mat4 CameraComponent::GetProjectionMatrix() const
 {
     switch(projectionType)

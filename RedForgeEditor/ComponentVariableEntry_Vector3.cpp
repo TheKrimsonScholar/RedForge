@@ -49,4 +49,6 @@ void ComponentVariableEntry_Vector3::OnValueChanged()
 	variablePtr->x = fieldX->GetValue();
 	variablePtr->y = fieldY->GetValue();
 	variablePtr->z = fieldZ->GetValue();
+
+	onValueChanged.Broadcast(variablePtr);
 }

@@ -39,6 +39,4 @@ public:
 	glm::mat4 GetProjectionMatrix() const;
 };
 
-REGISTER_COMPONENT_TYPE(CameraComponent, IComponent)
-
 glm::mat4 GetViewMatrix(Entity cameraEntity, SystemContext<const TransformComponent> ctx);

@@ -25,7 +25,6 @@ public:
 	
 	friend class Scheduler;
 };
-REGISTER_TYPE(SystemBase)
 template<typename... Components>
 class System : public SystemBase
 {

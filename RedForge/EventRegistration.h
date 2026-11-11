@@ -32,6 +32,25 @@ inline void RegisterEventTypeBase::RegisterEventType()
 	GetRegistryInstance().registeredEventInfoMap.emplace(TYPEID(T), eventTypeInfo);
 }
 
+#define SERIALIZED_EVENT_VARS(...)																													\
+void SerializeEvent(ByteStreamBase& str) const																										\
+{																																						\
+	str.SerializeAll(__VA_ARGS__);																														\
+}																																						\
+void DeserializeEvent(ByteStreamBase& str)																											\
+{																																						\
+	str.DeserializeAll(__VA_ARGS__);																													\
+}
+#define REPLICATED_EVENT_VARS(...)																													\
+void SerializeEvent(ByteStream<IPacketStreamFormat>& str) const																						\
+{																																						\
+	str.SerializeAll(__VA_ARGS__);																														\
+}																																						\
+void DeserializeEvent(ByteStream<IPacketStreamFormat>& str)																							\
+{																																						\
+	str.DeserializeAll(__VA_ARGS__);																													\
+}
+
 #define REGISTER_EVENT_TYPE(Type, ...) REGISTER_EVENT_TYPE_BEGIN(Type, __VA_ARGS__) REGISTER_EVENT_TYPE_END(Type)
 #define REGISTER_EVENT_TYPE_BEGIN(Type, ...)																											\
 struct RegisterEventType_##Type : public RegisterEventTypeBase																							\
@@ -70,4 +89,28 @@ struct RegisterEventType_##Type : public RegisterEventTypeBase																		
 #define REGISTER_EVENT_TYPE_END(Type)																													\
 	}																																					\
 };																																						\
-inline RegisterEventType_##Type RegisterEventType_##Type##_Instance;
+inline RegisterEventType_##Type RegisterEventType_##Type##_Instance;																					\
+																																						\
+template<>																																				\
+inline void ByteStreamBase::Serialize(const Type& src)																									\
+{																																						\
+	src.SerializeEvent(*this);																															\
+}																																						\
+template<>																																				\
+inline void ByteStreamBase::Deserialize(Type& dst)																										\
+{																																						\
+	dst.DeserializeEvent(*this);																														\
+}																																						\
+																																						\
+template<>																																				\
+template<>																																				\
+inline void ByteStream<IPacketStreamFormat>::Serialize(const Type& src)																					\
+{																																						\
+	src.SerializeEvent(*this);																															\
+}																																						\
+template<>																																				\
+template<>																																				\
+inline void ByteStream<IPacketStreamFormat>::Deserialize(Type& dst)																						\
+{																																						\
+	dst.DeserializeEvent(*this);																														\
+}

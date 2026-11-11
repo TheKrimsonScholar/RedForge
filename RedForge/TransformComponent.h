@@ -6,7 +6,7 @@
 
 #include "KMath.h"
 
-REDFORGE_API struct TransformComponent : public IComponent
+REDFORGE_API struct TransformComponent : public IReplicatedComponent
 {
 	SERIALIZED_COMPONENT_VARS(location, rotation, scale)
 	REPLICATED_COMPONENT_VARS(location, rotation, scale)
@@ -28,37 +28,3 @@ public:
 	glm::vec3 LocalToWorld_Point(const glm::vec3& vector, bool includeScale = false) const;
 	glm::vec3 LocalToWorld_Direction(const glm::vec3& vector, bool includeScale = false) const;
 };
-
-//template<>																																				
-//template<>																																				
-//ByteStream<IFileStreamFormat>& ByteStream<IFileStreamFormat>::operator<<(const TransformComponent& src)
-//{																																						
-//src.SerializeComponent(*this);																														
-//
-//return *this;																																		
-//}																																						
-//template<>																																				
-//template<>																																				
-//ByteStream<IFileStreamFormat>& ByteStream<IFileStreamFormat>::operator>>(TransformComponent& dst)
-//{																																						
-//dst.DeserializeComponent(*this);																													
-//
-//return *this;																																		
-//}																																						
-
-//template<>																																				
-//template<>																																				
-//ByteStream<IPacketStreamFormat>& ByteStream<IPacketStreamFormat>::operator<<(const TransformComponent& src)
-//{																																						
-//src.SerializeComponent(*this);																														
-//
-//return *this;																																		
-//}																																						
-//template<>																																				
-//template<>																																				
-//ByteStream<IPacketStreamFormat>& ByteStream<IPacketStreamFormat>::operator>>(TransformComponent& dst)
-//{																																						
-//dst.DeserializeComponent(*this);																													
-//
-//return *this;																																		
-//}

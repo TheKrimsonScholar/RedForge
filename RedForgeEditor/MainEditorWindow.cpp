@@ -53,6 +53,7 @@ MainEditorWindow::MainEditorWindow(QWidget* parent) : QMainWindow(parent)
 	toolbar = new EditorToolbar(this);
 
 	QWidget* vulkanWidgetWrapper = QWidget::createWindowContainer(viewport, this);
+	vulkanWidgetWrapper->setMinimumSize(320, 240);
 
 	QWidget* centralWidget = new QWidget(this);
 	QVBoxLayout* vBox = new QVBoxLayout();
@@ -73,8 +74,6 @@ MainEditorWindow::MainEditorWindow(QWidget* parent) : QMainWindow(parent)
 
 	consolePanel = new ConsolePanel(this);
 	addDockWidget(Qt::BottomDockWidgetArea, consolePanel);
-
-	//vulkanWidgetWrapper->setMinimumSize(640, 480);
 }
 MainEditorWindow::~MainEditorWindow()
 {

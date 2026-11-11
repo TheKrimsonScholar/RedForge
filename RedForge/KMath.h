@@ -1,5 +1,8 @@
 #pragma once
 
+#undef min
+#undef max
+
 #include <ostream>
 #include <istream>
 

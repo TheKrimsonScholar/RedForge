@@ -18,6 +18,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
 #include "TypeRegistry.h"
+#include "EventRegistration.h"
 #include "Event.h"
 #include "FileManager.h"
 
@@ -28,56 +29,71 @@ struct EngineShutdownParams;
 
 typedef size_t LevelID;
 
-static const uint32_t INVALID_ENTITY = 0xFFFFFFFF;
 static const uint32_t MAX_ENTITIES = 256;
 
 static const LevelID INVALID_LEVEL = -1;
 
-struct Entity
+#include "Entity.h"
+
+struct EntityCreatedEvent : public IEvent
 {
-public:
-	uint32_t index = INVALID_ENTITY;
-	// The generation of this entity, used to determine whether the entity is out-of-date.
-	// If 0, the entity is transient, i.e. it is owned by a non-authoritative source (like a command buffer) and will be added to the entity manager as a new entity with a different permanent ID in the future.
-	uint32_t generation = INVALID_ENTITY;
+	SERIALIZED_EVENT_VARS(entity, level, parent, name)
 
-	// Entity data should only be managed by EntityManager and LevelManager
-	friend class EntityManager;
-	friend class LevelManager;
-
-	friend struct std::formatter<Entity, char>;
-	friend struct std::hash<Entity>;
-
-public:
-	bool operator==(const Entity& other) const { return index == other.index && generation == other.generation; }
-	bool operator!=(const Entity& other) const { return !(*this == other); }
-
-	bool IsValid() const { return index != INVALID_ENTITY && generation != INVALID_ENTITY; }
+	Entity entity = {};
+	LevelID level = INVALID_LEVEL;
+	Entity parent = {};
+	Entity previous = {};
+	Entity next = {};
+	std::string name = "New Entity";
 };
-template <>
-struct std::formatter<Entity, char>
+struct EntityDestroyedEvent : public IEvent
 {
-	constexpr auto parse(std::format_parse_context& ctx) { return ctx.begin(); }
-	auto format(const Entity& e, std::format_context& ctx) const
-	{
-		return std::format_to(ctx.out(), "Entity(index={}, generation={})", e.index, e.generation);
-	}
-};
-namespace std
-{
-	template<>
-	struct hash<Entity>
-	{
-		size_t operator()(const Entity& e) const
-		{
-			std::hash<uint32_t> hasher;
-			size_t seed = hasher(e.index);
-			seed ^= hasher(e.generation) + 0x9e3779b9 + (seed << 6) + (seed >> 2); // 0x9e3779b9 is inverse golden ratio
+	SERIALIZED_EVENT_VARS(entity)
 
-			return seed;
-		}
-	};
-}
+	Entity entity = {};
+};
+struct EntityLevelChangedEvent : public IEvent
+{
+	SERIALIZED_EVENT_VARS(entity, level)
+	
+	Entity entity = {};
+	LevelID level = INVALID_LEVEL;
+};
+struct EntityReparentedEvent : public IEvent
+{
+	SERIALIZED_EVENT_VARS(entity, parent)
+
+	Entity entity = {};
+	Entity parent = {};
+};
+struct EntityMovedBeforeEvent : public IEvent
+{
+	SERIALIZED_EVENT_VARS(entity, next)
+
+	Entity entity = {};
+	Entity next = {};
+};
+struct EntityMovedAfterEvent : public IEvent
+{
+	SERIALIZED_EVENT_VARS(entity, previous)
+	
+	Entity entity = {};
+	Entity previous = {};
+};
+struct ComponentAddedEvent : public IEvent
+{
+	SERIALIZED_EVENT_VARS(entity, componentType)
+
+	Entity entity = {};
+	TypeID componentType = {};
+};
+struct ComponentRemovedEvent : public IEvent
+{
+	SERIALIZED_EVENT_VARS(entity, componentType)
+
+	Entity entity = {};
+	TypeID componentType = {};
+};
 
 class IComponentArray
 {
@@ -85,7 +101,7 @@ public:
 	virtual ~IComponentArray() = default;
 
 	virtual void Add(uint32_t entity, const void* component = nullptr) = 0;
-	virtual void Remove(uint32_t entity) = 0;
+	virtual bool Remove(uint32_t entity) = 0;
 	virtual bool Has(uint32_t entity) = 0;
 
 	virtual void Resize(size_t size) = 0;
@@ -116,7 +132,7 @@ public:
 
 	void Add(uint32_t entity, T component);
 	void Add(uint32_t entity, const void* component = nullptr) override;
-	void Remove(uint32_t entity) override;
+	bool Remove(uint32_t entity) override;
 	bool Has(uint32_t entity) override;
 	T& GetByEntityIndex(uint32_t entity);
 	T& GetByComponentIndex(uint32_t index);
@@ -173,10 +189,10 @@ inline void ComponentArray<T>::Add(uint32_t entity, const void* component)
 		Add(entity, T());
 }
 template<typename T>
-void ComponentArray<T>::Remove(uint32_t entity)
+bool ComponentArray<T>::Remove(uint32_t entity)
 {
 	if(!Has(entity))
-		return;
+		return false;
 
 	uint32_t componentIndex = entityToComponentIndex[entity];
 	uint32_t lastComponentIndex = components.size() - 1;
@@ -191,6 +207,8 @@ void ComponentArray<T>::Remove(uint32_t entity)
 	entityIndices.pop_back();
 	// Remove the entity's association with the component list
 	entityToComponentIndex[entity] = -1;
+
+	return true;
 }
 template<typename T>
 bool ComponentArray<T>::Has(uint32_t entity)
@@ -303,6 +321,8 @@ public:
 	Entity CreateEntity(const std::string& name = "New Entity", LevelID level = INVALID_LEVEL, const std::filesystem::path& prefabPath = {});
 	template<typename... Components>
 	Entity CreateEntity(const Entity& parent, const std::string& name = "New Entity", const std::filesystem::path& prefabPath = {});
+	template<typename... Components>
+	Entity CreateEntity(const Entity& previous, const Entity& next, const std::string& name = "New Entity", const std::filesystem::path& prefabPath = {});
 	REDFORGE_API void DestroyEntity(Entity entity);
 
 	REDFORGE_API bool MoveEntityToLevel(Entity entity, LevelID level);
@@ -350,7 +370,7 @@ public:
 	// Efficiently iterates through all active entities which have all of the specified component types. Triggers the callback for each, providing the entity along with each of its relevant components by reference.
 	void ForEachComponentOfType(Callback&& callback);
 
-	void ForEachComponentOfType(const std::vector<TypeID>& componentTypes, std::function<void(const Entity&, std::span<void*>)> callback);
+	//void ForEachComponentOfType(const std::unordered_set<TypeID>& componentsToRead, const std::unordered_set<TypeID>& componentsToWrite, std::function<void(const Entity&, std::span<void*>)> callback);
 
 	REDFORGE_API std::unordered_map<void*, TypeID> GetAllComponents(Entity entity);
 
@@ -407,13 +427,17 @@ private:
 	void SetEntityNextSibling(Entity entity, Entity nextSibling);
 	void SetEntityLastSibling(Entity entity, Entity lastSibling);
 
+	REDFORGE_API void QueueEntityCreatedEvent(const EntityCreatedEvent& event);
+	void QueueComponentAddedEvent(const ComponentAddedEvent& event);
+	void QueueComponentRemovedEvent(const ComponentRemovedEvent& event);
+
 	friend class LevelManager;
 };
 
 template<typename... Components>
 inline Entity EntityManager::CreateEntity(const std::string& name, LevelID level, const std::filesystem::path& prefabPath)
 {
-	/* Insert the new entity as parent's last child */
+	/* Insert the new entity as level's last root entity */
 	
 	Entity lastSibling = levelData[level].first;
 	// Find the last child of the parent
@@ -468,6 +492,15 @@ inline Entity EntityManager::CreateEntity(const std::string& name, LevelID level
 	entityData[newEntity.index] = data;
 
 	onEntityCreated.Broadcast(newEntity);
+
+	EntityCreatedEvent event = {};
+	event.entity = newEntity;
+	event.level = level;
+	event.parent = {};
+	event.previous = lastSibling;
+	event.next = {};
+	event.name = name;
+	QueueEntityCreatedEvent(event);
 
 	return newEntity;
 }
@@ -534,6 +567,89 @@ inline Entity EntityManager::CreateEntity(const Entity& parent, const std::strin
 
 	onEntityCreated.Broadcast(newEntity);
 
+	EntityCreatedEvent event = {};
+	event.entity = newEntity;
+	event.level = GetEntityLevel(parent);
+	event.parent = parent;
+	event.previous = lastSibling;
+	event.next = {};
+	event.name = name;
+	QueueEntityCreatedEvent(event);
+
+	return newEntity;
+}
+template<typename ...Components>
+inline Entity EntityManager::CreateEntity(const Entity& previous, const Entity& next, const std::string& name, const std::filesystem::path& prefabPath)
+{
+	// If both previous and next are invalid, create entity under the root of the persistent level
+	if(!IsEntityValid(previous) && !IsEntityValid(next))
+		return CreateEntity<Components...>(name, INVALID_LEVEL, prefabPath);
+
+	/* Insert the new entity after previous, or before next if previous is invalid */
+	
+	/* Determine next entity index */
+
+	Entity newEntity = {};
+	if(!freeQueue.empty())
+	{
+		newEntity.index = freeQueue.top();
+		freeQueue.pop();
+	}
+	else
+	{
+		newEntity.index = nextEntity++;
+		entityData.resize(nextEntity);
+		// Resize all component array index maps to fit the new entity
+		for(const std::pair<TypeID, IComponentArray*>& componentArray : componentArrays)
+			componentArray.second->Resize(nextEntity);
+	}
+
+	entityData[newEntity.index].valid = true;
+	newEntity.generation = ++entityData[newEntity.index].generationCount;
+
+	// Add all default components
+	(AddComponent<Components>(newEntity, {}), ...);
+
+	LevelID level = IsEntityValid(previous) ? GetEntityLevel(previous) : GetEntityLevel(next);
+	const Entity& parent = IsEntityValid(previous) ? GetEntityParent(previous) : GetEntityParent(next);
+	const Entity& lastSibling = IsEntityValid(previous) ? previous : GetEntityLastSibling(next);
+	const Entity& nextSibling = IsEntityValid(previous) ? GetEntityNextSibling(previous) : next;
+
+	/* Put entity in the level */
+
+	EntityData data = {};
+	data.valid = true;
+	data.active = true;
+	data.generationCount = newEntity.generation;
+	data.name = name;
+	data.level = level;
+	data.prefabPath = prefabPath;
+	data.parent = parent;
+	data.firstChild = {};
+	data.nextSibling = nextSibling;
+	data.lastSibling = lastSibling;
+	data.depth = IsEntityValid(previous) ? GetEntityDepth(previous) : GetEntityDepth(next);
+
+	// If there is a sibling before this entity, update it
+	if(lastSibling.IsValid())
+		entityData[lastSibling.index].nextSibling = newEntity;
+	// If there is a sibling after this entity, update it
+	if(nextSibling.IsValid())
+		entityData[nextSibling.index].lastSibling = newEntity;
+
+	entityData[newEntity.index] = data;
+
+	onEntityCreated.Broadcast(newEntity);
+
+	EntityCreatedEvent event = {};
+	event.entity = newEntity;
+	event.level = level;
+	event.parent = parent;
+	event.previous = lastSibling;
+	event.next = nextSibling;
+	event.name = name;
+	QueueEntityCreatedEvent(event);
+
 	return newEntity;
 }
 
@@ -555,6 +671,11 @@ inline void EntityManager::AddComponent(Entity entity, T component)
 			AddComponentOfType(entity, dependencyID);
 
 	static_cast<ComponentArray<T>*>(componentArrays[TYPEID(T)])->Add(entity.index, component);
+
+	ComponentAddedEvent event = {};
+	event.entity = entity;
+	event.componentType = TYPEID(T);
+	QueueComponentAddedEvent(event);
 }
 template<typename T>
 inline void EntityManager::RemoveComponent(Entity entity)
@@ -563,7 +684,13 @@ inline void EntityManager::RemoveComponent(Entity entity)
 
 	assert(componentArrays.find(TypeRegistry::GetTypeID<T>()) != componentArrays.end() && "Component has not been registered.");
 
-	static_cast<ComponentArray<T>*>(componentArrays[TypeRegistry::GetTypeID<T>()])->Remove(entity.index);
+	if(!static_cast<ComponentArray<T>*>(componentArrays[TypeRegistry::GetTypeID<T>()])->Remove(entity.index))
+		return;
+
+	ComponentRemovedEvent event = {};
+	event.entity = entity;
+	event.componentType = TYPEID(T);
+	QueueComponentRemovedEvent(event);
 
 	// After removing the component, also remove all components that depend on it
 	for(std::type_index dependent : GET_COMPONENT_DEPENDENTS(typeid(T)))
