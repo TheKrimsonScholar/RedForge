@@ -49,4 +49,6 @@ void ComponentVariableEntry_Mesh::UpdateDisplayedValue()
 void ComponentVariableEntry_Mesh::OnValueChanged()
 {
 	*variablePtr = meshes[searchField->GetSelectedIndex()];
+
+	onValueChanged.Broadcast(variablePtr);
 }

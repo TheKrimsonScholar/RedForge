@@ -276,29 +276,10 @@ void NetworkSystem::SendHierarchyEventsPackets(LocalSystemContext& ctx)
             // Case 1: NetworkComponent added to an entity -> Add the entity to the network
 			if(componentAddedEvent.componentType == TYPEID(NetworkComponent))
 			{
-                size_t networkID = ServerAddEntityToNetwork(ctx, componentAddedEvent.entity);
-                if(networkID == NETID_INVALID)
-                    continue;
-
-				HierarchyEventData_EntityAddedToNetwork addEntityEvent = {};
-                addEntityEvent.entity = networkID;
-				addEntityEvent.level = ctx.GetEntityLevel(componentAddedEvent.entity);
-				addEntityEvent.parent = GetNetworkIDOfEntity(ctx.GetEntityParent(componentAddedEvent.entity));
-                addEntityEvent.previous = GetNetworkIDOfEntity(ctx.GetEntityLastSibling(componentAddedEvent.entity));
-                addEntityEvent.next = GetNetworkIDOfEntity(ctx.GetEntityNextSibling(componentAddedEvent.entity));
-				addEntityEvent.name = ctx.GetEntityName(componentAddedEvent.entity);
-
-                // Copy all of the entity's components to the component data list
-                for(TypeID componentType : TypeRegistry::GetRegisteredComponentsList())
-                    if(ctx.HasComponentOfType(componentAddedEvent.entity, componentType))
-                        addEntityEvent.componentData.emplace_back(componentType, ctx.GetComponentOfType_Const(componentAddedEvent.entity, componentType));
-
-                // Write the hierarchy event to the stream
-                packetByteStream << EHierarchyEventType::EntityAddedToNetwork;
-				packetByteStream << addEntityEvent;
+                ServerWriteAddEntityPacket(ctx, componentAddedEvent.entity);
 			}
             // Case 2: Other component added to a network entity -> Tell clients to add the component
-            else if(GetNetworkIDOfEntity(componentAddedEvent.entity) != NETID_INVALID)
+            else if(IsEntityInNetwork(componentAddedEvent.entity))
             {
                 HierarchyEventData_ComponentAdded addComponentEvent = {};
                 addComponentEvent.entity = GetNetworkIDOfEntity(componentAddedEvent.entity);
@@ -327,7 +308,7 @@ void NetworkSystem::SendHierarchyEventsPackets(LocalSystemContext& ctx)
 				packetByteStream << removeEntityEvent;
 			}
 			// Case 4: Other component removed from a network entity -> Tell clients to remove the component
-            else if(GetNetworkIDOfEntity(componentRemovedEvent.entity) != NETID_INVALID)
+            else if(IsEntityInNetwork(componentRemovedEvent.entity))
             {
                 HierarchyEventData_ComponentRemoved removeComponentEvent = {};
                 removeComponentEvent.entity = GetNetworkIDOfEntity(componentRemovedEvent.entity);
@@ -354,7 +335,7 @@ void NetworkSystem::SendHierarchyEventsPackets(LocalSystemContext& ctx)
 				entity = reinterpret_cast<const EntityMovedAfterEvent*>(event.GetEventPtr())->entity;
 
             // Case 5: A network entity was moved in the hierarchy -> Tell clients where to move it
-            if(GetNetworkIDOfEntity(entity) != NETID_INVALID)
+            if(IsEntityInNetwork(entity))
             {
 				HierarchyEventData_EntityMoved moveEntityEvent = {};
 				moveEntityEvent.entity = GetNetworkIDOfEntity(entity);
@@ -385,7 +366,8 @@ void NetworkSystem::SendReplicationPackets(LocalSystemContext& ctx)
     const std::unordered_set<TypeID>& dirtyResources = NetworkDirtyTracker::GetDirtyResources();
     std::unordered_set<ComponentNetworkRef> dirtyComponents;
     for(const ComponentRef& component : NetworkDirtyTracker::GetDirtyComponents())
-        dirtyComponents.emplace(GetNetworkIDOfEntity(component.entity), component.componentType);
+        if(IsEntityInNetwork(component.entity))
+            dirtyComponents.emplace(GetNetworkIDOfEntity(component.entity), component.componentType);
 
     // Don't send packet if there's nothing to replicate
     if(dirtyResources.empty() && dirtyComponents.empty())
@@ -451,6 +433,40 @@ void NetworkSystem::SendReplicationPackets(LocalSystemContext& ctx)
     // Clear all dirty objects after all replication packets have been sent
     NetworkDirtyTracker::ClearDirtyResources();
     NetworkDirtyTracker::ClearDirtyComponents();
+}
+
+void NetworkSystem::ServerWriteAddEntityPacket(LocalSystemContext& ctx, const Entity& entity)
+{
+    size_t networkID = ServerAddEntityToNetwork(ctx, entity);
+    if(networkID == NETID_INVALID)
+        return;
+
+	HierarchyEventData_EntityAddedToNetwork addEntityEvent = {};
+    addEntityEvent.entity = networkID;
+	addEntityEvent.level = ctx.GetEntityLevel(entity);
+	addEntityEvent.parent = GetNetworkIDOfEntity(ctx.GetEntityParent(entity));
+    addEntityEvent.previous = GetNetworkIDOfEntity(ctx.GetEntityLastSibling(entity));
+    addEntityEvent.next = GetNetworkIDOfEntity(ctx.GetEntityNextSibling(entity));
+	addEntityEvent.name = ctx.GetEntityName(entity);
+
+    // Copy all of the entity's components to the component data list
+    for(TypeID componentType : TypeRegistry::GetRegisteredComponentsList())
+        if(ctx.HasComponentOfType(entity, componentType))
+            addEntityEvent.componentData.emplace_back(componentType, ctx.GetComponentOfType_Const(entity, componentType));
+
+    // Write the hierarchy event to the stream
+    packetByteStream << EHierarchyEventType::EntityAddedToNetwork;
+	packetByteStream << addEntityEvent;
+
+    // Also add all descendant branches which have NetworkComponents
+    Entity descendant = ctx.GetEntityFirstChild(entity);
+    while(descendant.IsValid())
+    {
+        if(ctx.HasComponent<NetworkComponent>(descendant))
+            ServerWriteAddEntityPacket(ctx, descendant);
+
+        descendant = ctx.GetEntityNextSibling(descendant);
+    }
 }
 #endif // NETMODE_SERVER
 
@@ -665,6 +681,11 @@ size_t NetworkSystem::GetNetworkIDOfEntity(const Entity& entity)
     return NETID_INVALID;
 }
 
+bool NetworkSystem::IsEntityInNetwork(const Entity& entity)
+{
+    return networkIDs.find(entity) != networkIDs.end();
+}
+
 #ifdef NETMODE_SERVER
 size_t NetworkSystem::ServerAddEntityToNetwork(LocalSystemContext& ctx, const Entity& entity)
 {
@@ -694,16 +715,6 @@ size_t NetworkSystem::ServerAddEntityToNetwork(LocalSystemContext& ctx, const En
     networkIDs.emplace(entity, networkID);
     networkEntities.emplace(networkID, entity);
 
-	// Also add all descendant branches which have NetworkComponents
-    Entity descendant = ctx.GetEntityFirstChild(entity);
-	while(descendant.IsValid())
-	{
-		if(ctx.HasComponent<NetworkComponent>(descendant))
-			ServerAddEntityToNetwork(ctx, descendant);
-
-		descendant = ctx.GetEntityNextSibling(descendant);
-	}
-
     return networkID;
 }
 void NetworkSystem::ServerRemoveEntityFromNetwork(LocalSystemContext& ctx, const Entity& entity)
@@ -715,7 +726,8 @@ void NetworkSystem::ServerRemoveEntityFromNetwork(LocalSystemContext& ctx, const
     
     // If entity has a NetworkComponent, invalidate its networkID but don't remove the component
 	// This is done to keep the entity considered for the network if its parent is re-added to the network later
-    if(ctx.HasComponent<NetworkComponent>(entity))
+    // Keep in mind that the entity may have already been destroyed before this function was called
+    if(ctx.IsEntityValid(entity) && ctx.HasComponent<NetworkComponent>(entity))
 		ctx.GetComponent<NetworkComponent>(entity).networkID = NETID_INVALID;
 
 	// If the entity has the highest network ID, "shrink" the valid range
@@ -734,10 +746,17 @@ void NetworkSystem::ServerRemoveEntityFromNetwork(LocalSystemContext& ctx, const
         availableNetworkIDs.push(networkID);
 
 	// Also remove all descendants of the entity from the network
-    ctx.ForEachEntity([this, &ctx](const Entity& descendant)
+    // If this entity was already destroyed, then there's no need for this step since the children were destroyed and removed from the network as well
+    if(ctx.IsEntityValid(entity))
+    {
+        Entity child = ctx.GetEntityFirstChild(entity);
+        while(child.IsValid())
         {
-            ServerRemoveEntityFromNetwork(ctx, descendant);
-        }, entity);
+            ServerRemoveEntityFromNetwork(ctx, child);
+
+            child = ctx.GetEntityNextSibling(child);
+        }
+    }
 }
 #endif // NETMODE_SERVER
 

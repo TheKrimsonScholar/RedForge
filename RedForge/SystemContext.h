@@ -93,15 +93,16 @@ public:
 	template<typename... Ts>
 	void PollEvents(std::vector<GenericEventData>& out_eventList) const;
 
-	bool IsEntityActive(Entity entity);
-	std::string GetEntityName(Entity entity);
-	LevelID GetEntityLevel(Entity entity);
-	std::filesystem::path GetEntityPrefabPath(Entity entity);
-	Entity GetEntityParent(Entity entity);
-	Entity GetEntityFirstChild(Entity entity);
-	Entity GetEntityNextSibling(Entity entity);
-	Entity GetEntityLastSibling(Entity entity);
-	uint32_t GetEntityDepth(Entity entity);
+	bool IsEntityValid(const Entity& entity) const;
+	bool IsEntityActive(Entity entity) const;
+	std::string GetEntityName(Entity entity) const;
+	LevelID GetEntityLevel(Entity entity) const;
+	std::filesystem::path GetEntityPrefabPath(Entity entity) const;
+	Entity GetEntityParent(Entity entity) const;
+	Entity GetEntityFirstChild(Entity entity) const;
+	Entity GetEntityNextSibling(Entity entity) const;
+	Entity GetEntityLastSibling(Entity entity) const;
+	uint32_t GetEntityDepth(Entity entity) const;
 
 	bool CanContextReadTypes(const std::unordered_set<TypeID>& types) const;
 	bool CanContextWriteTypes(const std::unordered_set<TypeID>& types) const;
@@ -313,47 +314,52 @@ inline void SystemContext<Components...>::PollEvents(std::vector<GenericEventDat
 }
 
 template<typename ...Components>
-inline bool SystemContext<Components...>::IsEntityActive(Entity entity)
+inline bool SystemContext<Components...>::IsEntityValid(const Entity& entity) const
+{
+	return world->GetEntityManager().IsEntityValid(entity);
+}
+template<typename ...Components>
+inline bool SystemContext<Components...>::IsEntityActive(Entity entity) const
 {
 	return world->GetEntityManager().IsEntityActive(entity);
 }
 template<typename ...Components>
-inline std::string SystemContext<Components...>::GetEntityName(Entity entity)
+inline std::string SystemContext<Components...>::GetEntityName(Entity entity) const
 {
 	return world->GetEntityManager().GetEntityName(entity);
 }
 template<typename ...Components>
-inline LevelID SystemContext<Components...>::GetEntityLevel(Entity entity)
+inline LevelID SystemContext<Components...>::GetEntityLevel(Entity entity) const
 {
 	return world->GetEntityManager().GetEntityLevel(entity);
 }
 template<typename ...Components>
-inline std::filesystem::path SystemContext<Components...>::GetEntityPrefabPath(Entity entity)
+inline std::filesystem::path SystemContext<Components...>::GetEntityPrefabPath(Entity entity) const
 {
 	return world->GetEntityManager().GetEntityPrefabPath(entity);
 }
 template<typename ...Components>
-inline Entity SystemContext<Components...>::GetEntityParent(Entity entity)
+inline Entity SystemContext<Components...>::GetEntityParent(Entity entity) const
 {
 	return world->GetEntityManager().GetEntityParent(entity);
 }
 template<typename ...Components>
-inline Entity SystemContext<Components...>::GetEntityFirstChild(Entity entity)
+inline Entity SystemContext<Components...>::GetEntityFirstChild(Entity entity) const
 {
 	return world->GetEntityManager().GetEntityFirstChild(entity);
 }
 template<typename ...Components>
-inline Entity SystemContext<Components...>::GetEntityNextSibling(Entity entity)
+inline Entity SystemContext<Components...>::GetEntityNextSibling(Entity entity) const
 {
 	return world->GetEntityManager().GetEntityNextSibling(entity);
 }
 template<typename ...Components>
-inline Entity SystemContext<Components...>::GetEntityLastSibling(Entity entity)
+inline Entity SystemContext<Components...>::GetEntityLastSibling(Entity entity) const
 {
 	return world->GetEntityManager().GetEntityLastSibling(entity);
 }
 template<typename ...Components>
-inline uint32_t SystemContext<Components...>::GetEntityDepth(Entity entity)
+inline uint32_t SystemContext<Components...>::GetEntityDepth(Entity entity) const
 {
 	return world->GetEntityManager().GetEntityDepth(entity);
 }

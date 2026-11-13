@@ -209,9 +209,11 @@ public:
 
 					// Create the entity and add it to internal list for future reference
 					if(command.previous.IsValid() || command.next.IsValid())
-						createdEntities.push_back(world->GetEntityManager().CreateEntity(command.previous, command.next, command.name, command.prefabPath));
+						createdEntities.push_back(world->GetEntityManager().CreateEntity(
+							ResolveTransientEntity(command.previous), ResolveTransientEntity(command.next), command.name, command.prefabPath));
 					else if(command.parent.IsValid())
-						createdEntities.push_back(world->GetEntityManager().CreateEntity(command.parent, command.name, command.prefabPath));
+						createdEntities.push_back(world->GetEntityManager().CreateEntity(
+							ResolveTransientEntity(command.parent), command.name, command.prefabPath));
 					else
 						createdEntities.push_back(world->GetEntityManager().CreateEntity(command.name, command.level, command.prefabPath));
 				}

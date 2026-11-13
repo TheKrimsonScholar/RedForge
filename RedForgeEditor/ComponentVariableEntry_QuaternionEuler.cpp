@@ -48,4 +48,6 @@ void ComponentVariableEntry_QuaternionEuler::OnValueChanged()
 		fieldPitch->GetValue(), 
 		fieldYaw->GetValue(), 
 		fieldRoll->GetValue()));
+
+	onValueChanged.Broadcast(variablePtr);
 }

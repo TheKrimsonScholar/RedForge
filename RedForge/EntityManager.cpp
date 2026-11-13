@@ -119,6 +119,10 @@ void EntityManager::DestroyEntity(Entity entity)
 	for(const Entity& child : children)
 		DestroyEntity(child);
 
+	// Remove all of the entity's components (prevents conflict if this entity slot is reused)
+	for(auto& componentArray : componentArrays)
+		RemoveComponentOfType(entity, componentArray.first);
+
 	Entity parent = GetEntityParent(entity);
 	Entity lastSibling = GetEntityLastSibling(entity);
 	Entity nextSibling = GetEntityNextSibling(entity);
@@ -149,10 +153,6 @@ void EntityManager::DestroyEntity(Entity entity)
 	// Otherwise the entity is in the valid range, so add it to free queue
 	else
 		freeQueue.push(entity.index);
-
-	// Remove all of the entity's components (prevents conflict if this entity slot is reused)
-	for(auto& componentArray : componentArrays)
-		RemoveComponentOfType(entity, componentArray.first);
 
 	entityData[entity.index].valid = false;
 

@@ -49,4 +49,6 @@ void ComponentVariableEntry_Material::UpdateDisplayedValue()
 void ComponentVariableEntry_Material::OnValueChanged()
 {
 	*variablePtr = materials[searchField->GetSelectedIndex()];
+
+	onValueChanged.Broadcast(variablePtr);
 }

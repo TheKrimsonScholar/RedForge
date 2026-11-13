@@ -146,6 +146,8 @@ public:
 #ifdef NETMODE_SERVER
 	void SendHierarchyEventsPackets(LocalSystemContext& ctx);
 	void SendReplicationPackets(LocalSystemContext& ctx);
+
+	void ServerWriteAddEntityPacket(LocalSystemContext& ctx, const Entity& entity);
 #endif // NETMODE_SERVER
 	
 	void SendPacket_StateReplicationACK(ENetPeer* recipient, const NetworkPacketData_StateReplicationACK& packetData);
@@ -159,6 +161,8 @@ public:
 
 	Entity GetEntityByNetworkID(size_t networkID);
 	size_t GetNetworkIDOfEntity(const Entity& entity);
+
+	bool IsEntityInNetwork(const Entity& entity);
 
 private:
 #ifdef NETMODE_SERVER

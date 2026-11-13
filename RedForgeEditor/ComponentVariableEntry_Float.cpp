@@ -30,4 +30,6 @@ void ComponentVariableEntry_Float::UpdateDisplayedValue()
 void ComponentVariableEntry_Float::OnValueChanged()
 {
 	*variablePtr = field->GetValue();
+
+	onValueChanged.Broadcast(variablePtr);
 }
